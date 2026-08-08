@@ -1,0 +1,89 @@
+.modal__backdrop {
+  position: fixed;
+  inset: 0;                       /* top/right/bottom/left = 0 */
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 1000;
+  animation: modal-fade 140ms ease;
+}
+
+.modal__panel {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  /* Never taller than the viewport, so the close button is always
+     reachable on a small laptop screen. */
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: modal-rise 160ms ease;
+}
+
+.modal__panel--sm { max-width: 400px; }
+.modal__panel--md { max-width: 540px; }
+.modal__panel--lg { max-width: 720px; }
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal__title {
+  font-size: 1.15rem;
+}
+
+.modal__close {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: color var(--transition), background var(--transition);
+}
+.modal__close:hover {
+  color: var(--text-primary);
+  background: var(--gray-100);
+}
+
+.modal__body {
+  padding: var(--space-6);
+  overflow-y: auto;   /* long content scrolls inside the dialog */
+}
+
+.modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border-color);
+  background: var(--gray-50);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+@keyframes modal-fade {
+  from { opacity: 0; }
+}
+
+@keyframes modal-rise {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+}
+
+@media (max-width: 640px) {
+  .modal__footer {
+    flex-direction: column-reverse;
+  }
+  .modal__footer .btn {
+    width: 100%;
+  }
+}

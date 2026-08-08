@@ -1,0 +1,30 @@
+# ---------------------------------------------------------------
+# Line-ending normalization.
+#
+# You are on Windows (CRLF line endings). Docker containers run
+# Linux (LF line endings). Without this file, a shell script or
+# Dockerfile written on Windows can fail inside a container with
+# a confusing error like:  "/bin/sh^M: bad interpreter"
+#
+# `text=auto` tells Git: store everything as LF in the repository,
+# and check it out however the local OS prefers.
+# ---------------------------------------------------------------
+* text=auto
+
+# Always LF -- these are read by Linux tooling, no exceptions
+*.sh          text eol=lf
+Dockerfile    text eol=lf
+*.Dockerfile  text eol=lf
+Jenkinsfile   text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+*.sql         text eol=lf
+
+# Binary files -- never touch these
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

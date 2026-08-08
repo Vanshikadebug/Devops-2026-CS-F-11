@@ -1,0 +1,99 @@
+/* Button styles. Every value comes from a design token in
+   index.css -- no raw hex codes, no magic pixel numbers. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), border-color var(--transition),
+    color var(--transition), transform var(--transition);
+}
+
+.btn:active:not(:disabled) {
+  /* Tiny press effect -- makes the UI feel responsive. */
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --- Sizes --------------------------------------------------- */
+.btn--sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.85rem;
+}
+.btn--md {
+  padding: var(--space-3) var(--space-5);
+  font-size: 0.95rem;
+}
+
+.btn--full {
+  width: 100%;
+}
+
+/* --- Variants ------------------------------------------------ */
+
+/* primary: the main action on a screen (Login, Add Item, Request) */
+.btn--primary {
+  background: var(--green-600);
+  color: var(--text-inverse);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--green-700);
+}
+
+/* secondary: supporting action sitting next to a primary one */
+.btn--secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.btn--secondary:hover:not(:disabled) {
+  background: var(--gray-100);
+  border-color: var(--gray-400);
+}
+
+/* danger: destructive and irreversible (Delete item, Reject) */
+.btn--danger {
+  background: var(--red-600);
+  color: var(--text-inverse);
+}
+.btn--danger:hover:not(:disabled) {
+  background: var(--red-700);
+}
+
+/* ghost: low-emphasis, for toolbars and cancel actions */
+.btn--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--gray-100);
+  color: var(--text-primary);
+}
+
+/* --- Loading spinner inside the button ----------------------- */
+.btn__spinner {
+  width: 0.9em;
+  height: 0.9em;
+  border: 2px solid currentColor;
+  /* Hiding one edge is what makes a ring look like it spins. */
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: btn-spin 600ms linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

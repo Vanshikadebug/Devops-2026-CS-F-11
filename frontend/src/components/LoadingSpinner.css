@@ -1,0 +1,30 @@
+.spinner-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Centres the spinner in a large empty area while a page loads. */
+.spinner-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  width: 100%;
+}
+
+.spinner {
+  display: block;
+  border-radius: var(--radius-full);
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--green-600);
+  animation: spin 700ms linear infinite;
+}
+
+.spinner--sm { width: 18px; height: 18px; border-width: 2px; }
+.spinner--md { width: 32px; height: 32px; }
+.spinner--lg { width: 48px; height: 48px; border-width: 4px; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
