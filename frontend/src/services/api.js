@@ -40,6 +40,8 @@
  * only for real users.
  */
 
+import { getToken } from './tokenStorage.js'
+
 /** Every endpoint lives under /api. Written once, here. */
 const API_BASE = '/api'
 
@@ -69,12 +71,37 @@ export class ApiError extends Error {
 async function request(path, { method = 'GET', body, signal, headers = {} } = {}) {
   let response
 
+  /* ---------------------------------------------------------------
+     THE AUTHORIZATION HEADER
+     ---------------------------------------------------------------
+     Read fresh from storage on EVERY request, rather than captured
+     once when this module loads. That ordering matters: this file is
+     imported before the user has logged in, so a value read at import
+     time would be null forever, and every protected request after
+     login would 401 until a full page refresh.
+
+     Attached to every request, not only the ones we believe need it.
+     The alternative -- a `requiresAuth: true` flag per call site --
+     means remembering to pass it, and forgetting produces a 401 that
+     looks like a backend bug. Sending it unconditionally is safe
+     because the token only ever goes to our own origin (the URL is
+     relative, so it cannot be pointed at a third party), and public
+     endpoints simply ignore it.
+
+     `protect` on the server is what actually enforces anything. This
+     header is how we ASK; the backend decides. */
+  const token = getToken()
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
+
   try {
     response = await fetch(`${API_BASE}${path}`, {
       method,
       // Only send Content-Type when there IS a body. Sending it on a
       // GET is harmless but misleading, and some servers reject it.
-      headers: body === undefined ? headers : { 'Content-Type': 'application/json', ...headers },
+      headers:
+        body === undefined
+          ? { ...authHeaders, ...headers }
+          : { 'Content-Type': 'application/json', ...authHeaders, ...headers },
       body: body === undefined ? undefined : JSON.stringify(body),
       // Lets the caller cancel this request -- see the AbortController
       // in Home.jsx and the note on why that matters.

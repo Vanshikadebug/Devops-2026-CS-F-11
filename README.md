@@ -3,7 +3,7 @@
 > A platform for listing items you no longer need, so someone else can reuse them
 > instead of them becoming waste.
 
-**Status:** 🚧 Under active development — Phase 5 of 18 complete (frontend reads live data from MySQL).
+**Status:** 🚧 Under active development — Phase 7 of 18 complete (personal dashboard with per-user statistics).
 
 This README is a placeholder. The full documentation (architecture, database
 design, installation, API reference, Docker, Jenkins, CI/CD) is written in
@@ -58,12 +58,16 @@ npm run dev     # http://localhost:5173
 
 Then open **http://localhost:5173** — the item grid is served from MySQL.
 
-Demo login (available from Phase 6): `aarav@example.com` / `password123`
+You can register a new account, or use a demo login:
+`aarav@example.com` / `password123`
+
+Logging in lands you on **/dashboard** — your own items, your own request
+counts, nobody else's.
 
 **Tests:**
 
 ```bash
-cd backend && npm test    # 33 tests
+cd backend && npm test    # 72 tests
 ```
 
 ## API endpoints
@@ -71,8 +75,39 @@ cd backend && npm test    # 33 tests
 | Method | Path | Auth | Phase |
 |---|---|---|---|
 | `GET` | `/api/health` | — | 3 |
+| `POST` | `/api/auth/register` | — | 6 |
+| `POST` | `/api/auth/login` | — | 6 |
+| `GET` | `/api/auth/me` | Bearer token | 6 |
 | `GET` | `/api/items` | — | 5 |
 | `GET` | `/api/items/:id` | — | 5 |
+| `GET` | `/api/items/mine` | Bearer token | 7 |
+| `GET` | `/api/dashboard` | Bearer token | 7 |
+
+Protected endpoints expect the token in a header:
+
+```
+Authorization: Bearer <token>
+```
+
+## Security notes
+
+- Passwords are hashed with **bcrypt** (per-password salt) and are never stored,
+  logged, or returned by the API.
+- The JWT payload carries **only the user id** — it is base64, not encryption,
+  so anyone holding a token can read it.
+- Route guards in React control what a user **sees**; the `protect` middleware
+  on the server controls what a user **can do**. The second one is the security
+  boundary — the first can be bypassed from the browser.
+- Personal data is scoped by `req.user.id`, taken from the **verified token
+  signature** — never from a URL, query string, body field or header. This is
+  why the dashboard is `GET /api/dashboard` and not `/api/dashboard/:userId`:
+  there is no id to tamper with. `tests/dashboard.test.js` sends five separate
+  attempts to name another account and asserts all five return the caller's own
+  data.
+- Login returns an identical response for an unknown email and a wrong password,
+  so the API cannot be used to discover which addresses are registered.
+- All SQL uses prepared statements.
+- `.env` is gitignored and never committed.
 
 ## Build phases
 
@@ -81,8 +116,8 @@ cd backend && npm test    # 33 tests
 - [x] **Phase 3** — Backend setup
 - [x] **Phase 4** — MySQL database
 - [x] **Phase 5** — Frontend–backend connection
-- [ ] Phase 6 — Registration and authentication
-- [ ] Phase 7 — Dashboard
+- [x] **Phase 6** — Registration and authentication
+- [x] **Phase 7** — Dashboard
 - [ ] Phase 8 — Item management
 - [ ] Phase 9 — Search and filtering
 - [ ] Phase 10 — Request system

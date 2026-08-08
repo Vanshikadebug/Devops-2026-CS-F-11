@@ -17,15 +17,28 @@ import './Navbar.css'
  * React state -- the entire point of a single-page app is that
  * navigation does NOT hit the server.
  *
- * NOTE ON AUTH (Phase 6)
- * Right now `user` is passed in as a prop and is always null. In
- * Phase 6 this becomes a real `useAuth()` call. The markup below
- * already handles both cases, so that change is a two-line edit.
+ * AUTH (wired up in Phase 6)
+ * `user` and `onLogout` come from App, which reads them from
+ * useAuth(). This component stays a plain presentational component
+ * that takes props -- it does not call useAuth() itself.
+ *
+ * WHY PROPS RATHER THAN READING THE CONTEXT DIRECTLY?
+ * Because it keeps the Navbar testable and reusable in isolation:
+ * rendering it with user={{ name: 'Test' }} needs no provider around
+ * it. Reading context here would make the component impossible to
+ * render without the whole auth stack behind it.
  */
 function Navbar({ user = null, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   const closeMenu = () => setMenuOpen(false)
+
+  /* On a phone the nav is a dropdown, and logging out from inside it
+     would otherwise leave it hanging open over the page you land on. */
+  const handleLogout = () => {
+    closeMenu()
+    onLogout?.()
+  }
 
   // Passed to NavLink's className, which React Router calls with
   // { isActive } on every render.
@@ -62,14 +75,14 @@ function Navbar({ user = null, onLogout }) {
 
             {user && (
               <>
+                <NavLink to="/dashboard" className={linkClass} onClick={closeMenu}>
+                  Dashboard
+                </NavLink>
                 <NavLink to="/my-items" className={linkClass} onClick={closeMenu}>
                   My Items
                 </NavLink>
                 <NavLink to="/requests" className={linkClass} onClick={closeMenu}>
                   Requests
-                </NavLink>
-                <NavLink to="/profile" className={linkClass} onClick={closeMenu}>
-                  Profile
                 </NavLink>
               </>
             )}
@@ -78,13 +91,17 @@ function Navbar({ user = null, onLogout }) {
           <div className="navbar__actions">
             {user ? (
               <>
-                <span className="navbar__user">
+                {/* The name is a link to the dashboard: clicking your
+                    own name expecting your account is a near-universal
+                    habit, and a <Link> satisfies it without adding
+                    another item to the nav. */}
+                <Link to="/dashboard" className="navbar__user" onClick={closeMenu}>
                   <span className="navbar__avatar" aria-hidden="true">
                     {user.name?.charAt(0).toUpperCase()}
                   </span>
                   {user.name}
-                </span>
-                <Button variant="secondary" size="sm" onClick={onLogout}>
+                </Link>
+                <Button variant="secondary" size="sm" onClick={handleLogout}>
                   Logout
                 </Button>
                 <Link to="/items/new" onClick={closeMenu}>

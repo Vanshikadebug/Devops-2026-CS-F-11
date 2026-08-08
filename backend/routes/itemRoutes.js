@@ -26,27 +26,45 @@
  *
  * ROUTE ORDER MATTERS.
  * Express matches top to bottom and stops at the first hit, so
- * specific literal paths must come before dynamic ones. In Phase 8,
- * GET /mine has to be registered above GET /:id -- otherwise ':id'
- * matches the text "mine" and the wrong handler runs. Noting it here
- * because the bug is subtle and produces a confusing 400 rather than
- * an obvious failure.
+ * specific literal paths must come before dynamic ones. GET /mine is
+ * registered above GET /:id for exactly that reason -- see the
+ * comment on the route itself.
  */
 
 const express = require('express')
-const { getItems, getItemById } = require('../controllers/itemController')
+const { getItems, getItemById, getMyItems } = require('../controllers/itemController')
+const protect = require('../middleware/protect')
 
 const router = express.Router()
+
+/* --- Protected route, and it MUST come first -------------------
+   >>> THIS ORDERING IS A REAL BUG WAITING TO HAPPEN <<<
+   Express takes the FIRST route that matches. '/:id' is a wildcard,
+   so it happily matches the literal text "mine" -- meaning if these
+   two lines were swapped, a request to /api/items/mine would run
+   getItemById with req.params.id === 'mine'.
+
+   The failure is nasty because it is not a crash. getItemById would
+   reject 'mine' as a non-numeric id and answer:
+
+       400  "Item id must be a positive whole number"
+
+   ...for a URL that has no id in it at all. You would read that
+   message and go looking for the bug in the dashboard's fetch call,
+   which is entirely correct. Registered in this order, it cannot
+   happen.
+
+   Phase 8 adds the remaining protected routes:
+     router.post('/',      protect, createItem)
+     router.put('/:id',    protect, updateItem)
+     router.delete('/:id', protect, deleteItem)
+--------------------------------------------------------------- */
+router.get('/mine', protect, getMyItems)
 
 /* --- Public routes ---------------------------------------------
    Browsing needs no account: someone should be able to see what is
    available before deciding to register. Requesting an item is what
    requires a login, and that is Phase 10.
-
-   Phase 8 adds the protected routes here:
-     router.post('/',        protect, createItem)
-     router.put('/:id',      protect, updateItem)
-     router.delete('/:id',   protect, deleteItem)
 --------------------------------------------------------------- */
 router.get('/', getItems)
 router.get('/:id', getItemById)

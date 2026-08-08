@@ -1,0 +1,80 @@
+/* FormField -- one labelled input with an error slot.
+   Companion to FormField.jsx. Colours come from the design-system
+   tokens in index.css; nothing here is hard-coded. */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* The required asterisk. Kept subtle (green rather than red) so it
+   never looks like an error -- it is not one, it is information. */
+.field__required {
+  color: var(--green-600);
+}
+
+.field__input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.field__input:hover {
+  border-color: var(--gray-400);
+}
+
+/* Focus is styled here, but only for pointer/mouse clicks.
+   Keyboard focus is handled globally by :focus-visible in index.css,
+   which shows the strong green ring. The distinction stops mouse
+   users seeing a ring every time they click, while keyboard users
+   always see where they are. */
+.field__input:focus {
+  outline: none;
+  border-color: var(--green-600);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+/* Invalid fields get a red border as soon as an error exists.
+   The text warning under the field does the explaining; the border
+   is the at-a-glance signal. aria-invalid is set in the JSX so
+   screen readers get the same information. */
+.field__input--error {
+  border-color: var(--red-500);
+}
+
+.field__input--error:hover {
+  border-color: var(--red-500);
+}
+
+/* The password manager's autofill paints its own background, and it
+   wins over ours. Keep the text readable against it. */
+.field__input:-webkit-autofill {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-surface) inset;
+}
+
+.field__hint {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.field__error {
+  font-size: 0.8125rem;
+  color: var(--red-600);
+}
+
+@media (max-width: 640px) {
+  .field__input {
+    padding: 0.75rem; /* slightly taller touch target */
+  }
+}

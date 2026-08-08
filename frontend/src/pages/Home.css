@@ -68,23 +68,12 @@
 }
 
 /* --- The responsive grid ---------------------------------------
-   auto-fill + minmax is the whole trick: the browser fits as many
-   280px-or-wider columns as the screen allows, then stretches them
-   to fill the row. One rule handles phone, tablet and desktop --
-   no media queries needed. */
-.item-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-5);
-}
+   `.item-grid` moved to index.css when the Dashboard started using
+   it too -- shared layout belongs there, per the note at the top of
+   that section. */
 
 @media (max-width: 720px) {
   .toolbar {
     flex-direction: column;
-  }
-  .item-grid {
-    /* Below 720px, force a single column so cards do not get
-       squeezed to an unreadable width. */
-    grid-template-columns: 1fr;
   }
 }

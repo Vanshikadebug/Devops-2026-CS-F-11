@@ -1,0 +1,100 @@
+/* AuthForm.css -- shared styling for Login and Register.
+
+   ONE STYLESHEET, TWO PAGES. The forms differ only in how many
+   fields they have, so duplicating this into Login.css and
+   Register.css would guarantee they eventually drift apart -- one
+   card 480px wide, the other 460px, for no reason anyone remembers.
+
+   Every value below comes from the tokens in index.css. */
+
+.auth {
+  display: flex;
+  justify-content: center;
+  /* Centres the card horizontally and gives it breathing room at the
+     top, without vertical centering -- a tall form (Register has five
+     fields) would otherwise push its own heading off the top of the
+     screen on a short laptop display. */
+  padding: var(--space-10) var(--space-4) var(--space-16);
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 26rem;
+  padding: var(--space-8);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.auth__header {
+  margin-bottom: var(--space-6);
+}
+
+.auth__title {
+  margin-bottom: var(--space-1);
+}
+
+.auth__subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+/* A grid, not a stack of margins: the gap between fields is declared
+   once here rather than as a margin on every field. */
+.auth__form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* The form-level error: a failed login, a duplicate email, an
+   unreachable server. Field-level errors live under their own field
+   (see FormField.css) -- this is for problems that belong to the
+   whole submission. */
+.auth__alert {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--red-100);
+  border-left: 3px solid var(--red-500);
+  border-radius: var(--radius-sm);
+  background: var(--red-50);
+  color: var(--red-700);
+  font-size: 0.875rem;
+}
+
+.auth__switch {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+/* --- The full-page "checking your session" state ----------------
+   Rendered by ProtectedRoute while AuthProvider asks /api/auth/me
+   who the stored token belongs to. Usually a few hundred
+   milliseconds; visible on a slow connection.
+
+   min-height keeps the footer from jumping up the page and back
+   down again as this is replaced by the real content. */
+.auth__checking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+@media (max-width: 480px) {
+  .auth {
+    padding: var(--space-6) var(--space-3) var(--space-12);
+  }
+
+  /* On a narrow phone the card border and shadow just eat width, so
+     the form fills the screen instead. */
+  .auth__card {
+    padding: var(--space-6) var(--space-4);
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
+}

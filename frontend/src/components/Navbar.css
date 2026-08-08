@@ -108,6 +108,22 @@
   gap: var(--space-2);
   font-size: 0.9rem;
   color: var(--text-secondary);
+  /* It became a <Link> in Phase 7, so the global anchor styling has
+     to be overridden -- otherwise the name renders green and
+     underlines on hover, which reads as a mistake next to the
+     buttons beside it. */
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.navbar__user:hover {
+  color: var(--text-primary);
+}
+
+.navbar__user:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .navbar__avatar {

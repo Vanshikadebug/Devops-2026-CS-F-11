@@ -83,4 +83,38 @@ const getItemById = asyncHandler(async (req, res) => {
   })
 })
 
-module.exports = { getItems, getItemById }
+/**
+ * GET /api/items/mine -- the logged-in user's own items.
+ *
+ * >>> WHY THERE IS NO :id IN THIS URL <<<
+ * The obvious alternative is GET /api/users/:id/items, and it is a
+ * trap. The moment the id is in the URL, the server has to decide
+ * whether the caller is allowed to read that id -- and forgetting
+ * that check means anyone can enumerate /api/users/1/items,
+ * /api/users/2/items and read the whole site user by user.
+ *
+ * "mine" cannot be wrong. There is no id to tamper with: the answer
+ * comes from req.user.id, which protect.js set from a verified token
+ * signature. A caller cannot ask for someone else's items because
+ * the URL gives them nowhere to say whose items they want.
+ *
+ * This route is registered with `protect`, so req.user is guaranteed
+ * to exist by the time this function runs -- there is no need to
+ * check for it here.
+ *
+ * ?limit=N is honoured for the dashboard, which wants only the newest
+ * few. The model clamps it; the controller does not need to.
+ */
+const getMyItems = asyncHandler(async (req, res) => {
+  const items = await itemModel.findByUser(req.user.id, {
+    limit: req.query.limit,
+  })
+
+  res.status(200).json({
+    success: true,
+    count: items.length,
+    data: items,
+  })
+})
+
+module.exports = { getItems, getItemById, getMyItems }

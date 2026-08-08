@@ -1,0 +1,131 @@
+/* ---------------------------------------------------------------
+   Dashboard -- the logged-in user's home base.
+
+   The grid definitions here all use auto-fit + minmax rather than a
+   fixed column count. That means the layout responds to the SPACE
+   AVAILABLE rather than to a list of device widths: the same rule
+   gives three columns on a laptop, two on a tablet and one on a
+   phone, with no media queries to keep in sync.
+--------------------------------------------------------------- */
+
+.dashboard__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.dashboard__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+}
+
+.dashboard__subtitle {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.dashboard__cta {
+  text-decoration: none;
+  /* Stops the button shrinking when the heading wraps. */
+  flex-shrink: 0;
+}
+
+.dashboard__status {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  min-height: 1.2rem;
+  margin-bottom: var(--space-4);
+}
+
+/* --- Sections --------------------------------------------------- */
+.dashboard__section {
+  margin-bottom: var(--space-10);
+}
+
+.dashboard__section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dashboard__section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+.dashboard__section-head .dashboard__section-title {
+  margin-bottom: var(--space-4);
+}
+
+.dashboard__see-all {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--green-700);
+  text-decoration: none;
+}
+
+.dashboard__see-all:hover {
+  text-decoration: underline;
+}
+
+/* --- Account details -------------------------------------------
+   Marked up as a <dl>: a description list is the correct element for
+   label/value pairs, which is why the CSS has to undo its default
+   indentation. Using divs would look the same and tell a screen
+   reader nothing about which value belongs to which label.
+--------------------------------------------------------------- */
+.account-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4) var(--space-6);
+  margin: 0;
+  padding: var(--space-5);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.account-card__row dt {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.account-card__row dd {
+  margin: 0;
+  color: var(--text-primary);
+  /* An email address has no spaces, so a long one would otherwise
+     push the card wider than its container on a narrow screen. */
+  overflow-wrap: anywhere;
+}
+
+/* --- The stat grid ---------------------------------------------- */
+.dashboard__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .dashboard__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard__title {
+    font-size: 1.5rem;
+  }
+}

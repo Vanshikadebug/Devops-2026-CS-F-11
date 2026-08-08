@@ -127,4 +127,39 @@ async function findById(id) {
   return rows[0] ?? null
 }
 
-module.exports = { findAll, findById }
+/**
+ * Every item belonging to ONE user, newest first.
+ *
+ * >>> THE user_id FILTER IS THE WHOLE POINT OF THIS FUNCTION <<<
+ * It is the difference between "my items" and "everyone's items".
+ * The caller passes req.user.id -- which protect.js derived from a
+ * verified token signature -- and never a value from the URL or the
+ * request body. See the note at the end of protect.js.
+ *
+ * `limit` exists for the dashboard, which shows only the most recent
+ * few. It is a NUMBER, forced through Number.parseInt and clamped,
+ * never interpolated from user input as text: LIMIT cannot be a
+ * bound parameter in a prepared statement, so this is the one place
+ * a value gets embedded into SQL, and it must therefore be proven to
+ * be an integer first. Passing '5; DROP TABLE items' through here
+ * would otherwise be catastrophic -- parseInt turns it into 5.
+ */
+async function findByUser(userId, { limit } = {}) {
+  const safeLimit = Math.min(
+    Math.max(Number.parseInt(limit, 10) || MAX_ROWS, 1),
+    MAX_ROWS,
+  )
+
+  const [rows] = await pool.execute(
+    `SELECT ${ITEM_FIELDS}
+       FROM items i
+       JOIN users u ON u.id = i.user_id
+      WHERE i.user_id = ?
+      ORDER BY i.created_at DESC, i.id DESC
+      LIMIT ${safeLimit}`,
+    [userId],
+  )
+  return rows
+}
+
+module.exports = { findAll, findById, findByUser }

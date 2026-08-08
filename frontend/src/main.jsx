@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
+import AuthProvider from './context/AuthProvider.jsx'
 
 /**
  * main.jsx -- the ENTRY POINT of the entire frontend.
@@ -27,16 +28,33 @@ import App from './App.jsx'
  *    It uses the History API, so navigation changes the URL without
  *    a page reload.
  *
- * 3. App
- *    Our own root component, holding the routing table.
+ * 3. AuthProvider  (added in Phase 6)
+ *    Holds the logged-in user and makes it readable anywhere via
+ *    useAuth(). See context/AuthProvider.jsx.
  *
- * Phase 6 adds a fourth wrapper here -- AuthProvider -- placed
- * inside BrowserRouter so auth logic can redirect after login.
+ *    >>> WHY IS IT INSIDE BrowserRouter, NOT OUTSIDE? <<<
+ *    Order is not cosmetic here. Anything that uses routing --
+ *    useNavigate, useLocation, <Navigate> -- must have a Router
+ *    ABOVE it in the tree. AuthProvider itself does not navigate
+ *    today, but ProtectedRoute (rendered beneath it) redirects with
+ *    <Navigate>, and Login calls useNavigate(). Swapping these two
+ *    lines would produce:
+ *      "useNavigate() may be used only in the context of a <Router>"
+ *
+ *    It wraps App rather than living inside it, so the session
+ *    survives every route change: navigating from /login to / does
+ *    not unmount the provider, so the user is not re-fetched on
+ *    every navigation.
+ *
+ * 4. App
+ *    Our own root component, holding the routing table.
  */
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 )

@@ -1,0 +1,90 @@
+/* ---------------------------------------------------------------
+   StatCard -- one number on the dashboard.
+
+   The tones are colour only. A stat is never communicated by colour
+   alone: "2 awaiting your reply" says the same thing in words, so a
+   colour-blind user, or anyone on a poor screen, loses nothing.
+--------------------------------------------------------------- */
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-5);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  /* A left edge in the tone colour, rather than a tinted background:
+     it reads as a category marker without hurting text contrast. */
+  border-left: 4px solid var(--border-strong);
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.stat-card--accent {
+  border-left-color: var(--green-600);
+}
+
+.stat-card--warn {
+  border-left-color: var(--amber-700);
+}
+
+.stat-card__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-bottom: var(--space-1);
+}
+
+.stat-card__value {
+  /* Tabular figures keep every digit the same width, so a row of
+     cards does not jiggle when 9 becomes 10. */
+  font-variant-numeric: tabular-nums;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.stat-card__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.stat-card__hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* --- The linked variant ---------------------------------------- */
+.stat-card--link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.stat-card--link:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-left-color: var(--green-600);
+}
+
+/* Keyboard users get the same feedback as mouse users. Removing the
+   outline without replacing it makes an interface unusable without a
+   mouse, and it is invisible to whoever removed it. */
+.stat-card--link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Some people disable animation because motion makes them ill. This
+   query is how the operating system tells us, and honouring it costs
+   three lines. */
+@media (prefers-reduced-motion: reduce) {
+  .stat-card {
+    transition: none;
+  }
+
+  .stat-card--link:hover {
+    transform: none;
+  }
+}

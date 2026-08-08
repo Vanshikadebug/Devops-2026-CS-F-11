@@ -219,6 +219,29 @@ button, input, select, textarea {
   font-size: 0.95rem;
 }
 
+/* --- The responsive item grid ----------------------------------
+   auto-fill + minmax is the whole trick: the browser fits as many
+   280px-or-wider columns as the screen allows, then stretches them
+   to fill the row. One rule handles phone, tablet and desktop.
+
+   THIS LIVES HERE, NOT IN Home.css, because Home and Dashboard both
+   use it -- and in Phase 8 and 9 so will My Items and the search
+   results. It was defined in Home.css originally, which worked only
+   because Vite bundles every stylesheet together: the Dashboard
+   would have been silently relying on Home's CSS being loaded, and
+   the day Home.css changed, an unrelated page would break. */
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+
+@media (max-width: 720px) {
+  /* Below 720px, force a single column so cards do not get
+     squeezed to an unreadable width. */
+  .item-grid { grid-template-columns: 1fr; }
+}
+
 /* Screen-reader-only: visually hidden, still read aloud.
    Used for labels that would be visual clutter but are needed
    for accessibility. */
