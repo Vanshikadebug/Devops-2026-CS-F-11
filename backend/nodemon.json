@@ -1,0 +1,20 @@
+{
+  "//": "nodemon config -- controls the auto-restart dev server.",
+
+  "watch": ["."],
+  "ext": "js,json",
+
+  "ignore": [
+    "node_modules/",
+    "tests/",
+    "coverage/",
+    "*.test.js"
+  ],
+
+  "//delay": "Wait 500ms after a change before restarting. Saving several files at once then triggers ONE restart instead of five.",
+  "delay": 500,
+
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

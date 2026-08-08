@@ -11,6 +11,27 @@
 
 const app = require('./app')
 const config = require('./config/env')
+const { testConnection, closePool } = require('./config/db')
+
+/* ---------------------------------------------------------------
+   Verify the database BEFORE accepting traffic.
+
+   Why check at startup instead of waiting for the first query?
+   Because a wrong password would otherwise surface as a random 500
+   during a demo, with the real cause buried in a stack trace. Here
+   it produces one clear message, immediately, at the moment you
+   start the server.
+
+   We WARN rather than exit: the health endpoint needs no database,
+   so a running API that reports "DB down" is more useful for
+   debugging than a process that refuses to start at all.
+--------------------------------------------------------------- */
+testConnection().then((ok) => {
+  if (!ok) {
+    console.warn('[server] starting WITHOUT a database connection.')
+    console.warn('[server] /api/health will still respond; data routes will fail.')
+  }
+})
 
 const server = app.listen(config.port, () => {
   console.log('')
@@ -58,7 +79,10 @@ server.on('error', (err) => {
 function shutdown(signal) {
   console.log(`\n[server] ${signal} received, shutting down gracefully…`)
 
-  server.close(() => {
+  server.close(async () => {
+    // Close the pool too. Ten open MySQL connections left behind on
+    // every restart would eventually exhaust the server's limit.
+    await closePool().catch(() => {})
     console.log('[server] closed remaining connections. Goodbye.')
     process.exit(0)
   })

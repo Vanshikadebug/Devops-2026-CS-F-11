@@ -36,7 +36,14 @@ const dotenv = require('dotenv')
 // to wherever `npm start` happened to be run from. Without that,
 // starting the server from the project root would silently find no
 // .env file at all.
-dotenv.config({ path: path.join(__dirname, '..', '.env') })
+//
+// `quiet: true` suppresses dotenv's own promotional startup banner.
+// It is harmless, but it clutters test output and Jenkins logs --
+// and noisy logs are logs nobody reads.
+dotenv.config({
+  path: path.join(__dirname, '..', '.env'),
+  quiet: true,
+})
 
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const isTest = NODE_ENV === 'test'

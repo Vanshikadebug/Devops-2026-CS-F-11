@@ -67,17 +67,6 @@
   margin-bottom: var(--space-4);
 }
 
-.home__mock-note {
-  background: var(--amber-100);
-  color: var(--amber-700);
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-}
-
 /* --- The responsive grid ---------------------------------------
    auto-fill + minmax is the whole trick: the browser fits as many
    280px-or-wider columns as the screen allows, then stretches them

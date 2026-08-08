@@ -3,7 +3,7 @@
 > A platform for listing items you no longer need, so someone else can reuse them
 > instead of them becoming waste.
 
-**Status:** 🚧 Under active development — Phase 2 of 18 complete (frontend shell).
+**Status:** 🚧 Under active development — Phase 5 of 18 complete (frontend reads live data from MySQL).
 
 This README is a placeholder. The full documentation (architecture, database
 design, installation, API reference, Docker, Jenkins, CI/CD) is written in
@@ -36,8 +36,19 @@ design, installation, API reference, Docker, Jenkins, CI/CD) is written in
 
 ## Getting started (so far)
 
-Run the frontend on its own — the backend arrives in Phase 3, so the
-item list currently renders from sample data:
+You need **two terminals**, both running at the same time.
+
+**Terminal 1 — backend** (API + database):
+
+```bash
+cd backend
+cp .env.example .env   # first time only, then fill in your MySQL password
+npm install            # first time only
+npm run db:reset       # first time only — creates the schema and demo data
+npm run dev            # http://localhost:5000/api/health
+```
+
+**Terminal 2 — frontend**:
 
 ```bash
 cd frontend
@@ -45,13 +56,31 @@ npm install     # first time only
 npm run dev     # http://localhost:5173
 ```
 
+Then open **http://localhost:5173** — the item grid is served from MySQL.
+
+Demo login (available from Phase 6): `aarav@example.com` / `password123`
+
+**Tests:**
+
+```bash
+cd backend && npm test    # 33 tests
+```
+
+## API endpoints
+
+| Method | Path | Auth | Phase |
+|---|---|---|---|
+| `GET` | `/api/health` | — | 3 |
+| `GET` | `/api/items` | — | 5 |
+| `GET` | `/api/items/:id` | — | 5 |
+
 ## Build phases
 
 - [x] **Phase 1** — Project setup and architecture
 - [x] **Phase 2** — Frontend setup
-- [ ] Phase 3 — Backend setup
-- [ ] Phase 4 — MySQL database
-- [ ] Phase 5 — Frontend–backend connection
+- [x] **Phase 3** — Backend setup
+- [x] **Phase 4** — MySQL database
+- [x] **Phase 5** — Frontend–backend connection
 - [ ] Phase 6 — Registration and authentication
 - [ ] Phase 7 — Dashboard
 - [ ] Phase 8 — Item management

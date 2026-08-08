@@ -126,16 +126,22 @@ app.get('/api', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: 'GET /api/health',
+      items: 'GET /api/items, GET /api/items/:id',
       // Filled in as each phase lands:
       // auth:     POST /api/auth/register, POST /api/auth/login   (Phase 6)
-      // items:    GET|POST /api/items, GET|PUT|DELETE /api/items/:id (Phase 8)
+      // items:    POST /api/items, PUT|DELETE /api/items/:id      (Phase 8)
       // requests: GET|POST /api/requests, PUT /api/requests/:id   (Phase 10)
     },
   })
 })
 
-// Feature routers are mounted here in later phases, e.g.
-//   app.use('/api/auth', require('./routes/authRoutes'))
+/* Feature routers.
+   Mounted AFTER the body parser (so req.body exists) and BEFORE the
+   fallbacks below (so real routes get a chance to match first).
+
+   Phase 6 adds:  app.use('/api/auth', require('./routes/authRoutes'))
+   Phase 10 adds: app.use('/api/requests', require('./routes/requestRoutes')) */
+app.use('/api/items', require('./routes/itemRoutes'))
 
 /* ---------------------------------------------------------------
    5 & 6. Fallbacks -- MUST be registered last.
