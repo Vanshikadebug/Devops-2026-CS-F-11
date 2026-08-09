@@ -36,6 +36,11 @@ const TUNNEL_HOSTS =
 app.use(
   cors({
     credentials: true,
+    /* Preflight answers for these routes do not vary between requests, so
+       letting the browser cache them keeps OPTIONS off the critical path for
+       the rest of a session. Browsers cap this themselves (Chrome at 2h), so
+       it is an upper bound rather than a promise. */
+    maxAge: 86400,
     origin(origin, callback) {
       // No Origin header: curl, a health probe, a same-origin navigation.
       if (!origin) return callback(null, true)
@@ -43,9 +48,21 @@ app.use(
       const clean = origin.replace(/\/+$/, '')
       if (config.corsOrigins.includes(clean)) return callback(null, true)
 
-      if (config.allowTunnelOrigins) {
+      /* Tunnel namespaces are shared and throwaway -- anyone can claim a
+         *.trycloudflare.com or *.ngrok-free.app name in seconds. With
+         credentials:true that would let an attacker's tunnel page call this API
+         as a logged-in user and read the replies, so production refuses them
+         regardless of ALLOW_TUNNEL_ORIGINS; the flag only picks the behaviour
+         outside production.
+
+         HTTPS for the same reason: all four providers serve TLS, so an http://
+         origin on one of these hosts did not come from them. */
+      if (config.allowTunnelOrigins && !config.isProduction) {
         try {
-          if (TUNNEL_HOSTS.test(new URL(origin).hostname)) return callback(null, true)
+          const url = new URL(origin)
+          if (url.protocol === 'https:' && TUNNEL_HOSTS.test(url.hostname)) {
+            return callback(null, true)
+          }
         } catch { /* an unparseable Origin is not an allowed one */ }
       }
 
