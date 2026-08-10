@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import ItemCard from '../components/ItemCard'
 import StatCard from '../components/StatCard'
+import CampusCard from '../components/CampusCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 import Button from '../components/Button'
@@ -167,6 +168,19 @@ function Dashboard() {
               </div>
             </dl>
           </section>
+
+          {/* --- Campus ---------------------------------------------
+              Fed from the CONTEXT user, not from data.user. Both are
+              correct on first paint -- the dashboard response and
+              /auth/me build the same object from the same token. They
+              diverge the moment the campus is saved: applyUser
+              refreshes the context immediately, while data.user is a
+              snapshot taken before the write and would keep showing
+              the old college until the next full page load.
+
+              The `??` fallback is for the instant before AuthProvider
+              finishes restoring a session on a hard refresh. */}
+          <CampusCard user={sessionUser ?? data.user} />
 
           {/* --- The numbers ---------------------------------------- */}
           <section className="dashboard__section" aria-labelledby="stats-heading">

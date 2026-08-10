@@ -149,6 +149,39 @@ function AuthProvider({ children }) {
        former. */
   }, [])
 
+  /* ---------------------------------------------------------------
+     APPLYING A PROFILE CHANGE MADE ELSEWHERE
+     ---------------------------------------------------------------
+     Added when the Dashboard gained a "change your campus" control.
+     Saving a college returns the updated user, re-read by the server
+     after the write, so the fresh object is already in hand -- this
+     is how it gets into the session that the rest of the app reads.
+
+     >>> WHY THIS DOES NOT TOUCH THE TOKEN <<<
+     The token proves WHO you are. It carries no college, no name and
+     no email, so a profile edit cannot invalidate it and there is
+     nothing to reissue. Conflating the two -- handing out a new token
+     on every profile save -- is a common and genuinely bad idea: it
+     makes every edit a re-authentication, and any failure logs the
+     user out mid-task.
+
+     >>> WHY IT ACCEPTS THE SERVER'S OBJECT RATHER THAN A PATCH <<<
+     A `setCollege(id)` action would have to construct the derived
+     fields -- college_name, area_name, city_name -- on the client,
+     from lists the picker happened to be holding. Those would then be
+     the client's guess at what the database now says. Taking the
+     server's re-read row means the session cannot drift from the
+     stored truth, which is the same reason the endpoint returns it.
+
+     The guard rejects a null: this is for applying an update to a
+     signed-in session, and clearing the session is logout's job.
+     Without it, a failed request returning undefined would silently
+     log the user out. */
+  const applyUser = useCallback((updated) => {
+    if (!updated) return
+    setUser(updated)
+  }, [])
+
   /* Memoised so the object identity only changes when the session
      genuinely does. Without this, every provider render hands out a
      brand-new object, and every consumer re-renders even though
@@ -161,8 +194,9 @@ function AuthProvider({ children }) {
       login,
       register,
       logout,
+      applyUser,
     }),
-    [user, loading, login, register, logout],
+    [user, loading, login, register, logout, applyUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

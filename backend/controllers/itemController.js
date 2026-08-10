@@ -26,19 +26,103 @@ const itemModel = require('../models/itemModel')
 const ApiError = require('../utils/ApiError')
 const asyncHandler = require('../utils/asyncHandler')
 
+/* ---------------------------------------------------------------
+   READING THE QUERY STRING
+   ---------------------------------------------------------------
+   Everything in req.query is a string typed by somebody, and these
+   two helpers turn that into either a value the model can trust or a
+   400. Nothing reaches itemModel.findAll() unvalidated.
+
+   >>> WHY AN UNKNOWN VALUE IS REJECTED RATHER THAN IGNORED <<<
+   The tempting alternative is to drop a filter we do not recognise
+   and answer with whatever the remaining filters give. That is worse
+   than an error, because the response looks completely normal. A
+   typo in ?category=Bookss would return EVERY category while the
+   heading still read "Books", and the person reading the screen has
+   no way to tell. An explicit 400 naming the allowed values is a
+   dead end you can act on.
+--------------------------------------------------------------- */
+
+/** A positive integer, or a 400. Absent and empty both mean "no filter". */
+function optionalId(value, label) {
+  if (value === undefined || value === '') return undefined
+
+  const n = Number(value)
+  if (!Number.isInteger(n) || n <= 0) {
+    throw ApiError.badRequest(`${label} must be a positive whole number`)
+  }
+  return n
+}
+
+/** One of `allowed`, or a 400 that lists what was allowed. */
+function optionalEnum(value, allowed, label) {
+  if (value === undefined || value === '') return undefined
+
+  if (!allowed.includes(value)) {
+    throw ApiError.badRequest(
+      `${label} must be one of: ${allowed.join(', ')}`,
+    )
+  }
+  return value
+}
+
 /**
- * GET /api/items -- list all items.
+ * GET /api/items -- list items, optionally filtered.
+ *
+ * Supported query parameters, all optional:
+ *
+ *   ?college=4        items at one campus
+ *   ?area=1           items at any college in one locality
+ *   ?city=1           items at any college in one city
+ *   ?search=calc      substring of the name or description
+ *   ?category=Books   one category
+ *   ?condition=Good   one condition
+ *   ?status=Available one status
+ *   ?sort=newest      newest | oldest | name
+ *   ?limit=6          1..100, clamped by the model
+ *
+ * >>> CALLING IT WITH NO PARAMETERS BEHAVES EXACTLY AS BEFORE <<<
+ * Every filter is undefined, the model builds no WHERE clause, and
+ * the response is the full list newest-first -- byte for byte what
+ * Phase 5 returned. That is deliberate: this endpoint already has
+ * callers, and a filter feature that changes the unfiltered answer
+ * is a breaking change wearing a feature's clothes.
+ *
+ * In particular the default is NOT "available items only". Hiding
+ * the unavailable ones would be a defensible product decision and a
+ * silent behaviour change, so it is left to the caller, which asks
+ * for ?status=Available when it wants it.
  *
  * WHY THE { success, count, data } ENVELOPE INSTEAD OF A BARE ARRAY?
  * Returning `[...]` directly seems simpler, but it leaves no room to
- * add anything later. Phase 9 needs to send pagination info
- * alongside the rows; with a bare array there is nowhere to put it
- * without breaking every existing caller. The envelope also matches
- * the error shape from errorHandler.js, so the frontend has exactly
- * one rule: read `success`, then read `data` or `message`.
+ * add anything later. Paging needs to send its info alongside the
+ * rows; with a bare array there is nowhere to put it without
+ * breaking every existing caller. The envelope also matches the
+ * error shape from errorHandler.js, so the frontend has exactly one
+ * rule: read `success`, then read `data` or `message`.
  */
 const getItems = asyncHandler(async (req, res) => {
-  const items = await itemModel.findAll()
+  const { search } = req.query
+
+  const filters = {
+    college: optionalId(req.query.college, 'college'),
+    area: optionalId(req.query.area, 'area'),
+    city: optionalId(req.query.city, 'city'),
+    category: optionalEnum(req.query.category, itemModel.CATEGORIES, 'category'),
+    condition: optionalEnum(req.query.condition, itemModel.CONDITIONS, 'condition'),
+    status: optionalEnum(req.query.status, itemModel.STATUSES, 'status'),
+    sort: optionalEnum(req.query.sort, itemModel.SORT_KEYS, 'sort'),
+    limit: req.query.limit,
+
+    /* Trimmed, because a search box sends the spaces around what was
+       typed and ' laptop ' should find the same rows as 'laptop'.
+       A term that is nothing BUT spaces trims to '', which is falsy,
+       so the model skips the clause entirely rather than searching
+       for the empty string and matching every row. */
+    search: typeof search === 'string' && search.trim() ? search.trim() : undefined,
+  }
+
+  const items = await itemModel.findAll(filters)
 
   res.status(200).json({
     success: true,

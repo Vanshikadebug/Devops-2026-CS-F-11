@@ -60,7 +60,7 @@ describe('schema structure', () => {
     expect(names).not.toContain('condition')
   })
 
-  it('declares all three foreign keys', async () => {
+  it('declares a foreign key for every relationship', async () => {
     const [rows] = await pool.query(
       `SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
         WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_TYPE = 'FOREIGN KEY'`,
@@ -71,16 +71,95 @@ describe('schema structure', () => {
         'fk_items_user',
         'fk_requests_item',
         'fk_requests_requester',
+        // The location chain: city <- area <- college, and the two
+        // things that point at a college.
+        'fk_areas_city',
+        'fk_colleges_area',
+        'fk_users_college',
+        'fk_items_college',
       ]),
     )
   })
 
-  it('cascades deletes from users, so no orphan rows can survive', async () => {
+  /**
+   * >>> WHY THIS TEST NAMES EVERY CONSTRAINT INDIVIDUALLY <<<
+   *
+   * It used to assert that EVERY foreign key in the database was
+   * ON DELETE CASCADE, in one loop. That passed while every
+   * relationship happened to be a cascade, and it was checking the
+   * wrong thing: it asserted uniformity, when what actually matters
+   * is that each relationship has the delete rule it specifically
+   * needs. The two are indistinguishable right up until they
+   * disagree, at which point the blanket test fails on a change that
+   * is entirely correct -- exactly what happened when college_id was
+   * added.
+   *
+   * CASCADE and SET NULL answer completely different questions:
+   *
+   *   CASCADE  = "this row is meaningless without its parent."
+   *              An item with no owner cannot be collected from
+   *              anyone. A request for a deleted item is noise.
+   *
+   *   SET NULL = "this row outlives its parent."
+   *              Removing a college from the directory must not
+   *              delete the people who studied there, nor the
+   *              things they are giving away. Those items keep
+   *              their `location` text and simply stop being
+   *              filed under a campus.
+   *
+   * Getting this backwards is a data-loss bug of the worst kind:
+   * silent, immediate, and irreversible. One tidy-up of the college
+   * list would take every listing at that college with it. Pinning
+   * each rule by name means such a change cannot pass review by
+   * accident.
+   */
+  it('gives each foreign key the delete rule its relationship needs', async () => {
     const [rows] = await pool.query(
-      `SELECT DELETE_RULE FROM information_schema.REFERENTIAL_CONSTRAINTS
+      `SELECT CONSTRAINT_NAME, DELETE_RULE
+         FROM information_schema.REFERENTIAL_CONSTRAINTS
         WHERE CONSTRAINT_SCHEMA = DATABASE()`,
     )
-    rows.forEach((r) => expect(r.DELETE_RULE).toBe('CASCADE'))
+
+    const ruleFor = Object.fromEntries(
+      rows.map((r) => [r.CONSTRAINT_NAME, r.DELETE_RULE]),
+    )
+
+    // The child cannot exist without the parent -> delete it too.
+    expect(ruleFor.fk_items_user).toBe('CASCADE')
+    expect(ruleFor.fk_requests_item).toBe('CASCADE')
+    expect(ruleFor.fk_requests_requester).toBe('CASCADE')
+    expect(ruleFor.fk_areas_city).toBe('CASCADE')
+    expect(ruleFor.fk_colleges_area).toBe('CASCADE')
+
+    // The child outlives the parent -> keep it, forget the link.
+    expect(ruleFor.fk_users_college).toBe('SET NULL')
+    expect(ruleFor.fk_items_college).toBe('SET NULL')
+  })
+
+  it('lets an item exist without a college, for off-campus listings', async () => {
+    // The nullable column is what makes SET NULL possible above. If
+    // someone made college_id NOT NULL to "tidy it up", deleting a
+    // college would start failing outright instead of releasing its
+    // items -- and this test says why the column is the way it is.
+    const [cols] = await pool.query('SHOW COLUMNS FROM items')
+    const collegeId = cols.find((c) => c.Field === 'college_id')
+
+    expect(collegeId).toBeDefined()
+    expect(collegeId.Null).toBe('YES')
+  })
+
+  it('indexes the browse query: college, then status, then date', async () => {
+    // The main browse query is "available items at this college,
+    // newest first". A composite index in that exact column order
+    // serves all three parts; three single-column indexes cannot.
+    const [rows] = await pool.query(
+      `SHOW INDEX FROM items WHERE Key_name = 'idx_items_college_status_created'`,
+    )
+    expect(rows.map((r) => r.Column_name)).toEqual([
+      'college_id',
+      'status',
+      'created_at',
+    ])
   })
 
   it('keeps a FULLTEXT index for search', async () => {
@@ -119,7 +198,7 @@ describe('constraints reject bad data', () => {
     await rejects(
       `INSERT INTO items (user_id,name,description,category,item_condition,location)
        VALUES (?,?,?,?,?,?)`,
-      [1, 'Thing', 'desc', 'Vehicles', 'Good', 'Kochi'],
+      [1, 'Thing', 'desc', 'Vehicles', 'Good', 'Jaipur'],
       'WARN_DATA_TRUNCATED',
     )
   })
@@ -128,7 +207,7 @@ describe('constraints reject bad data', () => {
     await rejects(
       `INSERT INTO items (user_id,name,description,category,item_condition,location)
        VALUES (?,?,?,?,?,?)`,
-      [1, 'Thing', null, 'Books', 'Good', 'Kochi'],
+      [1, 'Thing', null, 'Books', 'Good', 'Jaipur'],
       'ER_BAD_NULL_ERROR',
     )
   })
@@ -205,7 +284,7 @@ describe('cascade behaviour', () => {
       const [i] = await conn.execute(
         `INSERT INTO items (user_id,name,description,category,item_condition,location)
          VALUES (?,?,?,?,?,?)`,
-        [u.insertId, 'Probe Item', 'temporary', 'Books', 'Good', 'Kochi'],
+        [u.insertId, 'Probe Item', 'temporary', 'Books', 'Good', 'Jaipur'],
       )
       await conn.execute(
         'INSERT INTO requests (item_id,requester_id) VALUES (?,?)',

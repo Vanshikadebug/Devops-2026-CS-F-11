@@ -21,6 +21,34 @@
   font-size: 1.05rem;
 }
 
+/* --- The location scope panel -----------------------------------
+   Visually distinct from the toolbar below it, because they answer
+   different questions: this one is WHERE, the toolbar is WHAT. Two
+   identical white boxes would read as one long row of six controls
+   and lose the 1-2-3 sequence entirely. */
+.browse-scope {
+  background: var(--green-50);
+  border: 1px solid var(--green-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.browse-scope__heading {
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--green-800);
+  margin-bottom: var(--space-4);
+}
+
+.browse-scope__resolved {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--green-200);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
 /* --- Toolbar (search + filters) -------------------------------- */
 .toolbar {
   display: flex;
@@ -55,6 +83,27 @@
   background: var(--gray-100);
   color: var(--text-muted);
   cursor: not-allowed;
+}
+
+/* Appears only when a filter is actually set, so it is never a dead
+   control -- and its appearance is itself the signal that something
+   is narrowing the results. */
+.toolbar__clear {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+
+.toolbar__clear:hover {
+  background: var(--gray-100);
+  color: var(--text-primary);
 }
 
 /* --- Result count ---------------------------------------------- */

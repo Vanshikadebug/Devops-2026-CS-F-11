@@ -23,16 +23,15 @@
   overflow: hidden;
 }
 
-.item-card__media img {
-  width: 100%;
-  height: 100%;
-  /* `cover` crops to fill without distorting. Users paste image
-     URLs of every possible shape, so this keeps the grid tidy. */
-  object-fit: cover;
-  transition: transform 240ms ease;
-}
+/* The picture itself is ItemImage, which fills this box and
+   guarantees it is never empty -- see ItemImage.jsx for the three
+   ways an item picture goes wrong and how each is handled.
 
-.item-card:hover .item-card__media img {
+   The hover zoom applies to whichever layer is showing: the photo
+   when there is one, the category glyph when there is not. Zooming
+   only the photo would make half the grid feel dead on hover. */
+.item-card:hover .item-image__photo,
+.item-card:hover .item-image__glyph {
   transform: scale(1.04);
 }
 

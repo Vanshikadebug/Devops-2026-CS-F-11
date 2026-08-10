@@ -24,8 +24,26 @@
 import { api } from './api.js'
 
 /**
- * Every item, newest first.
+ * Items, optionally filtered.
  * Returns a plain array -- the envelope is unwrapped here.
+ *
+ * Accepts { college, area, city, search, category, condition, status,
+ * sort, limit }. Every one is optional; passing none returns
+ * everything, newest first, exactly as this function did before
+ * filtering existed.
+ *
+ * >>> WHY EMPTY VALUES ARE DROPPED RATHER THAN SENT <<<
+ * A UI that keeps its filter state in one object sends the whole
+ * object on every request, so an untouched dropdown arrives here as
+ * '' and an unchosen college as null. Sending those verbatim would
+ * produce `?category=&college=null` -- and `college=null` is not
+ * empty, it is the four-character string "null", which the backend
+ * correctly rejects as not-a-number. The page would answer 400 the
+ * moment someone typed in the search box before choosing a campus.
+ *
+ * Dropping them here means every caller can pass its state object
+ * directly and never think about it. URLSearchParams also does the
+ * percent-encoding, so a search for "50% off" cannot break the URL.
  *
  * The `?? []` is a small but real safeguard. If the backend ever
  * answered { success: true } with no data key, `.map()` on undefined
@@ -33,8 +51,16 @@ import { api } from './api.js'
  * An empty array renders the empty state instead: wrong, but not
  * broken.
  */
-async function getAll({ signal } = {}) {
-  const response = await api.get('/items', { signal })
+async function getAll(filters = {}, { signal } = {}) {
+  const query = new URLSearchParams()
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return
+    query.set(key, value)
+  })
+
+  const suffix = query.toString() ? `?${query}` : ''
+  const response = await api.get(`/items${suffix}`, { signal })
   return response.data ?? []
 }
 

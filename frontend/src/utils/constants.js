@@ -41,15 +41,38 @@ export const STATUS_VARIANTS = {
   Rejected: 'danger',
 }
 
-/** Fallback picture when an item has no image_url, or the URL 404s. */
-export const PLACEHOLDER_IMAGE =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
-       <rect width="400" height="300" fill="#f1f5f9"/>
-       <text x="50%" y="50%" font-family="system-ui,sans-serif" font-size="18"
-             fill="#94a3b8" text-anchor="middle" dominant-baseline="middle">
-         No image
-       </text>
-     </svg>`,
-  )
+/**
+ * The fallback artwork for an item with no photo, keyed by category.
+ *
+ * >>> WHY THIS REPLACED THE OLD `PLACEHOLDER_IMAGE` DATA-URI <<<
+ * That constant was a base64-ish SVG string reading "No image", fed
+ * into an <img src>. It worked, but it had two problems worth naming:
+ *
+ *  1. IT WAS STILL AN IMAGE REQUEST. An <img> whose src fails leaves
+ *     the browser's broken-image glyph -- and a data-URI can fail too
+ *     if it is ever mistyped. Real markup cannot 404.
+ *  2. IT SAID NOTHING. Every empty card looked identical. A reader
+ *     scanning the grid learned nothing from the grey rectangle.
+ *
+ * A category glyph is honest -- it does not pretend to be a
+ * photograph of the actual object -- while still telling you at a
+ * glance that the row is a book rather than a chair. That directly
+ * serves the rule that we do not put random unrelated stock photos on
+ * listings: when we do not have the real thing, we say so, in a way
+ * that is still useful.
+ *
+ * The `tint` picks the background wash in ItemImage.css. The keys
+ * must match the CATEGORIES array above, because that array is what
+ * the ENUM in schema.sql allows.
+ */
+export const CATEGORY_ART = {
+  Books: { glyph: '📚', tint: 'books' },
+  Electronics: { glyph: '🎧', tint: 'electronics' },
+  Clothing: { glyph: '👕', tint: 'clothing' },
+  Furniture: { glyph: '🪑', tint: 'furniture' },
+  Stationery: { glyph: '✏️', tint: 'stationery' },
+  Other: { glyph: '📦', tint: 'other' },
+}
+
+/** Used when `category` is missing or is a value we do not know. */
+export const DEFAULT_CATEGORY_ART = { glyph: '📦', tint: 'other' }

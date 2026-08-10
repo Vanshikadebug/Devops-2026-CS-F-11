@@ -72,7 +72,7 @@ async function main() {
     const tableNames = tables.map((row) => Object.values(row)[0])
     console.log(`[setup] tables created: ${tableNames.join(', ')}`)
 
-    for (const table of ['users', 'items', 'requests']) {
+    for (const table of ['cities', 'areas', 'colleges', 'users', 'items', 'requests']) {
       const [cols] = await connection.query(`SHOW COLUMNS FROM \`${table}\``)
       console.log(`         ${table.padEnd(9)} ${cols.length} columns`)
     }

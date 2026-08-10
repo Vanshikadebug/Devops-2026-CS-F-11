@@ -54,15 +54,50 @@ describe('GET /api/items', () => {
     const res = await request(app).get('/api/items')
 
     // Checking ALL rows, not just the first. The seed deliberately
-    // includes an item with image_url = null; if a row were missing a
-    // key entirely, testing only data[0] would sail past it.
+    // includes items with image_url = null and one with no college
+    // at all; if a row were missing a key entirely, testing only
+    // data[0] would sail past it.
+    //
+    // toEqual on the whole sorted key list, rather than a series of
+    // toHaveProperty calls, is the point: it fails on a field that
+    // APPEARS as well as one that disappears. That is what catches
+    // the day someone adds `u.email` to the JOIN "just for debugging".
     res.body.data.forEach((item) => {
       expect(Object.keys(item).sort()).toEqual(
         [
-          'category', 'condition', 'created_at', 'description', 'id',
-          'image_url', 'location', 'name', 'owner_name', 'status', 'user_id',
+          'area_name', 'category', 'city_name', 'college_id', 'college_name',
+          'condition', 'created_at', 'description', 'id', 'image_url',
+          'location', 'name', 'owner_name', 'status', 'user_id',
         ].sort(),
       )
+    })
+  })
+
+  it('resolves the college of an on-campus item, and nulls for an off-campus one', async () => {
+    // >>> THIS IS THE LEFT JOIN TEST <<<
+    // items.college_id is nullable, so the college tables are
+    // reached with LEFT JOINs. Were any of them a plain JOIN, the
+    // off-campus row would not come back wrong -- it would silently
+    // VANISH from every listing, which is far harder to notice.
+    const res = await request(app).get('/api/items')
+
+    const onCampus = res.body.data.filter((i) => i.college_id !== null)
+    const offCampus = res.body.data.filter((i) => i.college_id === null)
+
+    expect(onCampus.length).toBeGreaterThan(0)
+    expect(offCampus.length).toBeGreaterThan(0) // run `npm run db:reset` if this fails
+
+    onCampus.forEach((item) => {
+      expect(typeof item.college_name).toBe('string')
+      expect(typeof item.area_name).toBe('string')
+      expect(typeof item.city_name).toBe('string')
+    })
+
+    offCampus.forEach((item) => {
+      expect(item.college_name).toBeNull()
+      // `location` is NOT NULL in the schema precisely so a card
+      // with no college still has something true to display.
+      expect(item.location).toBeTruthy()
     })
   })
 

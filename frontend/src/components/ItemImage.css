@@ -1,0 +1,75 @@
+/* ItemImage -- the never-blank picture frame.
+
+   The component renders two layers stacked in the same box: the
+   category fallback, and (when there is one that loads) the photo on
+   top of it. Absolute positioning is what puts them in the same
+   place; the parent supplies the shape of the box, which is why there
+   is no aspect-ratio here -- ItemCard wants 4:3, and the detail page
+   will want something else. */
+
+.item-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* --- Layer 1: the fallback ------------------------------------- */
+.item-image__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  /* Overridden per category by the --item-tint rules below. */
+  background: var(--gray-100);
+}
+
+.item-image__glyph {
+  font-size: clamp(2rem, 12%, 3rem);
+  line-height: 1;
+  /* The emoji sits slightly high inside its own line box; this
+     nudges the pair back to optically centred. */
+  transform: translateY(2px);
+  transition: transform 240ms ease;
+}
+
+.item-image__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* --- Layer 2: the photo ----------------------------------------
+   Sits on top, so it hides the fallback the moment it decodes. It is
+   NOT conditionally hidden by CSS -- the component unmounts it on
+   error, which is what guarantees no broken-image glyph. */
+.item-image__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* `cover` crops to fill without distorting. Users paste image URLs
+     of every possible shape, so this keeps the grid tidy. */
+  object-fit: cover;
+  transition: transform 240ms ease;
+}
+
+/* --- Category tints --------------------------------------------
+   A wash of colour, not a picture. Enough to make a grid of
+   photo-less listings look intentional and scannable rather than
+   like a column of identical grey holes.
+
+   All six use the same 12%-ish lightness so no single category
+   shouts, and the label above keeps its AA contrast on every one. */
+.item-image--books       .item-image__fallback { background: var(--blue-100); }
+.item-image--electronics .item-image__fallback { background: var(--gray-200); }
+.item-image--clothing    .item-image__fallback { background: var(--amber-100); }
+.item-image--furniture   .item-image__fallback { background: var(--green-100); }
+.item-image--stationery  .item-image__fallback { background: var(--red-100); }
+.item-image--other       .item-image__fallback { background: var(--gray-100); }

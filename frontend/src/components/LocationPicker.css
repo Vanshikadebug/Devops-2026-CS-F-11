@@ -1,0 +1,105 @@
+/* LocationPicker -- the three cascading dropdowns.
+
+   Laid out as equal columns on desktop so the 1-2-3 order reads
+   left to right, and stacked on narrow screens where three selects
+   side by side would each be too narrow to read an option in. */
+
+.location-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.location-picker__step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;              /* lets a select shrink inside the grid */
+}
+
+.location-picker__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--text-secondary);
+}
+
+/* The step number. Small, quiet, but it is what makes three
+   dropdowns read as one sequence rather than three filters. */
+.location-picker__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-full);
+  background: var(--green-100);
+  color: var(--green-800);
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.location-picker__optional {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.location-picker__select {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  cursor: pointer;
+  /* Long college names are the norm, not the exception -- "Swami
+     Keshvanand Institute of Technology" does not fit a third of a
+     row. The <select> itself clips; the dropdown list shows the
+     full text. */
+  text-overflow: ellipsis;
+}
+
+.location-picker__select:disabled {
+  background: var(--gray-100);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* --- Failure state ---------------------------------------------
+   If the directory cannot load, the picker is useless, so it says
+   so and offers the retry rather than rendering three empty
+   dropdowns that look like the database is simply empty. */
+.location-picker--error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--red-100);
+  border-radius: var(--radius-md);
+  background: var(--red-50);
+  color: var(--red-700);
+  font-size: 0.9rem;
+}
+
+.location-picker__retry {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--red-500);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--red-700);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.location-picker__retry:hover {
+  background: var(--red-100);
+}
+
+@media (max-width: 720px) {
+  .location-picker {
+    grid-template-columns: 1fr;
+  }
+}

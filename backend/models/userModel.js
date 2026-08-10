@@ -34,8 +34,36 @@ const { pool } = require('../config/db')
 const config = require('../config/env')
 
 /* The columns that are safe to send to a client. Note the absence
-   of `password`. Written once so every query returns the same shape. */
-const SAFE_FIELDS = 'id, name, email, mobile, created_at'
+   of `password`. Written once so every query returns the same shape.
+
+   college_id is here, plus the college's display name and its area
+   and city, resolved through the LEFT JOINs below. The frontend uses
+   them to pre-select the browse filters for someone who has already
+   said where they study, and to print "SKIT Jaipur" on the dashboard
+   rather than making a second request for it.
+
+   >>> WHY THE JOINS ARE **LEFT** JOINS <<<
+   users.college_id is NULLABLE -- registration never asked for one,
+   so every account created before this feature has NULL, and saying
+   so is a legitimate answer. A plain JOIN would make those users
+   vanish from findById(), which protect.js calls on EVERY
+   authenticated request. The result would be a valid token whose
+   owner "does not exist": logged in one moment, 401 the next, with
+   nothing in the logs to explain it. */
+const SAFE_FIELDS = `
+  u.id, u.name, u.email, u.mobile, u.created_at,
+  u.college_id,
+  co.short_name AS college_name,
+  a.name        AS area_name,
+  c.name        AS city_name
+`
+
+const USER_SOURCE = `
+  FROM users u
+  LEFT JOIN colleges co ON co.id = u.college_id
+  LEFT JOIN areas    a  ON a.id  = co.area_id
+  LEFT JOIN cities   c  ON c.id  = a.city_id
+`
 
 /**
  * Creates a user. The password arrives in plain text and is hashed
@@ -93,7 +121,7 @@ async function create({ name, email, mobile, password }) {
 /** One user by id, without the password. Used by protect middleware. */
 async function findById(id) {
   const [rows] = await pool.execute(
-    `SELECT ${SAFE_FIELDS} FROM users WHERE id = ?`,
+    `SELECT ${SAFE_FIELDS} ${USER_SOURCE} WHERE u.id = ?`,
     [id],
   )
   return rows[0] ?? null
@@ -102,7 +130,7 @@ async function findById(id) {
 /** One user by email, without the password. */
 async function findByEmail(email) {
   const [rows] = await pool.execute(
-    `SELECT ${SAFE_FIELDS} FROM users WHERE email = ?`,
+    `SELECT ${SAFE_FIELDS} ${USER_SOURCE} WHERE u.email = ?`,
     [email],
   )
   return rows[0] ?? null
@@ -117,10 +145,42 @@ async function findByEmail(email) {
  */
 async function findByEmailWithPassword(email) {
   const [rows] = await pool.execute(
-    `SELECT ${SAFE_FIELDS}, password FROM users WHERE email = ?`,
+    `SELECT ${SAFE_FIELDS}, u.password ${USER_SOURCE} WHERE u.email = ?`,
     [email],
   )
   return rows[0] ?? null
+}
+
+/**
+ * Sets (or clears) which college a user studies at.
+ *
+ * >>> THE userId ARGUMENT MUST COME FROM A VERIFIED TOKEN <<<
+ * This function writes to whichever row it is given, and it has no
+ * way to check that the caller is entitled to that row. That check
+ * belongs one layer up: the controller passes req.user.id, which
+ * protect.js derived from a verified signature, and never a value
+ * out of the URL, body or query string. An endpoint shaped like
+ * PUT /api/users/:id/college would let anyone renumber anyone.
+ *
+ * `collegeId` of null is a real, supported value: "I would rather
+ * not say", or someone undoing a wrong choice. Deliberately not an
+ * error.
+ *
+ * A college id that does not exist is rejected by the FOREIGN KEY,
+ * which raises ER_NO_REFERENCED_ROW_2 -- already mapped to a 400 by
+ * errorHandler.js. That is the database enforcing it, not a check we
+ * have to remember to write and could forget.
+ *
+ * Returns the freshly read user, so the caller sends back the
+ * resolved college_name/area_name/city_name rather than assembling
+ * a half-updated object by hand.
+ */
+async function updateCollege(userId, collegeId) {
+  await pool.execute(
+    'UPDATE users SET college_id = ? WHERE id = ?',
+    [collegeId, userId],
+  )
+  return findById(userId)
 }
 
 /**
@@ -148,4 +208,5 @@ module.exports = {
   findByEmail,
   findByEmailWithPassword,
   verifyPassword,
+  updateCollege,
 }

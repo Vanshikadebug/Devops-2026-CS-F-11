@@ -127,12 +127,20 @@ app.get('/api', (req, res) => {
     endpoints: {
       health: 'GET /api/health',
       auth: 'POST /api/auth/register, POST /api/auth/login, GET /api/auth/me',
+      users: 'PUT /api/users/me/college',
       items: 'GET /api/items, GET /api/items/:id, GET /api/items/mine',
+      locations:
+        'GET /api/locations/cities, GET /api/locations/cities/:id/areas, ' +
+        'GET /api/locations/colleges, GET /api/locations/colleges/:id',
       dashboard: 'GET /api/dashboard',
       // Filled in as each phase lands:
       // items:    POST /api/items, PUT|DELETE /api/items/:id      (Phase 8)
       // requests: GET|POST /api/requests, PUT /api/requests/:id   (Phase 10)
     },
+    // The filters GET /api/items understands. Documented here so the
+    // API describes itself -- someone exploring with curl finds them
+    // without reading the controller.
+    itemFilters: ['college', 'area', 'city', 'search', 'category', 'condition', 'status', 'sort', 'limit'],
   })
 })
 
@@ -142,7 +150,9 @@ app.get('/api', (req, res) => {
 
    Phase 10 adds: app.use('/api/requests', require('./routes/requestRoutes')) */
 app.use('/api/auth', require('./routes/authRoutes'))
+app.use('/api/users', require('./routes/userRoutes'))
 app.use('/api/items', require('./routes/itemRoutes'))
+app.use('/api/locations', require('./routes/locationRoutes'))
 app.use('/api/dashboard', require('./routes/dashboardRoutes'))
 
 /* ---------------------------------------------------------------
