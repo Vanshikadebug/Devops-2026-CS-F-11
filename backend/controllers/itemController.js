@@ -7,13 +7,17 @@
  * JSON to send back. It contains no SQL, and the model contains no
  * knowledge of HTTP. Each layer can then be understood on its own.
  *
- * PHASE 5 SCOPE: READ ONLY.
- * Two endpoints, both public, both harmless -- listing items and
- * viewing one. Creating, editing and deleting items need a logged-in
- * user and ownership checks, so they wait for Phase 8, after Phase 6
- * builds authentication. Adding a write endpoint now would mean
- * either an unprotected one (anyone on the network could delete your
- * data) or dead code guarding an identity that does not exist yet.
+ * PHASE 5 BUILT THE READ HALF. PHASE 8 ADDED THE WRITE HALF.
+ * The two public GETs came first, deliberately: creating, editing
+ * and deleting need a logged-in user and an ownership check, so they
+ * had to wait for Phase 6 to build authentication. Adding a write
+ * endpoint before that would have meant either an unprotected one --
+ * anyone on the network could delete your data -- or dead code
+ * guarding an identity that did not exist yet.
+ *
+ * The write handlers begin at "THE WRITE ENDPOINTS" below. None of
+ * them contains an authorisation check, because authorisation is
+ * decided in middleware before they run; see routes/itemRoutes.js.
  *
  * WHY IS EVERY HANDLER WRAPPED IN asyncHandler?
  * If MySQL goes down mid-query, the await rejects. Unwrapped, that
@@ -23,6 +27,7 @@
  */
 
 const itemModel = require('../models/itemModel')
+const locationModel = require('../models/locationModel')
 const ApiError = require('../utils/ApiError')
 const asyncHandler = require('../utils/asyncHandler')
 
@@ -201,4 +206,267 @@ const getMyItems = asyncHandler(async (req, res) => {
   })
 })
 
-module.exports = { getItems, getItemById, getMyItems }
+/* ===============================================================
+   THE WRITE ENDPOINTS
+   ===============================================================
+   Four handlers, all reached only through `protect`, and three of
+   them only through `checkItemOwnership` as well. See routes/
+   itemRoutes.js -- the guards are visible there rather than buried
+   in these function bodies.
+
+   >>> WHERE `location` COMES FROM, AND WHY NOT FROM THE CLIENT <<<
+
+   This is the one genuinely interesting decision in the phase, and
+   it comes straight out of the schema: items.college_id is NULLABLE
+   but items.location is NOT NULL. So every item must produce a human
+   sentence about where it is, whether or not it has a campus.
+
+   The obvious implementation accepts both fields from the form and
+   stores what it is given. It is wrong, and the reason is worth
+   understanding, because the same shape of bug recurs everywhere:
+
+       { collegeId: 4, location: "Kota" }
+
+   Item 4 is SKIT Jaipur. Nothing rejects this -- both fields are
+   individually valid -- so the row is stored with a college_id that
+   filters it into Jagatpura and a location that PRINTS as Kota. The
+   filter and the label now disagree, permanently, and no error was
+   ever raised. Someone browsing Kota never sees it; someone who
+   finds it at SKIT is told to travel 250km.
+
+   THE RULE: a value that can be DERIVED from another stored value
+   must be derived, not accepted. When collegeId is present the
+   location text is built from the college's own area and city, and
+   whatever the client sent in `location` is discarded. The free-text
+   field is only consulted when there is no college -- which is
+   exactly the case the column exists to cover.
+
+   This also means the two fields can never contradict each other,
+   rather than merely being unlikely to.
+=============================================================== */
+
+/**
+ * Works out what to store in college_id and location, together.
+ *
+ * Returns { collegeId, location } or throws a 400/404. Shared by
+ * create and update so the two cannot diverge -- if only create
+ * derived the text, editing an item would be a way to reintroduce
+ * exactly the mismatch described above.
+ *
+ * `collegeId` has already been through the validator, so it is
+ * either a positive integer, null, or undefined by the time it
+ * arrives here.
+ */
+async function resolvePlace({ collegeId, location }) {
+  /* --- On campus ------------------------------------------------
+     The id is checked against the directory BEFORE the write. The
+     foreign key would reject an unknown id anyway, so this lookup is
+     not what makes it safe -- the database is. It is what makes the
+     failure legible: without it the caller gets errorHandler's
+     generic mapping of ER_NO_REFERENCED_ROW_2, "Referenced record
+     does not exist", which names neither the field nor the value.
+     One indexed read buys a message that says which college. */
+  if (collegeId !== undefined && collegeId !== null) {
+    const college = await locationModel.findCollegeById(collegeId)
+
+    if (!college) {
+      throw ApiError.notFound(`No college found with id ${collegeId}`)
+    }
+
+    return {
+      collegeId: college.id,
+      /* Built the same way seed-db.js builds it, so a seeded row and
+         a user-created row are indistinguishable in the database.
+         Two different formats for the same fact would show up as
+         inconsistent card text with no obvious cause. */
+      location: `${college.area_name}, ${college.city_name}`,
+    }
+  }
+
+  /* --- Off campus -----------------------------------------------
+     No college, so the text is the only thing this item has to say
+     about where it is, and the column is NOT NULL. An item with
+     neither is not a row the database will accept, and it is not
+     information anyone could act on either -- "someone somewhere is
+     giving away a chair" helps nobody. */
+  const text = typeof location === 'string' ? location.trim() : ''
+
+  if (!text) {
+    throw ApiError.badRequest(
+      'Choose a college, or type where the item can be collected',
+    )
+  }
+
+  return { collegeId: null, location: text }
+}
+
+/**
+ * Normalises an optional text field to a string or null.
+ *
+ * >>> WHY '' MUST BECOME null AND NOT STAY '' <<<
+ * An empty <input> submits an empty string, so a form where the user
+ * cleared the photo URL sends imageUrl: ''. Stored verbatim, the
+ * column then holds '' rather than NULL -- and those are different
+ * values that mean the same thing, which is how a column ends up
+ * needing two checks forever.
+ *
+ * It also breaks the frontend in a specific way: ItemImage decides
+ * whether to render a photo with `Boolean(item.image_url)`, and ''
+ * is falsy, so it happens to work -- until some other component
+ * writes `item.image_url !== null` and renders an <img src="">,
+ * which browsers resolve to the PAGE's own URL and download the HTML
+ * as an image. NULL means absent. One representation, everywhere.
+ */
+function emptyToNull(value) {
+  if (typeof value !== 'string') return value ?? null
+  const trimmed = value.trim()
+  return trimmed === '' ? null : trimmed
+}
+
+/**
+ * POST /api/items -- list a new item.
+ *
+ * >>> THE OWNER IS NOT IN THE REQUEST BODY <<<
+ * user_id comes from req.user.id, which protect.js derived from a
+ * verified token signature. The validator does not accept a `userId`
+ * field and this handler never reads one, so a body containing
+ * "userId": 3 is ignored rather than obeyed. There is nowhere in
+ * this request for a caller to list an item in someone else's name.
+ *
+ * 201, not 200: something now exists that did not before, and the
+ * status code is how a caller knows that without inspecting the
+ * body.
+ */
+const createItem = asyncHandler(async (req, res) => {
+  const place = await resolvePlace(req.body)
+
+  const item = await itemModel.create({
+    userId: req.user.id,
+    name: req.body.name,
+    description: req.body.description,
+    category: req.body.category,
+    condition: req.body.condition,
+    collegeId: place.collegeId,
+    location: place.location,
+    imageUrl: emptyToNull(req.body.imageUrl),
+    // The schema defaults this to 'Available'; passing it explicitly
+    // keeps the model's INSERT column list fixed rather than built
+    // conditionally.
+    status: req.body.status || 'Available',
+  })
+
+  res.status(201).json({
+    success: true,
+    message: 'Item listed',
+    data: item,
+  })
+})
+
+/**
+ * PUT /api/items/:id -- replace an item you own.
+ *
+ * OWNERSHIP IS ALREADY PROVEN by the time this runs --
+ * checkItemOwnership threw a 404 or 403 otherwise, and left the
+ * parsed id on req.itemId. That is why there is no ownership check
+ * in this function: adding one here would suggest the middleware
+ * were optional.
+ *
+ * A FULL REPLACEMENT, not a patch -- see the note on updateRules in
+ * validators/itemValidators.js for why "missing means unchanged" is
+ * a worse contract than it looks on a form with nullable fields.
+ */
+const updateItem = asyncHandler(async (req, res) => {
+  const place = await resolvePlace(req.body)
+
+  const item = await itemModel.update(req.itemId, {
+    name: req.body.name,
+    description: req.body.description,
+    category: req.body.category,
+    condition: req.body.condition,
+    collegeId: place.collegeId,
+    location: place.location,
+    imageUrl: emptyToNull(req.body.imageUrl),
+    status: req.body.status || 'Available',
+  })
+
+  res.status(200).json({
+    success: true,
+    message: 'Item updated',
+    data: item,
+  })
+})
+
+/**
+ * PATCH /api/items/:id/status -- mark reserved, available or gone.
+ *
+ * WHY PATCH RATHER THAN PUT?
+ * PUT means "here is the complete new state of this resource". This
+ * body is one field out of eight, so it is a partial modification,
+ * which is precisely what PATCH is for. Using PUT here would also
+ * make the two endpoints' contracts contradict each other -- one
+ * treating a missing `name` as an error and the other as fine.
+ *
+ * WHY A SEPARATE ENDPOINT AT ALL?
+ * Because this is the write the app performs most: one click on a
+ * card that says "mark as given away". Routing it through PUT would
+ * force any list page to hold every field of every item just to
+ * toggle an enum, and would make an accidental overwrite of the
+ * description possible from a button that has nothing to do with it.
+ */
+const updateItemStatus = asyncHandler(async (req, res) => {
+  const item = await itemModel.updateStatus(req.itemId, req.body.status)
+
+  res.status(200).json({
+    success: true,
+    message: `Item marked ${req.body.status}`,
+    data: item,
+  })
+})
+
+/**
+ * DELETE /api/items/:id -- remove an item you own.
+ *
+ * >>> THIS ALSO DELETES EVERY REQUEST FOR THE ITEM <<<
+ * requests.item_id carries ON DELETE CASCADE, so the pending
+ * requests go with it. That is the right outcome -- a request to
+ * collect something that no longer exists is not actionable -- but
+ * it is a real consequence of one statement, and the frontend
+ * confirms before calling this for that reason.
+ *
+ * WHY 200 WITH A BODY RATHER THAN 204 NO CONTENT?
+ * 204 is the more orthodox answer to a successful DELETE. This API
+ * answers 200 with the standard envelope because every other
+ * endpoint does, and the frontend's api.js REQUIRES a JSON body --
+ * it throws "the server replied with something that was not JSON"
+ * when a 2xx response has none. Consistency across the API is worth
+ * more here than strict adherence to the most orthodox status code,
+ * and this is a decision, not an oversight.
+ *
+ * The `deleted` flag can only be false in a genuine race: the
+ * ownership middleware found the row a moment ago, so a false here
+ * means someone else deleted it in between. 404 is the honest
+ * answer.
+ */
+const deleteItem = asyncHandler(async (req, res) => {
+  const deleted = await itemModel.remove(req.itemId)
+
+  if (!deleted) {
+    throw ApiError.notFound(`No item found with id ${req.itemId}`)
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Item deleted',
+    data: { id: req.itemId },
+  })
+})
+
+module.exports = {
+  getItems,
+  getItemById,
+  getMyItems,
+  createItem,
+  updateItem,
+  updateItemStatus,
+  deleteItem,
+}

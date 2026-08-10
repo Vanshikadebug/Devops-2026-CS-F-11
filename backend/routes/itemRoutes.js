@@ -14,15 +14,16 @@
  *
  * WHY A SEPARATE FILE FROM THE CONTROLLER?
  * This file is a table of contents: every URL, its method, and who
- * handles it, readable at a glance. In Phase 8 the protected routes
- * gain middleware and the value becomes obvious:
+ * handles it, readable at a glance. Now that Phase 8 has added the
+ * write routes, the value is concrete -- the security rules for the
+ * entire resource are visible in one screen:
  *
- *     router.post('/', protect, createItem)
- *     router.delete('/:id', protect, checkOwnership, deleteItem)
+ *     router.post('/',           protect, ..., createItem)
+ *     router.delete('/:id',      protect, checkItemOwnership, deleteItem)
  *
- * The security rules for the whole resource are then visible in one
- * place, instead of buried inside handler bodies where a missing
- * `protect` is invisible during review.
+ * A missing `protect` is something you can SEE here. Buried inside a
+ * handler body, its absence is invisible during review, which is
+ * exactly how unprotected endpoints ship.
  *
  * ROUTE ORDER MATTERS.
  * Express matches top to bottom and stops at the first hit, so
@@ -32,8 +33,19 @@
  */
 
 const express = require('express')
-const { getItems, getItemById, getMyItems } = require('../controllers/itemController')
+const {
+  getItems,
+  getItemById,
+  getMyItems,
+  createItem,
+  updateItem,
+  updateItemStatus,
+  deleteItem,
+} = require('../controllers/itemController')
+const { createRules, updateRules, statusRules } = require('../validators/itemValidators')
+const validate = require('../middleware/validate')
 const protect = require('../middleware/protect')
+const checkItemOwnership = require('../middleware/checkItemOwnership')
 
 const router = express.Router()
 
@@ -53,11 +65,6 @@ const router = express.Router()
    message and go looking for the bug in the dashboard's fetch call,
    which is entirely correct. Registered in this order, it cannot
    happen.
-
-   Phase 8 adds the remaining protected routes:
-     router.post('/',      protect, createItem)
-     router.put('/:id',    protect, updateItem)
-     router.delete('/:id', protect, deleteItem)
 --------------------------------------------------------------- */
 router.get('/mine', protect, getMyItems)
 
@@ -68,5 +75,38 @@ router.get('/mine', protect, getMyItems)
 --------------------------------------------------------------- */
 router.get('/', getItems)
 router.get('/:id', getItemById)
+
+/* ===============================================================
+   WRITES -- every one of them behind `protect`
+   ===============================================================
+   >>> READ THE MIDDLEWARE CHAINS AS SENTENCES <<<
+   Each line below says, left to right, exactly what must be true
+   before the handler runs. That is the entire point of putting them
+   here rather than inside the controllers:
+
+     protect              you are logged in         (401 otherwise)
+     checkItemOwnership   this row is yours         (404 / 403)
+     createRules          the body has valid shape
+     validate             ...or stop with one 400
+
+   ORDER WITHIN THE CHAIN IS DELIBERATE, not stylistic. Ownership is
+   checked BEFORE validation on the update routes, so a stranger
+   probing someone else's item gets 403 rather than a 400 that
+   quietly confirms which fields the resource has. Cheapest, most
+   secure rejection first.
+
+   Creation has no ownership step because there is no existing row to
+   own -- the owner is req.user.id, and the body is never asked.
+=============================================================== */
+router.post('/', protect, createRules, validate, createItem)
+
+router.put('/:id', protect, checkItemOwnership, updateRules, validate, updateItem)
+
+/* PATCH, not PUT: the body is one field out of eight, which is a
+   partial modification by definition. See the note on
+   updateItemStatus in the controller. */
+router.patch('/:id/status', protect, checkItemOwnership, statusRules, validate, updateItemStatus)
+
+router.delete('/:id', protect, checkItemOwnership, deleteItem)
 
 module.exports = router

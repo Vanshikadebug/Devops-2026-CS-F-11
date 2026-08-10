@@ -350,10 +350,197 @@ async function findByUser(userId, { limit } = {}) {
   return rows
 }
 
+/* ===============================================================
+   THE WRITE HALF
+   ===============================================================
+   Everything above this line reads. Everything below changes data,
+   and the rules are different for three reasons worth naming:
+
+   1. EVERY ONE OF THESE FUNCTIONS TRUSTS ITS ARGUMENTS COMPLETELY.
+      create() writes whatever user_id it is handed; remove() deletes
+      whatever id it is handed. Neither can tell an authorised caller
+      from an unauthorised one, because a model has no idea who is
+      logged in -- it has no access to the request.
+
+      That is deliberate, not an oversight. Authorisation is decided
+      one layer up, in middleware/checkItemOwnership.js, where the
+      verified token lives. Splitting it that way means there is
+      exactly ONE place to audit the question "who may edit this?",
+      instead of the same check copied into three model functions
+      where the copies can drift.
+
+      The rule that follows: never call these from a route that has
+      not already established ownership.
+
+   2. THEY RE-READ THE ROW AND RETURN IT, rather than returning the
+      object that was passed in. An INSERT sets defaults the caller
+      never saw -- created_at, status, the auto-increment id -- and
+      the joined college and owner names are not in the input at all.
+      Returning findById() means the API answers with what the
+      database actually holds, so the frontend's copy cannot drift
+      from storage. Assembling the response by hand from the request
+      body is how a UI ends up showing a value that was never saved.
+
+   3. THE COLUMN IS item_condition, NOT condition. The alias in
+      ITEM_FIELDS hides that on the way out, and these functions have
+      to remember it on the way in. See the note in schema.sql for
+      why the column is named that way.
+=============================================================== */
+
+/**
+ * Inserts one item and returns the stored row.
+ *
+ * `userId` MUST come from req.user.id -- see rule 1 above.
+ *
+ * WHY EVERY ARGUMENT IS NAMED RATHER THAN POSITIONAL:
+ * create(id, name, description, category, condition, location, ...)
+ * is nine positional arguments of which four are strings that would
+ * swap silently. Passing an object means a mistake is a wrong KEY,
+ * which is visible, instead of a wrong ORDER, which is not.
+ */
+async function create({
+  userId,
+  name,
+  description,
+  category,
+  condition,
+  location,
+  collegeId = null,
+  imageUrl = null,
+  status = 'Available',
+}) {
+  const [result] = await pool.execute(
+    `INSERT INTO items
+       (user_id, name, description, category, item_condition,
+        location, college_id, image_url, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      userId, name, description, category, condition,
+      location, collegeId, imageUrl, status,
+    ],
+  )
+
+  return findById(result.insertId)
+}
+
+/**
+ * Overwrites one item and returns the stored row.
+ *
+ * A FULL REPLACEMENT, matching PUT semantics -- every column the
+ * owner controls is set from the arguments, so a field left out of
+ * the request has already been rejected by updateRules rather than
+ * quietly kept. See the note on updateRules for why "missing means
+ * unchanged" is a worse contract than it sounds.
+ *
+ * >>> WHAT THIS FUNCTION DELIBERATELY CANNOT CHANGE <<<
+ * user_id and created_at are absent from the SET clause. An item
+ * cannot be reassigned to a different owner and cannot claim to have
+ * been listed at a different time. Neither is something the edit
+ * form offers, and leaving them out means a crafted request cannot
+ * reach them either -- the SQL has no slot for them.
+ *
+ * updated_at needs no mention: the column carries
+ * ON UPDATE CURRENT_TIMESTAMP, so MySQL maintains it. Setting it by
+ * hand would be a second source of truth for the same fact.
+ */
+async function update(id, {
+  name,
+  description,
+  category,
+  condition,
+  location,
+  collegeId = null,
+  imageUrl = null,
+  status,
+}) {
+  await pool.execute(
+    `UPDATE items
+        SET name           = ?,
+            description    = ?,
+            category       = ?,
+            item_condition = ?,
+            location       = ?,
+            college_id     = ?,
+            image_url      = ?,
+            status         = ?
+      WHERE id = ?`,
+    [
+      name, description, category, condition,
+      location, collegeId, imageUrl, status,
+      id,
+    ],
+  )
+
+  return findById(id)
+}
+
+/**
+ * Changes only the status, and returns the stored row.
+ *
+ * Exists so "mark as given away" is one indexed write instead of a
+ * full rewrite of eight columns. The narrower statement is also the
+ * safer one: a bug in this function can only ever corrupt an enum
+ * that the database itself restricts to three values.
+ */
+async function updateStatus(id, status) {
+  await pool.execute('UPDATE items SET status = ? WHERE id = ?', [status, id])
+  return findById(id)
+}
+
+/**
+ * Deletes one item. Returns true if a row actually went.
+ *
+ * >>> WHAT ELSE THIS DELETES <<<
+ * The `requests` table declares
+ *     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+ * so removing an item also removes every request made for it. That
+ * is the correct behaviour -- a pending request to collect an item
+ * that no longer exists is not information anyone can act on -- but
+ * it is worth knowing that this one statement can remove rows from a
+ * table it does not name.
+ *
+ * `affectedRows` is checked rather than assumed. Deleting an id that
+ * is already gone is not an error at the SQL level; it simply
+ * changes nothing. Returning that fact lets the controller tell the
+ * difference between "deleted" and "there was nothing there", which
+ * is the difference between 200 and 404.
+ */
+async function remove(id) {
+  const [result] = await pool.execute('DELETE FROM items WHERE id = ?', [id])
+  return result.affectedRows > 0
+}
+
+/**
+ * Just the owner's id for one item, or null if there is no such row.
+ *
+ * WHY NOT JUST CALL findById?
+ * Because the ownership check runs before every write, and findById
+ * is a four-table join that builds the entire public item shape --
+ * owner name, college, area, city -- to answer a question that needs
+ * one integer. This is a single-row primary-key lookup of one
+ * column.
+ *
+ * The null-vs-number distinction is the whole interface: null means
+ * the item does not exist (404), a number that differs from the
+ * caller means it belongs to someone else (403).
+ */
+async function findOwnerId(id) {
+  const [rows] = await pool.execute(
+    'SELECT user_id FROM items WHERE id = ?',
+    [id],
+  )
+  return rows[0]?.user_id ?? null
+}
+
 module.exports = {
   findAll,
   findById,
   findByUser,
+  create,
+  update,
+  updateStatus,
+  remove,
+  findOwnerId,
   // Exported so the controller can validate a query parameter
   // against the SAME list the SQL relies on. Two separate copies of
   // the allowed categories is how the API starts rejecting a value
