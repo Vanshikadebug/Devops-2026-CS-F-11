@@ -33,6 +33,10 @@ function createLimiter({ windowSec, max, bucket, skipSafeMethods = false, ipOnly
   }
 }
 
+function ipIdentity(req) {
+  return `ip:${req.ip || 'unknown'}`
+}
+
 function identify(req) {
   const header = req.headers.authorization || ''
   if (header.startsWith('Bearer ')) {
@@ -40,15 +44,27 @@ function identify(req) {
     // token itself in a Redis key.
     return `t:${header.slice(-24)}`
   }
-  return `ip:${req.ip || 'unknown'}`
+  return ipIdentity(req)
 }
 
 // Login and register are a password oracle that answers in milliseconds.
 // bcrypt makes each guess expensive; this makes the ATTEMPTS finite.
+//
+// ipOnly matters here: identify() buckets by the Authorization header without
+// validating it, so a brute-forcer could send a random `Bearer <junk>` per
+// attempt, land in a fresh bucket each time, and never hit the ceiling below.
+// Keying on IP removes that escape hatch.
+//
+// skipSafeMethods keeps GET /api/auth/me out of this bucket. It shares the
+// prefix but is not a password oracle, and campus traffic arrives NATed behind
+// a handful of IPs -- IP-keying it would let one network exhaust the limit for
+// everyone on it. Safe methods are already unlimited everywhere else here.
 const authLimiter = createLimiter({
   windowSec: config.rateLimit.auth.windowSec,
   max: config.rateLimit.auth.max,
   bucket: 'auth',
+  ipOnly: true,
+  skipSafeMethods: true,
 })
 
 // Ordinary writes: generous enough that no real user notices, tight enough
