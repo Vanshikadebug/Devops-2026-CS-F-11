@@ -199,7 +199,7 @@ export default function Browse() {
                       variant="quiet"
                       size="sm"
                       disabled={!pagination.hasNext}
-                      onClick={() => setParam('page', String(page + 1))}
+                      onClick={() => goToPage(page + 1)}
                     >
                       Next
                     </Button>

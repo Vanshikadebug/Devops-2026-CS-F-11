@@ -4,12 +4,12 @@ const ApiError = require('../utils/ApiError')
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
-function createLimiter({ windowSec, max, bucket, skipSafeMethods = false }) {
+function createLimiter({ windowSec, max, bucket, skipSafeMethods = false, ipOnly = false }) {
   return async function limiter(req, res, next) {
     if (!config.rateLimit.enabled) return next()
     if (skipSafeMethods && SAFE_METHODS.has(req.method)) return next()
 
-    const identity = identify(req)
+    const identity = ipOnly ? ipIdentity(req) : identify(req)
     const key = `rl:${bucket}:${identity}`
 
     const result = await redis.incrWithTtl(key, windowSec)
