@@ -69,6 +69,13 @@ export default function Browse() {
   const activeFilters = ['search', 'category', 'condition', 'city', 'status']
     .filter((k) => get(k))
 
+  function goToPage(next) {
+    setParam('page', String(next))
+    // The grid swaps in place, so without this the next page opens
+    // already scrolled to the bottom of the list.
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div className="page browse">
       <div className="shell">
@@ -183,7 +190,7 @@ export default function Browse() {
                       variant="quiet"
                       size="sm"
                       disabled={!pagination.hasPrev}
-                      onClick={() => setParam('page', String(page - 1))}
+                      onClick={() => goToPage(page - 1)}
                     >
                       Previous
                     </Button>
