@@ -253,9 +253,29 @@ const getMyItems = asyncHandler(async (req, res) => {
  * derived the text, editing an item would be a way to reintroduce
  * exactly the mismatch described above.
  *
- * `collegeId` has already been through the validator, so it is
- * either a positive integer, null, or undefined by the time it
- * arrives here.
+ * `collegeId` has already been through the validator, so anything
+ * TRUTHY that reaches here is a positive integer -- collegeIdRule
+ * runs isInt({ min: 1 }).toInt() on every value it does not treat as
+ * absent. That guarantee is what the test below relies on.
+ *
+ * >>> "ABSENT" MUST BE SPELLED THE SAME WAY IN BOTH FILES <<<
+ * This function once asked `collegeId !== undefined && !== null`,
+ * which is the obvious way to write it and does not match the rule in
+ * validators/itemValidators.js. That rule is
+ * `optional({ values: 'falsy' })`, so it lets '' and 0 through
+ * UNCHECKED as "no college given" -- and an unselected <select>
+ * submits '', not null, on every off-campus listing the form makes.
+ *
+ * The two definitions differed by exactly those two values, so '' was
+ * not absent here: it took the on-campus branch, looked up the college
+ * whose id is the empty string, found none, and answered
+ *
+ *     404  "No college found with id "
+ *
+ * to a valid request whose message names no id at all, on the most
+ * ordinary path through the form. A truthiness test is not laziness
+ * here -- it is the SAME test the validator applied, written once more
+ * so the two layers cannot disagree about which requests were checked.
  */
 async function resolvePlace({ collegeId, location }) {
   /* --- On campus ------------------------------------------------
@@ -266,7 +286,7 @@ async function resolvePlace({ collegeId, location }) {
      generic mapping of ER_NO_REFERENCED_ROW_2, "Referenced record
      does not exist", which names neither the field nor the value.
      One indexed read buys a message that says which college. */
-  if (collegeId !== undefined && collegeId !== null) {
+  if (collegeId) {
     const college = await locationModel.findCollegeById(collegeId)
 
     if (!college) {

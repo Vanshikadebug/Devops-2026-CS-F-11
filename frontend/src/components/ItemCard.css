@@ -93,18 +93,10 @@
   color: var(--text-muted);
 }
 
-/* --- Status badge (shared) ------------------------------------ */
-.badge {
-  display: inline-block;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.badge--success { background: var(--green-100); color: var(--green-800); }
-.badge--warning { background: var(--amber-100); color: var(--amber-700); }
-.badge--danger  { background: var(--red-100);   color: var(--red-700); }
-.badge--neutral { background: var(--gray-200);  color: var(--gray-700); }
-.badge--info    { background: var(--blue-100);  color: var(--blue-700); }
+/* --- Status badge --------------------------------------------
+   The .badge classes themselves now live in index.css, alongside
+   .item-grid and for exactly the same reason: ItemDetail and
+   MyItems both render a status badge WITHOUT rendering an
+   ItemCard, so defining it here made those pages silently depend
+   on this stylesheet happening to be in the bundle. Only the
+   card's POSITIONING of the badge belongs to this file. */

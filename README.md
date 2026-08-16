@@ -3,7 +3,7 @@
 > A platform for listing items you no longer need, so someone else can reuse them
 > instead of them becoming waste.
 
-**Status:** 🚧 Under active development — Phase 7 of 18 complete (personal dashboard with per-user statistics).
+**Status:** 🚧 Under active development — Phase 8 of 18 complete (item management: listing, editing, deleting your own items).
 
 This README is a placeholder. The full documentation (architecture, database
 design, installation, API reference, Docker, Jenkins, CI/CD) is written in
@@ -62,12 +62,13 @@ You can register a new account, or use a demo login:
 `aarav@example.com` / `password123`
 
 Logging in lands you on **/dashboard** — your own items, your own request
-counts, nobody else's.
+counts, nobody else's. From there, **List an item** opens the form and
+**My items** manages what you have already posted.
 
 **Tests:**
 
 ```bash
-cd backend && npm test    # 72 tests
+cd backend && npm test    # 183 tests
 ```
 
 ## API endpoints
@@ -81,6 +82,10 @@ cd backend && npm test    # 72 tests
 | `GET` | `/api/items` | — | 5 |
 | `GET` | `/api/items/:id` | — | 5 |
 | `GET` | `/api/items/mine` | Bearer token | 7 |
+| `POST` | `/api/items` | Bearer token | 8 |
+| `PUT` | `/api/items/:id` | Bearer token + **owner** | 8 |
+| `PATCH` | `/api/items/:id/status` | Bearer token + **owner** | 8 |
+| `DELETE` | `/api/items/:id` | Bearer token + **owner** | 8 |
 | `GET` | `/api/dashboard` | Bearer token | 7 |
 
 Protected endpoints expect the token in a header:
@@ -88,6 +93,10 @@ Protected endpoints expect the token in a header:
 ```
 Authorization: Bearer <token>
 ```
+
+**Owner** means the `checkItemOwnership` middleware runs after `protect`: a
+missing item answers `404`, and someone else's item answers `403` — before the
+controller runs at all.
 
 ## Security notes
 
@@ -106,6 +115,15 @@ Authorization: Bearer <token>
   data.
 - Login returns an identical response for an unknown email and a wrong password,
   so the API cannot be used to discover which addresses are registered.
+- **You can only edit, re-status or delete your own items**, and that is decided
+  on the server. The React pages hide the controls on items you do not own, but
+  hiding a button is presentation, not protection — `checkItemOwnership` compares
+  the row's `user_id` against `req.user.id` from the verified token, so the same
+  three requests sent by hand (curl, DevTools, a script) still answer `403`.
+- An item's `location` is **derived server-side** from the chosen college, not
+  taken from the request. A body may claim `{ collegeId: 4, location: "Kota" }`,
+  which is individually valid and permanently self-contradictory; the server
+  looks the college up and stores its real area and city instead.
 - All SQL uses prepared statements.
 - `.env` is gitignored and never committed.
 
@@ -118,7 +136,7 @@ Authorization: Bearer <token>
 - [x] **Phase 5** — Frontend–backend connection
 - [x] **Phase 6** — Registration and authentication
 - [x] **Phase 7** — Dashboard
-- [ ] Phase 8 — Item management
+- [x] **Phase 8** — Item management
 - [ ] Phase 9 — Search and filtering
 - [ ] Phase 10 — Request system
 - [ ] Phase 11 — Testing

@@ -6,6 +6,9 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import ItemForm from './pages/ItemForm'
+import ItemDetail from './pages/ItemDetail'
+import MyItems from './pages/MyItems'
 import Placeholder from './pages/Placeholder'
 import NotFound from './pages/NotFound'
 import './App.css'
@@ -99,11 +102,11 @@ function App() {
           />
 
           {/* --- Requires an account ------------------------------
-              Still placeholders until Phases 7-10, but the GUARD is
-              real from now on. Wiring it in with the placeholder
-              means the redirect behaviour gets tested this phase,
-              instead of being written and debugged later at the same
-              time as the page itself. */}
+              Only /requests is still a placeholder; the item pages
+              below became real in Phase 8. The GUARD was wired in
+              Phase 6 with the placeholders still in place, which is
+              why swapping in the real pages needed no change to the
+              redirect behaviour -- it had already been tested. */}
           <Route
             path="/dashboard"
             element={
@@ -112,40 +115,52 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* --- The item routes, in the order Express taught us ---
+              `/items/new` MUST come before `/items/:id`. React Router
+              v6 ranks routes by specificity rather than by source
+              order, so a literal segment beats a dynamic one and this
+              would work either way -- but relying on that means the
+              file no longer reads as the list of rules it is. Written
+              in the order that would be correct under plain
+              first-match, the intent survives a router upgrade.
+
+              ItemForm serves BOTH /items/new and /items/:id/edit. It
+              is one component because the two are the same eight
+              fields; the presence of :id is what puts it in edit
+              mode. See the note at the top of that file for why the
+              URL, not a prop, decides. */}
           <Route
             path="/items/new"
             element={
               <ProtectedRoute>
-                <Placeholder
-                  title="Add an item"
-                  phase={8}
-                  description="List something you no longer need so another user can reuse it."
-                />
+                <ItemForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/items/:id/edit"
+            element={
+              <ProtectedRoute>
+                <ItemForm />
               </ProtectedRoute>
             }
           />
           {/* Public: anyone can view an item. Requesting one needs an
               account, but browsing does not -- a logged-out visitor
-              seeing what is on offer is how they decide to sign up. */}
-          <Route
-            path="/items/:id"
-            element={
-              <Placeholder
-                title="Item details"
-                phase={8}
-                description="Full details for a single item, plus the button to request it."
-              />
-            }
-          />
+              seeing what is on offer is how they decide to sign up.
+
+              The page shows Edit and Delete only to the owner. That
+              is presentation, not protection: the server answers 403
+              to the same request regardless of what this page chose
+              to render. */}
+          <Route path="/items/:id" element={<ItemDetail />} />
+
           <Route
             path="/my-items"
             element={
               <ProtectedRoute>
-                <Placeholder
-                  title="My items"
-                  phase={8}
-                  description="Everything you have listed, with edit, delete and availability controls."
-                />
+                <MyItems />
               </ProtectedRoute>
             }
           />

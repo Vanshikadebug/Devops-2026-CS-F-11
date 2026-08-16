@@ -179,15 +179,22 @@ async function request(path, { method = 'GET', body, signal, headers = {} } = {}
  * The public interface. Components call api.get('/items'), never
  * fetch() directly.
  *
- * post/put/del are unused until Phase 6, but they are three lines
- * each and defining them now keeps the shape of the module obvious.
- *
  * `del`, not `delete` -- `delete` is a reserved word in JavaScript
- * and cannot be used as a shorthand method name here.
+ * and cannot be used as a shorthand method name here. `patch` is not
+ * reserved, so it keeps its real name.
+ *
+ * WHY BOTH put AND patch, WHEN THEY DIFFER BY ONE STRING?
+ * Because the two mean different things to the server, and the
+ * distinction is worth keeping visible at the call site. PUT sends
+ * the complete new state of a resource; PATCH sends only what
+ * changes. `api.patch('/items/7/status', { status })` cannot blank
+ * the description by accident, and a reader of the calling code can
+ * see that from the method name alone.
  */
 export const api = {
   get: (path, options) => request(path, { ...options, method: 'GET' }),
   post: (path, body, options) => request(path, { ...options, method: 'POST', body }),
   put: (path, body, options) => request(path, { ...options, method: 'PUT', body }),
+  patch: (path, body, options) => request(path, { ...options, method: 'PATCH', body }),
   del: (path, options) => request(path, { ...options, method: 'DELETE' }),
 }

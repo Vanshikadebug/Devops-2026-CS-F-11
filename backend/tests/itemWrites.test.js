@@ -335,6 +335,50 @@ describe('location resolution', () => {
     expect(res.status).toBe(400)
   })
 
+  /* >>> THIS TEST EXISTS BECAUSE THE SUITE MISSED A REAL BUG <<<
+     Every case above sends collegeId as null, which is what a
+     hand-written JSON body contains. A BROWSER does not send null: an
+     unselected <select> submits the EMPTY STRING, and that is the
+     value the form produces on every off-campus listing.
+
+     collegeIdRule uses optional({ values: 'falsy' }), so '' is passed
+     through unchecked as "no college". resolvePlace originally asked
+     `collegeId !== undefined && collegeId !== null`, which '' fails --
+     so it took the on-campus branch, looked up the college whose id is
+     '', and answered 404 "No college found with id " to a request that
+     was completely valid.
+
+     Fifty-three passing tests did not catch it because all of them
+     spelled absence the way a test author does, not the way a form
+     does. That is the lesson worth keeping: a fixture that never uses
+     the client's actual encoding tests a client that does not exist. */
+  it('treats an EMPTY STRING college id as no college, like the form sends', async () => {
+    const res = await createItem(
+      aaravToken,
+      validBody({ collegeId: '', location: 'Pratap Nagar, Jaipur' }),
+    )
+
+    expect(res.status).toBe(201)
+    expect(res.body.data.college_id).toBeNull()
+    expect(res.body.data.location).toBe('Pratap Nagar, Jaipur')
+  })
+
+  it('treats an empty-string college id the same way on UPDATE', async () => {
+    // The same gap on the edit path would let someone clear their
+    // college and get a 404 for an item that is on screen in front
+    // of them.
+    const made = await createItem(aaravToken, validBody({ collegeId: skit.id }))
+
+    const res = await request(app)
+      .put(`/api/items/${made.body.data.id}`)
+      .set('Authorization', `Bearer ${aaravToken}`)
+      .send(validBody({ collegeId: '', location: 'Hostel B common room' }))
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.college_id).toBeNull()
+    expect(res.body.data.location).toBe('Hostel B common room')
+  })
+
   it('404s for a college id that does not exist', async () => {
     const res = await createItem(aaravToken, validBody({ collegeId: 999999 }))
     expect(res.status).toBe(404)

@@ -1,0 +1,163 @@
+/* ItemForm.css -- the add / edit item form.
+
+   ONE STYLESHEET FOR BOTH MODES, for the same reason ItemForm.jsx is
+   one component: create and edit are the same eight fields, so two
+   files would drift.
+
+   Every value comes from the tokens in index.css. The generic field
+   classes (.field, .field__input, .field__error) are NOT redefined
+   here -- they come from FormField.css, so the textarea and the two
+   native selects below look identical to every other input in the
+   app without a single duplicated declaration. */
+
+.item-form-page {
+  /* Narrower than the browse grid on purpose. A form is read one
+     line at a time, and a full-width text input on a 1440px monitor
+     makes the eye travel the whole screen to get from the start of a
+     value to its end. */
+  max-width: 42rem;
+}
+
+.item-form__header {
+  margin-bottom: var(--space-8);
+}
+
+.item-form__title {
+  margin-bottom: var(--space-2);
+}
+
+.item-form__subtitle {
+  color: var(--text-secondary);
+}
+
+/* A grid rather than margins on each child: the gap is declared once
+   here, so a new field cannot arrive spaced differently from the
+   rest. Same approach as .auth__form. */
+.item-form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* Submission-level problems: a 403, a dead server, a validation
+   error naming a field this form does not render. Field-level errors
+   live under their own field. Identical treatment to .auth__alert --
+   an error should not look different depending on which page it
+   happened on. */
+.item-form__alert {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--red-100);
+  border-left: 3px solid var(--red-500);
+  border-radius: var(--radius-sm);
+  background: var(--red-50);
+  color: var(--red-700);
+  font-size: 0.875rem;
+}
+
+/* Category and condition sit side by side: both are short dropdowns,
+   and pairing them keeps the "where" section above the fold on a
+   laptop. */
+.item-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.item-form__textarea {
+  /* vertical only. Horizontal resizing would let the user drag the
+     field wider than its container and break the layout. */
+  resize: vertical;
+  min-height: 7rem;
+  font-family: inherit;
+  line-height: 1.6;
+}
+
+/* --- The location group -----------------------------------------
+   A real <fieldset>, not a div. It groups three dropdowns and a text
+   input that together answer ONE question, and a screen reader
+   announces the legend before each control inside it -- so "City"
+   is heard as "Where can it be collected? City" rather than as an
+   orphan dropdown. */
+.item-form__fieldset {
+  padding: var(--space-5);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-muted);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.item-form__legend {
+  padding: 0 var(--space-2);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.item-form__legend-hint {
+  margin-top: calc(var(--space-2) * -1);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* Shown once a college is chosen, in place of the address input.
+   Green because it confirms rather than warns: the user has answered
+   the question, and this says so. */
+.item-form__derived {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--green-50);
+  color: var(--green-700);
+  font-size: 0.875rem;
+}
+
+/* A button that has to LOOK like a link, because its job is to
+   change what the form is asking for, not to navigate. Using a real
+   <a> here would be the wrong element -- nothing is being linked to
+   -- and using an unstyled <button> would read as a second submit.
+   The element stays correct for the keyboard and the screen reader;
+   only the paint changes. */
+.item-form__link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--green-700);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.item-form__link-btn:hover {
+  color: var(--green-800);
+}
+
+.item-form__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-color);
+}
+
+.item-form__cancel {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+.item-form__cancel:hover {
+  color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+  /* Two dropdowns side by side are ~140px each on a phone, which is
+     narrower than some of the values they hold. Stacked, each gets
+     the full width. */
+  .item-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .item-form__fieldset {
+    padding: var(--space-4);
+  }
+}

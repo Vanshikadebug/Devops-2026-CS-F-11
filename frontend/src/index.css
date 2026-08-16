@@ -242,6 +242,30 @@ button, input, select, textarea {
   .item-grid { grid-template-columns: 1fr; }
 }
 
+/* --- Status badge ----------------------------------------------
+   The coloured pill reading Available / Reserved / Pending. Lives
+   here for the same reason .item-grid does: ItemCard, ItemDetail and
+   MyItems all render one, and only the first of those has a
+   stylesheet the others would have been leaning on by accident.
+
+   The MODIFIER is chosen in JS, from STATUS_VARIANTS in
+   constants.js -- so a new status cannot be added without someone
+   having to give it a colour. */
+.badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.badge--success { background: var(--green-100); color: var(--green-800); }
+.badge--warning { background: var(--amber-100); color: var(--amber-700); }
+.badge--danger  { background: var(--red-100);   color: var(--red-700); }
+.badge--neutral { background: var(--gray-200);  color: var(--gray-700); }
+.badge--info    { background: var(--blue-100);  color: var(--blue-700); }
+
 /* Screen-reader-only: visually hidden, still read aloud.
    Used for labels that would be visual clutter but are needed
    for accessibility. */
