@@ -93,7 +93,17 @@ export default function Browse() {
             <div className="row row--between">
               <h3>Filters</h3>
               {activeFilters.length > 0 && (
-                <button type="button" className="browse__clear" onClick={() => setParams({}, { replace: true })}>
+                <button
+                  type="button"
+                  className="browse__clear"
+                  onClick={() => {
+                    setParams({}, { replace: true })
+                    // `term` is seeded from the URL only on mount, so clearing
+                    // the params alone would unfilter the results while leaving
+                    // the old query sitting visibly in the search box.
+                    setTerm('')
+                  }}
+                >
                   Clear all
                 </button>
               )}
