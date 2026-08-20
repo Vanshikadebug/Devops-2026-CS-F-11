@@ -28,6 +28,11 @@ function FormField({
         )}
       </label>
 
+      {/* aria-required, not the native `required` attribute: the asterisk
+          above is aria-hidden, so a screen reader would otherwise never
+          learn the field is required — but native validation would fire the
+          browser's own tooltip and block submit before the page's validate()
+          runs, replacing its custom error messages. */}
       <input
         id={id}
         type={type}
@@ -36,12 +41,6 @@ function FormField({
         onChange={onChange}
         autoComplete={autoComplete}
         aria-invalid={error ? 'true' : undefined}
-        {/* The asterisk above is aria-hidden, so without this a screen
-            reader has no way to know the field is required. Using
-            aria-required rather than the native `required` attribute
-            deliberately: native validation would fire the browser's own
-            tooltip and block submit before the page's validate() runs,
-            replacing its custom error messages. */}
         aria-required={required || undefined}
         aria-describedby={error ? errorId : hint ? hintId : undefined}
         {...rest}
