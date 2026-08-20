@@ -123,6 +123,32 @@ const config = {
   bcryptSaltRounds: isTest ? 4 : number('BCRYPT_SALT_ROUNDS', 10),
 
   clientOrigin: optional('CLIENT_ORIGIN', 'http://localhost:5173'),
+
+  /* ---------------------------------------------------------------
+     THE BOOTSTRAP ADMIN
+     ---------------------------------------------------------------
+     Read by scripts/create-admin.js and by NOTHING that handles a
+     request. It is here rather than in that script because this file
+     is the answer to "what settings does this app have?", and a
+     credential that lives somewhere undocumented is a credential
+     nobody rotates.
+
+     >>> WHY THERE ARE NO DEFAULTS <<<
+     Every field falls back to '' and the script refuses to run
+     without them. A default admin password is the single most
+     exploited weakness in self-hosted software: it ships, it is
+     documented, nobody changes it, and it is the first thing every
+     scanner tries. An empty string that stops the script is safe; a
+     convenient 'admin123' is a backdoor with a manual.
+
+     These values are never logged, never returned by an endpoint, and
+     never written to .env.example -- only their NAMES are. */
+  seedAdmin: {
+    email: optional('ADMIN_EMAIL', ''),
+    password: optional('ADMIN_PASSWORD', ''),
+    name: optional('ADMIN_NAME', ''),
+    mobile: optional('ADMIN_MOBILE', ''),
+  },
 }
 
 // A startup summary, so a misconfigured environment is visible

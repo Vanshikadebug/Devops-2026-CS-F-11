@@ -62,14 +62,38 @@ describe('GET /api/items', () => {
     // toHaveProperty calls, is the point: it fails on a field that
     // APPEARS as well as one that disappears. That is what catches
     // the day someone adds `u.email` to the JOIN "just for debugging".
+    //
+    // `moderation_status` was added here DELIBERATELY when the admin
+    // panel arrived, and this assertion is why that had to be a
+    // decision rather than a side effect. It is safe to publish: on
+    // this endpoint it is always 'Approved', because findAll cannot
+    // return anything else. What is NOT here, and must not be, is
+    // moderation_reason and moderated_by -- a staff note about a user,
+    // and the name of the moderator who wrote it.
     res.body.data.forEach((item) => {
       expect(Object.keys(item).sort()).toEqual(
         [
           'area_name', 'category', 'city_name', 'college_id', 'college_name',
           'condition', 'created_at', 'description', 'id', 'image_url',
-          'location', 'name', 'owner_name', 'status', 'user_id',
+          'location', 'moderation_status', 'name', 'owner_name', 'status',
+          'user_id',
         ].sort(),
       )
+    })
+  })
+
+  it('shows only approved items from active accounts', async () => {
+    // >>> THE PUBLIC VISIBILITY RULE <<<
+    // findAll pins moderation_status and the owner's status
+    // unconditionally -- there is no filter to pass and no flag to
+    // set. If either clause were ever removed, a listing that a
+    // moderator hid, or one belonging to a blocked spammer, would be
+    // back on the browse page.
+    const res = await request(app).get('/api/items?limit=100')
+
+    expect(res.body.data.length).toBeGreaterThan(0)
+    res.body.data.forEach((item) => {
+      expect(item.moderation_status).toBe('Approved')
     })
   })
 

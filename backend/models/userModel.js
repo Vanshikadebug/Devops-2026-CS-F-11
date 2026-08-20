@@ -49,9 +49,26 @@ const config = require('../config/env')
    vanish from findById(), which protect.js calls on EVERY
    authenticated request. The result would be a valid token whose
    owner "does not exist": logged in one moment, 401 the next, with
-   nothing in the logs to explain it. */
+   nothing in the logs to explain it.
+
+   >>> WHY role AND status ARE IN HERE, NOT IN AN ADMIN-ONLY QUERY <<<
+   Because authorize.js has to answer "may this person do this?" on
+   every single admin request, and the only user object it has is the
+   one protect.js loaded through findById(). If role were fetched
+   separately, every authorisation check would need its own query --
+   and the day someone forgets one, the check reads
+   `req.user.role === 'admin'`, `undefined === 'admin'` is false, and
+   it fails CLOSED. That is the safe direction, but a missing status
+   fails the other way: protect.js must be able to reject a BLOCKED
+   account on every request, and it can only do that if status
+   arrives with the user. So both travel with the identity, always.
+
+   Neither is a secret. The frontend needs role to decide whether to
+   render the Admin link at all -- which is a convenience, not a
+   protection; the backend re-checks it regardless (see authorize.js). */
 const SAFE_FIELDS = `
   u.id, u.name, u.email, u.mobile, u.created_at,
+  u.role, u.status,
   u.college_id,
   co.short_name AS college_name,
   a.name        AS area_name,
@@ -64,6 +81,13 @@ const USER_SOURCE = `
   LEFT JOIN areas    a  ON a.id  = co.area_id
   LEFT JOIN cities   c  ON c.id  = a.city_id
 `
+
+/* The users.role and users.status ENUMs, mirrored so the validators
+   and the authorisation middleware can check against ONE list instead
+   of each restating it. ROLES is ordered by increasing power, which
+   is what makes the rank comparison in authorize.js possible. */
+const ROLES = ['user', 'moderator', 'admin', 'super_admin']
+const STATUSES = ['active', 'blocked']
 
 /**
  * Creates a user. The password arrives in plain text and is hashed
@@ -107,6 +131,18 @@ const USER_SOURCE = `
 async function create({ name, email, mobile, password }) {
   const hash = await bcrypt.hash(password, config.bcryptSaltRounds)
 
+  /* >>> NOTE WHAT IS NOT IN THIS INSERT: role AND status <<<
+     There is no `role` parameter, and adding one would be a mistake.
+     The column takes its DEFAULT 'user' from the schema, so a
+     registration body of {"name":"x","role":"super_admin"} has
+     nowhere for that field to land -- not because a validator strips
+     it, but because no line of code between the request and the
+     database ever reads it. Privilege escalation through registration
+     is not filtered here; it is unrepresentable.
+
+     Roles are granted in exactly two places, both deliberate:
+     scripts/create-admin.js (bootstrap, needs shell access) and
+     setRole() below (needs an authenticated super_admin). */
   const [result] = await pool.execute(
     'INSERT INTO users (name, email, mobile, password) VALUES (?, ?, ?, ?)',
     [name, email, mobile, hash],
@@ -202,6 +238,249 @@ async function verifyPassword(plain, hash) {
   return bcrypt.compare(plain, hash)
 }
 
+/**
+ * Stamps users.last_login_at. Called by authController.login AFTER the
+ * password has been verified.
+ *
+ * >>> WHY THE CALLER MUST NOT AWAIT THIS <<<
+ * It is bookkeeping, not authentication. If this UPDATE were awaited
+ * and the database hiccuped, a user with the correct password would be
+ * told their login failed -- a write nobody asked for breaking the one
+ * thing they did ask for. authController fires it and moves on; a
+ * missing timestamp costs an admin one column of accuracy, and that is
+ * the cheaper failure by a wide margin.
+ */
+async function touchLastLogin(id) {
+  await pool.execute('UPDATE users SET last_login_at = NOW() WHERE id = ?', [id])
+}
+
+/* ===================================================================
+   ADMIN QUERIES
+   ===================================================================
+   Everything below is reached only through /api/admin/*, behind
+   protect + authorize. None of it is exported to a user-facing route.
+
+   >>> WHY THESE LIVE HERE AND NOT IN AN adminUserModel.js <<<
+   Because the rule in this project is that one model owns one table,
+   and splitting `users` across two files would mean the SAFE_FIELDS
+   guarantee at the top of this file -- the one that keeps the password
+   hash out of every response -- was enforced in one of them and merely
+   hoped for in the other.
+   =================================================================== */
+
+/* The admin table shows two columns an ordinary response has no
+   business carrying: when the account last signed in, and how many
+   listings it owns.
+
+   >>> WHY item_count IS A SUBQUERY AND NOT A JOIN + GROUP BY <<<
+   `LEFT JOIN items ... GROUP BY u.id` looks tidier and is a trap: the
+   query already LEFT JOINs colleges, areas and cities, and under
+   ONLY_FULL_GROUP_BY (on by default in MySQL 8) every one of those
+   selected columns then has to be provably functionally dependent on
+   the grouped key. Whether the optimiser accepts that through THREE
+   outer joins is a detail nobody should have to be sure about, and it
+   fails at runtime, in production, not in review. A correlated
+   subquery has no such question hanging over it: it is one index
+   lookup on idx_items_user per row, and a page is 20 rows. */
+const ADMIN_FIELDS = `
+  ${SAFE_FIELDS},
+  u.last_login_at,
+  (SELECT COUNT(*) FROM items i WHERE i.user_id = u.id) AS item_count
+`
+
+/* ORDER BY cannot be a bound parameter, so -- exactly as in
+   itemModel -- the permitted sorts are a lookup table and the caller
+   supplies a KEY, never SQL. An unknown key falls back to `newest`
+   rather than erroring: a stale bookmark should show a page, not a
+   500. */
+const USER_SORTS = {
+  newest: 'u.created_at DESC, u.id DESC',
+  oldest: 'u.created_at ASC, u.id ASC',
+  name: 'u.name ASC, u.id ASC',
+  items: 'item_count DESC, u.id ASC',
+  // NULLs (never signed in) sort last, which is what an admin looking
+  // for dormant accounts expects to see at the bottom, not the top.
+  active: 'u.last_login_at IS NULL, u.last_login_at DESC',
+}
+
+/** Builds the shared WHERE clause for listForAdmin and its COUNT. */
+function buildUserFilters(filters) {
+  const where = []
+  const params = []
+
+  if (filters.role) {
+    where.push('u.role = ?')
+    params.push(filters.role)
+  }
+  if (filters.status) {
+    where.push('u.status = ?')
+    params.push(filters.status)
+  }
+  if (filters.collegeId) {
+    where.push('u.college_id = ?')
+    params.push(filters.collegeId)
+  }
+  if (filters.search) {
+    /* Bound as parameters, wildcards and all. The '%' belongs in the
+       VALUE, never in the SQL text -- `LIKE '%${search}%'` is the
+       classic injection in a search box. */
+    where.push('(u.name LIKE ? OR u.email LIKE ? OR u.mobile LIKE ?)')
+    const like = `%${filters.search}%`
+    params.push(like, like, like)
+  }
+
+  return { clause: where.length ? `WHERE ${where.join(' AND ')}` : '', params }
+}
+
+/**
+ * One page of users for /admin/users, with the total so the pager can
+ * be drawn.
+ *
+ * The COUNT runs the same filters WITHOUT limit/offset. That second
+ * query is not waste: without it the frontend cannot know whether
+ * there is a page 4, and "load more until it returns nothing" makes
+ * the last page a wasted round trip and the total unknowable.
+ */
+async function listForAdmin({ page, limit, offset }, filters = {}) {
+  const { clause, params } = buildUserFilters(filters)
+  const order = USER_SORTS[filters.sort] || USER_SORTS.newest
+
+  const [rows] = await pool.execute(
+    `SELECT ${ADMIN_FIELDS} ${USER_SOURCE} ${clause}
+      ORDER BY ${order}
+      LIMIT ${limit} OFFSET ${offset}`,
+    params,
+  )
+
+  const [[{ total }]] = await pool.execute(
+    `SELECT COUNT(*) AS total ${USER_SOURCE} ${clause}`,
+    params,
+  )
+
+  return { rows, total: Number(total), page, limit }
+}
+
+/**
+ * One user for the admin detail page (§8): the profile, plus the
+ * counts that make it useful -- how many listings they own, how many
+ * requests they have sent, and how many they have received on their
+ * own items.
+ *
+ * Still no password. The detail page is exactly where someone would
+ * be tempted to "just include everything".
+ */
+async function findByIdForAdmin(id) {
+  const [rows] = await pool.execute(
+    `SELECT ${ADMIN_FIELDS},
+            (SELECT COUNT(*) FROM items i
+              WHERE i.user_id = u.id AND i.status = 'Available')   AS available_count,
+            (SELECT COUNT(*) FROM items i
+              WHERE i.user_id = u.id
+                AND i.moderation_status = 'Pending')               AS pending_count,
+            (SELECT COUNT(*) FROM requests r
+              WHERE r.requester_id = u.id)                         AS requests_sent,
+            (SELECT COUNT(*) FROM requests r
+               JOIN items i2 ON i2.id = r.item_id
+              WHERE i2.user_id = u.id)                             AS requests_received
+       ${USER_SOURCE}
+      WHERE u.id = ?`,
+    [id],
+  )
+  return rows[0] ?? null
+}
+
+/**
+ * Changes a user's role. Authorisation -- who may call this, and on
+ * whom -- is NOT decided here; see authorize.js and the controller.
+ * This function's whole responsibility is that the value reaching the
+ * ENUM is one of the four we recognise.
+ *
+ * >>> WHY VALIDATE A VALUE THE ENUM ALREADY CONSTRAINS? <<<
+ * Because of how MySQL fails. An unrecognised value against an ENUM
+ * does not raise an error in the default mode -- it stores the empty
+ * string '' and emits a warning nobody reads. A user whose role is ''
+ * matches no case in any check, which sounds safe until you find the
+ * account can no longer log in anywhere and nothing in the log says
+ * why. Rejecting it here turns silent corruption into a 422.
+ */
+async function setRole(id, role) {
+  if (!ROLES.includes(role)) {
+    throw new Error(`userModel.setRole: "${role}" is not one of ${ROLES.join(', ')}`)
+  }
+  const [result] = await pool.execute(
+    'UPDATE users SET role = ? WHERE id = ?',
+    [role, id],
+  )
+  return result.affectedRows > 0 ? findByIdForAdmin(id) : null
+}
+
+/**
+ * Blocks or unblocks an account.
+ *
+ * >>> WHY BLOCKING EXISTS AT ALL, GIVEN THERE IS A DELETE <<<
+ * users -> items is ON DELETE CASCADE, so deleting an abusive account
+ * silently destroys every listing it ever posted, along with the
+ * requests attached to them. That is unrecoverable, and it is the
+ * wrong first response to "this person is behaving badly" -- which is
+ * usually a decision someone wants to reconsider, or explain, or
+ * undo. Blocking is reversible and leaves the evidence intact.
+ * remove() stays available for the genuine cases (spam signups, a
+ * deletion request), and it is the exception, not the default.
+ */
+async function setStatus(id, status) {
+  if (!STATUSES.includes(status)) {
+    throw new Error(`userModel.setStatus: "${status}" is not one of ${STATUSES.join(', ')}`)
+  }
+  const [result] = await pool.execute(
+    'UPDATE users SET status = ? WHERE id = ?',
+    [status, id],
+  )
+  return result.affectedRows > 0 ? findByIdForAdmin(id) : null
+}
+
+/**
+ * Deletes a user. Returns true if a row went away.
+ *
+ * The FOREIGN KEYs decide what follows, and they were chosen with
+ * this call in mind: items CASCADE (their owner is gone, so the
+ * listing is meaningless), audit_logs.admin_id SET NULL (the log
+ * survives its author -- that is the point of storing admin_email
+ * alongside it), items.moderated_by SET NULL (a moderated item stays
+ * moderated). No cleanup is written here, because a cleanup someone
+ * has to remember to call is a cleanup that will eventually be
+ * skipped.
+ */
+async function remove(id) {
+  const [result] = await pool.execute('DELETE FROM users WHERE id = ?', [id])
+  return result.affectedRows > 0
+}
+
+/**
+ * How many accounts sit in each role and each status, for the
+ * dashboard cards. Two GROUP BYs rather than six COUNT queries.
+ *
+ * Returns a plain object with EVERY key present and zeroed, because a
+ * GROUP BY only returns rows that exist: with no blocked users there
+ * is no 'blocked' row at all, and a dashboard card reading
+ * `counts.blocked` would render "undefined" instead of "0".
+ */
+async function roleAndStatusCounts() {
+  const [byRole] = await pool.execute(
+    'SELECT role, COUNT(*) AS n FROM users GROUP BY role',
+  )
+  const [byStatus] = await pool.execute(
+    'SELECT status, COUNT(*) AS n FROM users GROUP BY status',
+  )
+
+  const roles = Object.fromEntries(ROLES.map((r) => [r, 0]))
+  for (const row of byRole) roles[row.role] = Number(row.n)
+
+  const statuses = Object.fromEntries(STATUSES.map((s) => [s, 0]))
+  for (const row of byStatus) statuses[row.status] = Number(row.n)
+
+  return { roles, statuses }
+}
+
 module.exports = {
   create,
   findById,
@@ -209,4 +488,14 @@ module.exports = {
   findByEmailWithPassword,
   verifyPassword,
   updateCollege,
+  touchLastLogin,
+  // admin
+  listForAdmin,
+  findByIdForAdmin,
+  setRole,
+  setStatus,
+  remove,
+  roleAndStatusCounts,
+  ROLES,
+  STATUSES,
 }
