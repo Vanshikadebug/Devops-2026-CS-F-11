@@ -133,9 +133,9 @@ app.get('/api', (req, res) => {
         'GET /api/locations/cities, GET /api/locations/cities/:id/areas, ' +
         'GET /api/locations/colleges, GET /api/locations/colleges/:id',
       dashboard: 'GET /api/dashboard',
-      // Filled in as each phase lands:
-      // items:    POST /api/items, PUT|DELETE /api/items/:id      (Phase 8)
-      // requests: GET|POST /api/requests, PUT /api/requests/:id   (Phase 10)
+      requests:
+        'POST /api/requests, GET /api/requests/sent, GET /api/requests/received, ' +
+        'PATCH /api/requests/:id',
     },
     // The filters GET /api/items understands. Documented here so the
     // API describes itself -- someone exploring with curl finds them
@@ -147,13 +147,13 @@ app.get('/api', (req, res) => {
 /* Feature routers.
    Mounted AFTER the body parser (so req.body exists) and BEFORE the
    fallbacks below (so real routes get a chance to match first).
-
-   Phase 10 adds: app.use('/api/requests', require('./routes/requestRoutes')) */
+--------------------------------------------------------------- */
 app.use('/api/auth', require('./routes/authRoutes'))
 app.use('/api/users', require('./routes/userRoutes'))
 app.use('/api/items', require('./routes/itemRoutes'))
 app.use('/api/locations', require('./routes/locationRoutes'))
 app.use('/api/dashboard', require('./routes/dashboardRoutes'))
+app.use('/api/requests', require('./routes/requestRoutes'))
 
 /* ---------------------------------------------------------------
    5 & 6. Fallbacks -- MUST be registered last.
