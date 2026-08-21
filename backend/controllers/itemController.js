@@ -150,6 +150,12 @@ const getItems = asyncHandler(async (req, res) => {
  * Number.isInteger(Number(x)) rejects 'abc', '1.5' and '' but accepts
  * '7'. The `> 0` matters too: ids are UNSIGNED in the schema, so a
  * negative id is not merely absent, it is impossible.
+ *
+ * >>> IT IS ALSO A PUBLIC ENDPOINT, so it must not leak what the
+ * browse grid hides. <<< The lookup goes through findPublicById, which
+ * applies findAll's visibility rule -- Approved, active owner -- so a
+ * Pending/Rejected/Hidden listing, or a blocked account's item,
+ * answers 404 by direct id, exactly as it is absent from the list.
  */
 const getItemById = asyncHandler(async (req, res) => {
   const id = Number(req.params.id)
@@ -158,10 +164,13 @@ const getItemById = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('Item id must be a positive whole number')
   }
 
-  const item = await itemModel.findById(id)
+  const item = await itemModel.findPublicById(id)
 
-  // The model reports "no such row" as null. Turning that into a 404
-  // is the controller's decision, because status codes are HTTP.
+  // The model reports "no such row" -- OR one the public may not see --
+  // as null. Turning that into a 404 is the controller's decision,
+  // because status codes are HTTP. A hidden item and a missing item are
+  // deliberately indistinguishable here: a different answer for the two
+  // would confirm that a hidden id exists.
   if (!item) {
     throw ApiError.notFound(`No item found with id ${id}`)
   }

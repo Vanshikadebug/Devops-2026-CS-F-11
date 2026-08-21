@@ -356,6 +356,40 @@ async function findById(id) {
 }
 
 /**
+ * One item by id AS THE PUBLIC MAY SEE IT, or null.
+ *
+ * >>> WHY THIS IS SEPARATE FROM findById <<<
+ * findById is the raw, ungated lookup, and it has to stay that way
+ * because create/update/updateStatus call it to echo back the row
+ * they just wrote -- gate it, and the moment item approval is switched
+ * on a freshly posted (Pending) listing would come back as null to its
+ * own author.
+ *
+ * This function is the PUBLIC detail read behind GET /api/items/:id,
+ * and it applies the EXACT rule findAll applies to the browse grid:
+ * an Approved listing whose owner is active, or nothing. Without it
+ * the detail route was a hole straight through moderation -- findAll
+ * hides a Hidden/Rejected item, and a blocked spammer's listings, from
+ * the grid, but anyone who knew (or guessed) an id could still read
+ * them one row at a time.
+ *
+ * Same pairing as findAll (gated, public) vs listForAdmin (ungated,
+ * admin): the two are DELIBERATELY separate functions, so there is no
+ * flag anyone could pass to turn the gate off by accident.
+ */
+async function findPublicById(id) {
+  const [rows] = await pool.execute(
+    `SELECT ${ITEM_FIELDS}
+     ${ITEM_SOURCE}
+     WHERE i.id = ?
+       AND i.moderation_status = 'Approved'
+       AND u.status = 'active'`,
+    [id],
+  )
+  return rows[0] ?? null
+}
+
+/**
  * Every item belonging to ONE user, newest first.
  *
  * >>> THE user_id FILTER IS THE WHOLE POINT OF THIS FUNCTION <<<
@@ -787,6 +821,7 @@ async function moderationCounts() {
 module.exports = {
   findAll,
   findById,
+  findPublicById,
   findByUser,
   create,
   update,

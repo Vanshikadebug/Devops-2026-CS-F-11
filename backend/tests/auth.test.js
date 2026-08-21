@@ -178,6 +178,37 @@ describe('POST /api/auth/login', () => {
     expect(res.body.user).not.toHaveProperty('password')
   })
 
+  it('lets a Gmail user with dots in their address log back in', async () => {
+    // >>> REGRESSION: register and login normalisation must AGREE <<<
+    // Gmail treats dots as insignificant, so express-validator's
+    // normalizeEmail() strips them BY DEFAULT. Registration switches
+    // that off, so the dots are kept -- but if login uses a bare
+    // normalizeEmail(), it strips them, searches for a different
+    // string, finds nothing and returns 401. The account exists yet
+    // can never log in.
+    //
+    // The existing "preserves the email exactly as typed" test only
+    // exercises REGISTER, so it never caught this. This one registers
+    // WITH dots and then logs in with the very same address -- the
+    // round-trip that actually reproduces the bug.
+    const dotted = {
+      name: 'Dotted Login',
+      email: `${TEST_TAG}.Dot.Ted.Login@Gmail.com`,
+      mobile: '9876500000',
+      password: 'correct-horse-9',
+    }
+    await request(app).post('/api/auth/register').send(dotted)
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: dotted.email, password: dotted.password })
+
+    expect(res.status).toBe(200)
+    expect(res.body.token.split('.')).toHaveLength(3)
+    // Lowercased, but the dots survive BOTH register and login.
+    expect(res.body.user.email).toBe(`${TEST_TAG}.dot.ted.login@gmail.com`)
+  })
+
   it('rejects a wrong password with 401', async () => {
     const res = await request(app)
       .post('/api/auth/login')

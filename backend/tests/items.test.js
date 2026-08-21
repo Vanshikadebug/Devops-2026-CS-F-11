@@ -18,7 +18,7 @@
 
 const request = require('supertest')
 const app = require('../app')
-const { closePool } = require('../config/db')
+const { pool, closePool } = require('../config/db')
 
 // Without this, Jest prints "A worker process has failed to exit
 // gracefully" and hangs -- the pool's open sockets keep Node's event
@@ -219,5 +219,119 @@ describe('GET /api/items/:id', () => {
     const after = await request(app).get('/api/items')
     expect(after.status).toBe(200)
     expect(after.body.count).toBe(before.body.count)
+  })
+})
+
+/* ===============================================================
+   GET /api/items/:id -- THE PUBLIC VISIBILITY GATE
+   ===============================================================
+   >>> REGRESSION <<<
+   findAll hides two kinds of listing from the browse grid: anything
+   whose moderation_status is not 'Approved', and anything whose owner
+   has been blocked. The detail route once did NOT -- it called a bare
+   findById with no gate, so anyone who knew (or guessed) an id could
+   read a Hidden/Pending/Rejected listing, or a blocked spammer's
+   listing, one row at a time. That is a hole straight through the
+   moderation system the grid is careful to enforce.
+
+   Unlike the read-only tests above, this block WRITES: it creates real
+   rows, nudges the two columns the gate reads, and asserts the detail
+   route now answers 404 for exactly the items the grid refuses to show
+   -- while still serving an ordinary Approved item from an active
+   owner. It has its own setup and cleanup and never touches the seeded
+   rows.
+=============================================================== */
+describe('GET /api/items/:id visibility gate', () => {
+  const TAG = 'itemvis'
+  let approvedId // Approved item, active owner  -> 200
+  let hiddenId   // Hidden item,   active owner  -> 404
+  let blockedId  // Approved item, blocked owner -> 404
+
+  beforeAll(async () => {
+    // Two owners, created through the real API so every NOT NULL
+    // column is filled exactly as a genuine signup would fill it.
+    const active = await request(app).post('/api/auth/register').send({
+      name: 'Vis Active',
+      email: `${TAG}.active@test.local`,
+      mobile: '9876500000',
+      password: 'correct-horse-9',
+    })
+    const blocked = await request(app).post('/api/auth/register').send({
+      name: 'Vis Blocked',
+      email: `${TAG}.blocked@test.local`,
+      mobile: '9876500000',
+      password: 'correct-horse-9',
+    })
+
+    // Three items, all created Approved (the default), through the API
+    // so they are valid rows; two are then pushed into the states the
+    // gate must catch.
+    const mkItem = async (token, name) => {
+      const r = await request(app)
+        .post('/api/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name,
+          description: 'visibility gate fixture item',
+          category: 'Books',
+          condition: 'Good',
+          location: 'Somewhere on campus',
+        })
+      return r.body.data.id
+    }
+    approvedId = await mkItem(active.body.token, 'Vis Approved Item')
+    hiddenId = await mkItem(active.body.token, 'Vis Hidden Item')
+    blockedId = await mkItem(blocked.body.token, 'Vis Blocked-Owner Item')
+
+    // Nudge exactly the two columns the gate reads -- nothing else.
+    await pool.execute(
+      "UPDATE items SET moderation_status = 'Hidden' WHERE id = ?",
+      [hiddenId],
+    )
+    await pool.execute(
+      "UPDATE users SET status = 'blocked' WHERE id = ?",
+      [blocked.body.user.id],
+    )
+  })
+
+  afterAll(async () => {
+    // ON DELETE CASCADE takes each owner's items with them.
+    await pool.execute('DELETE FROM users WHERE email LIKE ?', [`${TAG}.%`])
+  })
+
+  it('serves an ordinary Approved item from an active owner', async () => {
+    // The gate must not over-block: a normal listing still resolves.
+    const res = await request(app).get(`/api/items/${approvedId}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.id).toBe(approvedId)
+  })
+
+  it('returns 404 for a non-Approved item, even by direct id', async () => {
+    // >>> SECURITY: moderation must hold on the detail route too <<<
+    const res = await request(app).get(`/api/items/${hiddenId}`)
+
+    expect(res.status).toBe(404)
+    expect(res.body.success).toBe(false)
+  })
+
+  it('returns 404 for an item whose owner has been blocked', async () => {
+    // >>> SECURITY: a blocked account's listings disappear entirely,
+    // by direct link as well as from the grid <<<
+    const res = await request(app).get(`/api/items/${blockedId}`)
+
+    expect(res.status).toBe(404)
+    expect(res.body.success).toBe(false)
+  })
+
+  it('keeps the hidden and blocked-owner items out of the browse list', async () => {
+    // The other half of the same rule: the grid never showed them, and
+    // this proves the fixtures really are in the states we think.
+    const res = await request(app).get('/api/items?limit=100')
+    const ids = res.body.data.map((i) => i.id)
+
+    expect(ids).toContain(approvedId)
+    expect(ids).not.toContain(hiddenId)
+    expect(ids).not.toContain(blockedId)
   })
 })
