@@ -62,12 +62,12 @@ async function sendRequest(token, body) {
 
 beforeAll(async () => {
   const a = await request(app).post('/api/auth/login').send(AARAV)
-  aaravToken = a.body.token
-  aaravId = a.body.user.id
+  aaravToken = a.body.data.token
+  aaravId = a.body.data.user.id
 
   const p = await request(app).post('/api/auth/login').send(PRIYA)
-  priyaToken = p.body.token
-  priyaId = p.body.user.id
+  priyaToken = p.body.data.token
+  priyaId = p.body.data.user.id
 
   const third = await request(app).post('/api/auth/register').send({
     name: 'Req Third',
@@ -75,8 +75,8 @@ beforeAll(async () => {
     mobile: '9876500099',
     password: 'correct-horse-9',
   })
-  thirdToken = third.body.token
-  thirdId = third.body.user.id
+  thirdToken = third.body.data.token
+  thirdId = third.body.data.user.id
 
   const colleges = await request(app).get('/api/locations/colleges')
   skit = colleges.body.data.find((c) => c.slug === 'skit-jaipur')

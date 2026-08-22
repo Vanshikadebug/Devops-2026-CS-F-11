@@ -85,11 +85,15 @@ describe('GET /api/locations/cities', () => {
 })
 
 describe('GET /api/locations/cities/:id/areas', () => {
-  it('returns the areas of that city, and echoes the city back', async () => {
+  it('returns the areas of that city, in the standard { success, count, data } shape', async () => {
     const res = await request(app).get(`/api/locations/cities/${jaipur.id}/areas`)
 
     expect(res.status).toBe(200)
-    expect(res.body.city.name).toBe('Jaipur')
+    // No stray top-level `city` key any more -- this route now carries
+    // the same envelope as every other list endpoint (getCities,
+    // getColleges). The key it used to echo was never read by the
+    // frontend, so dropping it changes nothing a client relied on.
+    expect(res.body.city).toBeUndefined()
     expect(res.body.data.length).toBeGreaterThan(0)
 
     // Every area returned must belong to the city that was asked for.

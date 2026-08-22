@@ -64,18 +64,18 @@ describe('POST /api/auth/register', () => {
 
     expect(res.status).toBe(201)
     expect(res.body.success).toBe(true)
-    expect(typeof res.body.token).toBe('string')
+    expect(typeof res.body.data.token).toBe('string')
     // A JWT is three dot-separated parts.
-    expect(res.body.token.split('.')).toHaveLength(3)
-    expect(res.body.user.email).toBe(`${TEST_TAG}.create@test.local`)
-    expect(res.body.user.id).toBeGreaterThan(0)
+    expect(res.body.data.token.split('.')).toHaveLength(3)
+    expect(res.body.data.user.email).toBe(`${TEST_TAG}.create@test.local`)
+    expect(res.body.data.user.id).toBeGreaterThan(0)
   })
 
   it('never returns the password or its hash', async () => {
     // >>> SECURITY <<<
     const res = await request(app).post('/api/auth/register').send(newUser('nopass'))
 
-    expect(res.body.user).not.toHaveProperty('password')
+    expect(res.body.data.user).not.toHaveProperty('password')
     const body = JSON.stringify(res.body)
     expect(body).not.toMatch(/correct-horse-9/) // the plain text
     expect(body).not.toMatch(/\$2[aby]\$/)      // a bcrypt hash
@@ -140,7 +140,7 @@ describe('POST /api/auth/register', () => {
 
     expect(res.status).toBe(201)
     // Lowercased, but the dots survive.
-    expect(res.body.user.email).toBe(`${TEST_TAG}.dotted.name@gmail.com`)
+    expect(res.body.data.user.email).toBe(`${TEST_TAG}.dotted.name@gmail.com`)
   })
 
   it('reports every invalid field at once, not just the first', async () => {
@@ -190,9 +190,9 @@ describe('POST /api/auth/login', () => {
       .send({ email: user.email, password: user.password })
 
     expect(res.status).toBe(200)
-    expect(res.body.token.split('.')).toHaveLength(3)
-    expect(res.body.user.email).toBe(user.email)
-    expect(res.body.user).not.toHaveProperty('password')
+    expect(res.body.data.token.split('.')).toHaveLength(3)
+    expect(res.body.data.user.email).toBe(user.email)
+    expect(res.body.data.user).not.toHaveProperty('password')
   })
 
   it('lets a Gmail user with dots in their address log back in', async () => {
@@ -221,9 +221,9 @@ describe('POST /api/auth/login', () => {
       .send({ email: dotted.email, password: dotted.password })
 
     expect(res.status).toBe(200)
-    expect(res.body.token.split('.')).toHaveLength(3)
+    expect(res.body.data.token.split('.')).toHaveLength(3)
     // Lowercased, but the dots survive BOTH register and login.
-    expect(res.body.user.email).toBe(`${TEST_TAG}.dot.ted.login@gmail.com`)
+    expect(res.body.data.user.email).toBe(`${TEST_TAG}.dot.ted.login@gmail.com`)
   })
 
   it('rejects a wrong password with 401', async () => {
@@ -232,7 +232,7 @@ describe('POST /api/auth/login', () => {
       .send({ email: user.email, password: 'wrong-password-1' })
 
     expect(res.status).toBe(401)
-    expect(res.body.token).toBeUndefined()
+    expect(res.body.data).toBeUndefined()
   })
 
   it('gives an IDENTICAL response for unknown email and wrong password', async () => {
@@ -262,7 +262,7 @@ describe('POST /api/auth/login', () => {
       .send({ email: user.email, password: "' OR '1'='1" })
 
     expect(res.status).toBe(401)
-    expect(res.body.token).toBeUndefined()
+    expect(res.body.data).toBeUndefined()
   })
 
   it('refuses a blocked account, even with the correct password', async () => {
@@ -278,7 +278,7 @@ describe('POST /api/auth/login', () => {
 
     await pool.execute(
       "UPDATE users SET status = 'blocked' WHERE id = ?",
-      [reg.body.user.id],
+      [reg.body.data.user.id],
     )
 
     const res = await request(app)
@@ -287,7 +287,7 @@ describe('POST /api/auth/login', () => {
 
     expect(res.status).toBe(403)
     expect(res.body.success).toBe(false)
-    expect(res.body.token).toBeUndefined()
+    expect(res.body.data).toBeUndefined()
   })
 
   it('does not reveal the block to someone who lacks the password', async () => {
@@ -302,7 +302,7 @@ describe('POST /api/auth/login', () => {
 
     await pool.execute(
       "UPDATE users SET status = 'blocked' WHERE id = ?",
-      [reg.body.user.id],
+      [reg.body.data.user.id],
     )
 
     const res = await request(app)
@@ -323,7 +323,7 @@ describe('POST /api/auth/login', () => {
     // must fill it in.
     const u = newUser('lastlogin')
     const reg = await request(app).post('/api/auth/register').send(u)
-    const id = reg.body.user.id
+    const id = reg.body.data.user.id
 
     // A brand-new account has never signed in.
     const [[before]] = await pool.execute(
@@ -353,7 +353,7 @@ describe('POST /api/auth/login', () => {
     // of the checks, which would record attempts that never signed in.
     const u = newUser('nostamp')
     const reg = await request(app).post('/api/auth/register').send(u)
-    const id = reg.body.user.id
+    const id = reg.body.data.user.id
 
     const res = await request(app)
       .post('/api/auth/login')
@@ -378,8 +378,8 @@ describe('GET /api/auth/me', () => {
 
   beforeAll(async () => {
     const res = await request(app).post('/api/auth/register').send(user)
-    token = res.body.token
-    userId = res.body.user.id
+    token = res.body.data.token
+    userId = res.body.data.user.id
   })
 
   it('returns the current user for a valid token', async () => {
@@ -388,8 +388,8 @@ describe('GET /api/auth/me', () => {
       .set('Authorization', `Bearer ${token}`)
 
     expect(res.status).toBe(200)
-    expect(res.body.user.id).toBe(userId)
-    expect(res.body.user).not.toHaveProperty('password')
+    expect(res.body.data.user.id).toBe(userId)
+    expect(res.body.data.user).not.toHaveProperty('password')
   })
 
   it('rejects a request with no token', async () => {
@@ -420,7 +420,7 @@ describe('GET /api/auth/me', () => {
       .set('Authorization', `Bearer ${header}.${forged}.${signature}`)
 
     expect(res.status).toBe(401)
-    expect(res.body.user).toBeUndefined()
+    expect(res.body.data).toBeUndefined()
   })
 
   it('rejects a token signed with the wrong secret', async () => {
@@ -460,11 +460,11 @@ describe('GET /api/auth/me', () => {
     const doomed = newUser('deleted')
     const reg = await request(app).post('/api/auth/register').send(doomed)
 
-    await pool.execute('DELETE FROM users WHERE id = ?', [reg.body.user.id])
+    await pool.execute('DELETE FROM users WHERE id = ?', [reg.body.data.user.id])
 
     const res = await request(app)
       .get('/api/auth/me')
-      .set('Authorization', `Bearer ${reg.body.token}`)
+      .set('Authorization', `Bearer ${reg.body.data.token}`)
 
     expect(res.status).toBe(401)
   })
@@ -498,12 +498,12 @@ describe('token contents', () => {
     const res = await request(app).post('/api/auth/register').send(user)
 
     const payload = JSON.parse(
-      Buffer.from(res.body.token.split('.')[1], 'base64url').toString(),
+      Buffer.from(res.body.data.token.split('.')[1], 'base64url').toString(),
     )
 
     // iat = issued at, exp = expires. Both are standard JWT claims.
     expect(Object.keys(payload).sort()).toEqual(['exp', 'iat', 'id'])
-    expect(payload.id).toBe(res.body.user.id)
+    expect(payload.id).toBe(res.body.data.user.id)
 
     const decoded = JSON.stringify(payload)
     expect(decoded).not.toMatch(/correct-horse-9/)
@@ -514,7 +514,7 @@ describe('token contents', () => {
   it('expires, rather than lasting forever', async () => {
     const res = await request(app).post('/api/auth/register').send(newUser('expiry'))
     const payload = JSON.parse(
-      Buffer.from(res.body.token.split('.')[1], 'base64url').toString(),
+      Buffer.from(res.body.data.token.split('.')[1], 'base64url').toString(),
     )
 
     // A token with no exp claim would be a permanent password.

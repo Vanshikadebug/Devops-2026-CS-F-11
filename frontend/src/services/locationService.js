@@ -101,7 +101,9 @@ async function getCollege(collegeId, { signal } = {}) {
  */
 async function saveMyCollege(collegeId, { signal } = {}) {
   const response = await api.put('/users/me/college', { collegeId }, { signal })
-  return response.user
+  // The updated user arrives under data.user now, the same envelope the
+  // auth routes use. The value returned to callers is unchanged.
+  return response.data.user
 }
 
 export const locationService = {

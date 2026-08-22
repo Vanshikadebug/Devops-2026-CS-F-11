@@ -66,7 +66,9 @@ const updateMyCollege = asyncHandler(async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'College cleared',
-      user,
+      // The updated user under data.user -- the same envelope auth and
+      // every other endpoint use (see api.js on the frontend).
+      data: { user },
     })
   }
 
@@ -99,8 +101,9 @@ const updateMyCollege = asyncHandler(async (req, res) => {
     message: `College set to ${college.short_name}`,
     // The full user, re-read through SAFE_FIELDS, so the frontend can
     // replace its stored copy wholesale instead of patching one field
-    // and hoping the rest is still accurate.
-    user,
+    // and hoping the rest is still accurate. Nested under data.user --
+    // the one envelope every endpoint speaks (see api.js on the frontend).
+    data: { user },
   })
 })
 

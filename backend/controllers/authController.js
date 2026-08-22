@@ -23,10 +23,21 @@ function authResponse(user, message) {
   return {
     success: true,
     message,
-    token: signToken(user.id),
-    // `user` here came from the model's SAFE_FIELDS query, so there
-    // is no password on the object to leak in the first place.
-    user,
+    /* Everything the client needs sits under `data` -- the one envelope
+       key every other endpoint in this API already uses, and the shape
+       the frontend's api.js documents at the top of its file
+       ({ success, message, data }). Auth used to be the exception:
+       token and user hung at the top level, so authService needed a
+       special case that read them differently from every other service.
+       Nesting them here retires that exception -- authService unwraps
+       `data` exactly like itemService and locationService do, and the
+       contract the frontend claims to speak is finally true everywhere. */
+    data: {
+      token: signToken(user.id),
+      // `user` here came from the model's SAFE_FIELDS query, so there
+      // is no password on the object to leak in the first place.
+      user,
+    },
   }
 }
 
@@ -165,8 +176,11 @@ const login = asyncHandler(async (req, res) => {
  * GET /api/auth/me?id=3 would let anyone read any account.
  */
 const me = asyncHandler(async (req, res) => {
-  // protect already loaded and verified the user.
-  res.status(200).json({ success: true, user: req.user })
+  // protect already loaded and verified the user. Wrapped in `data`,
+  // with the user under `data.user` exactly as register and login
+  // return it (see authResponse), so the frontend reads one shape for
+  // all three auth routes.
+  res.status(200).json({ success: true, data: { user: req.user } })
 })
 
 /**

@@ -279,9 +279,9 @@ describe('GET /api/items/:id visibility gate', () => {
         })
       return r.body.data.id
     }
-    approvedId = await mkItem(active.body.token, 'Vis Approved Item')
-    hiddenId = await mkItem(active.body.token, 'Vis Hidden Item')
-    blockedId = await mkItem(blocked.body.token, 'Vis Blocked-Owner Item')
+    approvedId = await mkItem(active.body.data.token, 'Vis Approved Item')
+    hiddenId = await mkItem(active.body.data.token, 'Vis Hidden Item')
+    blockedId = await mkItem(blocked.body.data.token, 'Vis Blocked-Owner Item')
 
     // Nudge exactly the two columns the gate reads -- nothing else.
     await pool.execute(
@@ -290,7 +290,7 @@ describe('GET /api/items/:id visibility gate', () => {
     )
     await pool.execute(
       "UPDATE users SET status = 'blocked' WHERE id = ?",
-      [blocked.body.user.id],
+      [blocked.body.data.user.id],
     )
   })
 

@@ -97,12 +97,18 @@ const getAreas = asyncHandler(async (req, res) => {
 
   const areas = await locationModel.findAreas(cityId)
 
-  // The city is echoed back so the page can title itself
-  // "Areas in Jaipur" without a second request.
+  /* The city lookup above stays -- it is what turns an unknown id into
+     an honest 404 instead of a misleading empty list. But the city is
+     NOT echoed back in the response any more. It used to be, under a
+     top-level `city` key, so a page could title itself "Areas in
+     Jaipur" without a second request -- except the frontend never read
+     it (the picker already holds the chosen city in its own state), and
+     no other list endpoint carries an extra top-level key. Dropping it
+     makes this route match getCities and getColleges exactly:
+     { success, count, data }. */
   res.status(200).json({
     success: true,
     count: areas.length,
-    city,
     data: areas,
   })
 })
