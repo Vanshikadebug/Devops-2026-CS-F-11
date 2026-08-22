@@ -31,6 +31,23 @@ const newUser = (n) => ({
   password: 'correct-horse-9',
 })
 
+// last_login_at is written fire-and-forget by the login controller, so
+// a read taken the instant login returns can lose the race with the
+// UPDATE. Poll for up to a couple of seconds and return the value the
+// moment it appears; null means it never did.
+async function waitForLastLogin(id, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    const [[row]] = await pool.execute(
+      'SELECT last_login_at FROM users WHERE id = ?',
+      [id],
+    )
+    if (row && row.last_login_at !== null) return row.last_login_at
+    await new Promise((resolve) => setTimeout(resolve, 25))
+  }
+  return null
+}
+
 afterAll(async () => {
   // ON DELETE CASCADE removes any items and requests these users
   // created, so one statement is enough.
@@ -294,6 +311,60 @@ describe('POST /api/auth/login', () => {
 
     expect(res.status).toBe(401)
     expect(res.body.message).toBe('Invalid email or password')
+  })
+
+  it('stamps last_login_at on a successful login', async () => {
+    // >>> REGRESSION: the timestamp the admin "dormant accounts" sort
+    //     relies on <<<
+    // touchLastLogin shipped from day one with a docblock claiming
+    // login called it -- but nothing did. So last_login_at stayed NULL
+    // for every account forever, and the admin list's `active` sort had
+    // nothing to order by. A fresh account starts NULL; a real login
+    // must fill it in.
+    const u = newUser('lastlogin')
+    const reg = await request(app).post('/api/auth/register').send(u)
+    const id = reg.body.user.id
+
+    // A brand-new account has never signed in.
+    const [[before]] = await pool.execute(
+      'SELECT last_login_at FROM users WHERE id = ?',
+      [id],
+    )
+    expect(before.last_login_at).toBeNull()
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: u.email, password: u.password })
+    expect(res.status).toBe(200)
+
+    // The stamp is fire-and-forget (see authController), so the write
+    // can land a beat after the response returns -- poll rather than
+    // read once and race it.
+    const stamped = await waitForLastLogin(id)
+    expect(stamped).not.toBeNull()
+  })
+
+  it('does not stamp last_login_at when the password is wrong', async () => {
+    // >>> the flip side: only a SUCCESSFUL login is recorded <<<
+    // The stamp sits after the password and blocked checks, so a failed
+    // attempt fires no write at all -- which is why this can read the
+    // row immediately, with no poll: there is no in-flight UPDATE to
+    // race. Guards against a future refactor that moves the stamp ahead
+    // of the checks, which would record attempts that never signed in.
+    const u = newUser('nostamp')
+    const reg = await request(app).post('/api/auth/register').send(u)
+    const id = reg.body.user.id
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: u.email, password: 'wrong-password-1' })
+    expect(res.status).toBe(401)
+
+    const [[row]] = await pool.execute(
+      'SELECT last_login_at FROM users WHERE id = ?',
+      [id],
+    )
+    expect(row.last_login_at).toBeNull()
   })
 })
 

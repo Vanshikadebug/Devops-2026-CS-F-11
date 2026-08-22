@@ -241,7 +241,8 @@ async function verifyPassword(plain, hash) {
 
 /**
  * Stamps users.last_login_at. Called by authController.login AFTER the
- * password has been verified.
+ * password is verified AND the account passes the blocked check, so
+ * only a genuine, successful sign-in is ever recorded.
  *
  * >>> WHY THE CALLER MUST NOT AWAIT THIS <<<
  * It is bookkeeping, not authentication. If this UPDATE were awaited

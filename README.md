@@ -3,7 +3,7 @@
 > A platform for listing items you no longer need, so someone else can reuse them
 > instead of them becoming waste.
 
-**Status:** 🚧 Under active development — Phase 11 of 18 complete (search and filtering by campus, the request system wired end to end, and a 228-test backend suite).
+**Status:** 🚧 Under active development — Phase 11 of 18 complete (search and filtering by campus, the request system wired end to end, and a 232-test backend suite).
 
 This README is a placeholder. The full documentation (architecture, database
 design, installation, API reference, Docker, Jenkins, CI/CD) is written in
@@ -71,7 +71,7 @@ is accepted.
 **Tests:**
 
 ```bash
-cd backend && npm test    # 228 tests
+cd backend && npm test    # 232 tests
 ```
 
 ## API endpoints

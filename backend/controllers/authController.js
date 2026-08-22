@@ -129,6 +129,22 @@ const login = asyncHandler(async (req, res) => {
      deliberately awkward name. */
   delete user.password
 
+  /* >>> RECORD THE LOGIN, BUT NEVER LET IT FAIL THE LOGIN <<<
+     The credentials are good and the account is active, so this is a
+     genuine sign-in -- stamp last_login_at, the column the admin user
+     list sorts dormant accounts by. Placed HERE, after the blocked
+     check, a refused 403 login is never mistaken for a success.
+
+     Deliberately NOT awaited -- touchLastLogin's own docblock explains
+     why at length: it is bookkeeping, not authentication, and awaiting
+     a write nobody asked for would let a database hiccup turn a correct
+     password into "login failed". Fire it and move on. The .catch is
+     there only so a failed write is logged rather than surfacing as an
+     unhandled promise rejection that could take the process down. */
+  userModel.touchLastLogin(user.id).catch((err) => {
+    console.error(`[auth] failed to stamp last_login_at for user ${user.id}: ${err.message}`)
+  })
+
   res.status(200).json(authResponse(user, 'Logged in successfully'))
 })
 
