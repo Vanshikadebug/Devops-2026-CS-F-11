@@ -92,6 +92,36 @@ const login = asyncHandler(async (req, res) => {
 
   if (!matches) throw invalid
 
+  /* >>> REFUSE A BLOCKED ACCOUNT AT THE DOOR <<<
+     protect.js already rejects a blocked user on every authenticated
+     request, so a block is enforced with or without this line. But
+     without it, login itself still SUCCEEDS: a blocked person is told
+     "Logged in successfully", handed a fresh 7-day token, and only
+     discovers the block on their NEXT request, when protect answers
+     403. That is a login screen that accepts the password and then
+     behaves like a broken site. Refusing here makes the block honest
+     at the one moment the user is looking straight at it.
+
+     WHY AFTER THE PASSWORD CHECK, NOT BEFORE?
+     The two failures above deliberately share one message so a
+     stranger cannot learn which emails are registered (see `invalid`).
+     Announcing "blocked" before the password is verified would undo
+     that -- anyone who typed the address would learn the account both
+     exists and is blocked. Placed here, the only person who ever sees
+     this message is one who has already proved they hold the
+     credentials: the blocked user themselves. Nothing new leaks to an
+     attacker who is only guessing.
+
+     403, not 401, and the SAME wording as protect.js: the credentials
+     are genuine, so re-authenticating cannot help, and one message
+     means a blocked user reads the same explanation whether they are
+     stopped at login or mid-session. */
+  if (user.status === 'blocked') {
+    throw ApiError.forbidden(
+      'This account has been blocked. Contact support if you believe this is a mistake.',
+    )
+  }
+
   /* Strip the hash before responding. `user` came from the
      with-password query, so unlike everywhere else in this codebase
      the object genuinely holds a hash right now. Deleting it here is

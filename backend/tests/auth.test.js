@@ -247,6 +247,54 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(401)
     expect(res.body.token).toBeUndefined()
   })
+
+  it('refuses a blocked account, even with the correct password', async () => {
+    // >>> SECURITY / REGRESSION <<<
+    // protect.js rejects a blocked user on every authenticated request,
+    // but login used to issue the token FIRST and let protect catch it
+    // on the next call -- so the login screen accepted the password,
+    // said "Logged in successfully", and the app then behaved as though
+    // it were broken. A block must be honest at the door: 403 here, no
+    // token, and the same wording protect.js uses mid-session.
+    const blocked = newUser('blocked')
+    const reg = await request(app).post('/api/auth/register').send(blocked)
+
+    await pool.execute(
+      "UPDATE users SET status = 'blocked' WHERE id = ?",
+      [reg.body.user.id],
+    )
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: blocked.email, password: blocked.password })
+
+    expect(res.status).toBe(403)
+    expect(res.body.success).toBe(false)
+    expect(res.body.token).toBeUndefined()
+  })
+
+  it('does not reveal the block to someone who lacks the password', async () => {
+    // >>> SECURITY: the block adds no new enumeration signal <<<
+    // The status check runs AFTER the password check, so a wrong guess
+    // against a blocked account is indistinguishable from a wrong guess
+    // against any other -- the generic "Invalid email or password", not
+    // the "blocked" message. The block is disclosed only to someone who
+    // has already proved they hold the credentials.
+    const blocked = newUser('blocked-wrong')
+    const reg = await request(app).post('/api/auth/register').send(blocked)
+
+    await pool.execute(
+      "UPDATE users SET status = 'blocked' WHERE id = ?",
+      [reg.body.user.id],
+    )
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: blocked.email, password: 'wrong-password-1' })
+
+    expect(res.status).toBe(401)
+    expect(res.body.message).toBe('Invalid email or password')
+  })
 })
 
 /* ===============================================================
