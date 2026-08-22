@@ -17,9 +17,19 @@
  * controller:
  *
  *   overview            requireStaff        moderators and up may look
+ *   items list/detail   requireStaff        moderating content is staff work
+ *   moderate an item    requireStaff        approve / reject / hide / requeue
  *   users list/detail   requireAdmin        managing accounts is admin work
  *   block / unblock     requireAdmin
  *   change role         requireSuperAdmin   the power that grants powers
+ *
+ * >>> WHY ITEM MODERATION IS requireStaff BUT ACCOUNT ACTIONS ARE NOT <<<
+ * This is the line the `moderator` role was invented to draw. A
+ * moderator hides a listing (content, reversible, low-stakes) but may
+ * not block its author (an action that reaches a person) -- so the item
+ * routes sit one rung below the user routes on purpose. Overview is
+ * staff-level for the same reason: reading the aggregate counts is a
+ * moderator's job, acting on a named account is not.
  *
  * These guards run AFTER protect (they read req.user.role, which protect
  * loads), which is exactly the order `router.use(protect)` then the
@@ -33,8 +43,11 @@ const {
   getUser,
   setUserStatus,
   setUserRole,
+  listItems,
+  getItem,
+  setItemModeration,
 } = require('../controllers/adminController')
-const { statusRules, roleRules } = require('../validators/adminValidators')
+const { statusRules, roleRules, moderationRules } = require('../validators/adminValidators')
 const validate = require('../middleware/validate')
 const protect = require('../middleware/protect')
 const {
@@ -50,6 +63,16 @@ router.use(protect)
 
 /* The dashboard snapshot -- the one place a plain moderator is allowed. */
 router.get('/overview', requireStaff, getOverview)
+
+/* Item moderation -- the moderator's core job, so staff-level. The list
+   and detail are read-only but ungated (they surface pending, rejected,
+   hidden and blocked-owner listings, which is the point). The moderation
+   PATCH carries a body, so it runs moderationRules then `validate` before
+   the controller -- the same rules-then-validate shape every write uses.
+   moderationRules is where "a rejection must carry a reason" is enforced. */
+router.get('/items', requireStaff, listItems)
+router.get('/items/:id', requireStaff, getItem)
+router.patch('/items/:id/moderation', requireStaff, moderationRules, validate, setItemModeration)
 
 /* Account management. The list and the detail view are read-only but
    still administrative: they surface every account and its activity, so

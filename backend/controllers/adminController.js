@@ -282,10 +282,178 @@ const setUserRole = asyncHandler(async (req, res) => {
   })
 })
 
+/* ===================================================================
+   ITEM MODERATION
+   ===================================================================
+   The moderator's core job, and the reason the `moderator` role exists
+   at all. These sit at requireStaff, one rung BELOW the account actions
+   above -- a moderator may hide a listing but not block its author. The
+   split is deliberate: content is reversible and low-stakes (a wrongly
+   hidden chair is un-hidden in one click), whereas an account action
+   reaches a person.
+
+   TWO THINGS THESE HANDLERS DO NOT DO, and why, since the user handlers
+   above do both:
+
+     - NO self / rank guard. loadTargetForAction refuses to act on
+       yourself or a peer because a user IS a person with a rank. An item
+       is content. There is no "moderating your own item is a slip"
+       case worth a 422, and no rank on a chair to compare against. A
+       moderator moderating their own listing is audited like any other
+       decision; if that ever needs forbidding it is a policy question
+       for another day, not a safety invariant this endpoint must hold.
+
+     - NO no-op short-circuit. setUserStatus returns early when the
+       status is unchanged, because setStatus reports zero affected rows
+       for a no-op UPDATE and that null would otherwise read as a false
+       404. setModeration does not have that problem: it re-stamps
+       moderated_at (and moderated_by) on every non-requeue write, so the
+       row always changes and a null return genuinely means "the row is
+       gone". Re-affirming a decision is itself a recordable action -- a
+       moderator re-approving after a second look is a real event, and
+       the fresh moderated_at is the record of it. */
+
+/**
+ * GET /api/admin/items  (requireStaff)
+ *
+ * One filtered, paginated page of listings for the moderation queue and
+ * the admin item table. Mirrors listUsers: the filters go straight to
+ * itemModel.listForAdmin, which treats an unknown value leniently (a
+ * bad ?moderation= matches nothing rather than 500ing), and the page
+ * size is clamped to a safe integer inside the model.
+ *
+ * Unlike the public GET /api/items, this shows EVERYTHING -- pending,
+ * rejected and hidden listings, and the listings of blocked accounts.
+ * Those are exactly the rows a moderator opens this screen to find, and
+ * it is why listForAdmin is a separate function from findAll rather than
+ * findAll with a flag (see the visibility note in itemModel.findAll).
+ */
+const listItems = asyncHandler(async (req, res) => {
+  const { page, limit, offset } = await resolvePagination(req.query)
+
+  const filters = {
+    moderation: req.query.moderation,
+    status: req.query.status,
+    category: req.query.category,
+    userId: req.query.userId,
+    college: req.query.college,
+    search: req.query.search,
+    sort: req.query.sort,
+  }
+
+  const result = await itemModel.listForAdmin({ page, limit, offset }, filters)
+
+  res.status(200).json({
+    success: true,
+    count: result.rows.length,
+    data: result.rows,
+    pagination: paginationMeta({ page: result.page, limit: result.limit }, result.total),
+  })
+})
+
+/**
+ * GET /api/admin/items/:id  (requireStaff)
+ *
+ * One listing in the full admin shape -- the moderation columns kept out
+ * of the public view (moderation_reason, moderated_by/at, the moderator's
+ * name), plus the owner's email and status and a request count, so the
+ * detail screen can decide without a second round trip. findByIdForAdmin,
+ * not findById: the admin shape, and ungated, so a hidden or pending item
+ * is visible to the staff who need to act on it.
+ */
+const getItem = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id) || id <= 0) {
+    throw ApiError.badRequest('Item id must be a positive whole number')
+  }
+
+  const item = await itemModel.findByIdForAdmin(id)
+  if (!item) {
+    throw ApiError.notFound(`No item found with id ${id}`)
+  }
+
+  res.status(200).json({ success: true, data: item })
+})
+
+/**
+ * PATCH /api/admin/items/:id/moderation  (requireStaff)
+ *
+ * Approve, reject, hide, or send a listing back to the queue. The body
+ * carries `moderation_status` (validated against MODERATION_STATUSES) and
+ * an optional `reason` -- required specifically for a rejection, enforced
+ * by moderationRules, because the owner is shown that text and a
+ * rejection with nothing to show is a listing that just disappears.
+ *
+ * The consequence reaches the public site immediately: the browse grid
+ * (findAll) and the public detail read (findPublicById) both return only
+ * Approved listings, so hiding or rejecting one removes it from
+ * GET /api/items/:id the moment this commits, and approving it back
+ * restores it. Nothing is deleted -- the row and its owner are untouched,
+ * which is what makes every moderation decision reversible.
+ */
+const setItemModeration = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id) || id <= 0) {
+    throw ApiError.badRequest('Item id must be a positive whole number')
+  }
+
+  const item = await itemModel.findByIdForAdmin(id)
+  if (!item) {
+    throw ApiError.notFound(`No item found with id ${id}`)
+  }
+
+  const status = req.body.moderation_status // one of MODERATION_STATUSES
+  // required-on-reject is enforced by the validator; falsy -> null so a
+  // blank note on an approve/hide is stored as NULL, not ''.
+  const reason = req.body.reason || null
+
+  const updated = await itemModel.setModeration(id, {
+    status,
+    moderatorId: req.user.id,
+    reason,
+  })
+  if (!updated) {
+    // Deleted between the load and the write -- a genuine race. Not the
+    // no-op case that dogs setUserStatus: setModeration re-stamps
+    // moderated_at on every non-requeue write, so an unchanged status
+    // still affects the row and this null means it is truly gone.
+    throw ApiError.notFound(`No item found with id ${id}`)
+  }
+
+  /* The reason is deliberately NOT stored on the live row for Approved,
+     Hidden or requeued items unless the caller sent one -- but it is
+     always captured in the audit `changes` when present, so the record
+     of WHY survives even after setModeration clears moderation_reason on
+     a later requeue. changes carries the from/to so the trail reads as a
+     transition, not just an end state. */
+  await auditModel.record({
+    adminId: req.user.id,
+    adminEmail: req.user.email,
+    action: 'item.moderation_change',
+    targetType: 'item',
+    targetId: id,
+    description: `Set "${item.name}" moderation to ${status}${reason ? ` (${reason})` : ''}`,
+    changes: {
+      moderation_status: { from: item.moderation_status, to: status },
+      ...(reason ? { reason } : {}),
+    },
+    ip: req.ip,
+  })
+
+  res.status(200).json({
+    success: true,
+    message: `Item moderation set to ${status}`,
+    data: updated,
+  })
+})
+
 module.exports = {
   getOverview,
   listUsers,
   getUser,
   setUserStatus,
   setUserRole,
+  listItems,
+  getItem,
+  setItemModeration,
 }

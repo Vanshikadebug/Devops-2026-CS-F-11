@@ -137,7 +137,10 @@ app.get('/api', (req, res) => {
         'POST /api/requests, GET /api/requests/sent, GET /api/requests/received, ' +
         'PATCH /api/requests/:id',
       admin:
-        'GET /api/admin/overview, GET /api/admin/users, GET /api/admin/users/:id, ' +
+        'GET /api/admin/overview, ' +
+        'GET /api/admin/items, GET /api/admin/items/:id, ' +
+        'PATCH /api/admin/items/:id/moderation, ' +
+        'GET /api/admin/users, GET /api/admin/users/:id, ' +
         'PATCH /api/admin/users/:id/status, PATCH /api/admin/users/:id/role',
     },
     // The filters GET /api/items understands. Documented here so the
