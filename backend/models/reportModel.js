@@ -25,6 +25,7 @@
  */
 
 const { pool } = require('../config/db')
+const { clampLimitOffset } = require('../utils/pagination')
 
 /* Mirrors of the two ENUMs in schema.sql, exported so the validators
    check against the same list the database enforces. */
@@ -148,10 +149,14 @@ async function list({ page, limit, offset }, filters = {}) {
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const order = SORTS[filters.sort] || SORTS.priority
 
+  // LIMIT/OFFSET are interpolated, not bound, so re-clamp them to integers
+  // here regardless of the caller. See utils/pagination.js.
+  const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
+
   const [rows] = await pool.execute(
     `SELECT ${REPORT_FIELDS} ${REPORT_SOURCE} ${clause}
       ORDER BY ${order}
-      LIMIT ${limit} OFFSET ${offset}`,
+      LIMIT ${safeLimit} OFFSET ${safeOffset}`,
     params,
   )
 

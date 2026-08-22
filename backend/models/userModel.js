@@ -31,6 +31,7 @@
 
 const bcrypt = require('bcryptjs')
 const { pool } = require('../config/db')
+const { clampLimitOffset } = require('../utils/pagination')
 const config = require('../config/env')
 
 /* The columns that are safe to send to a client. Note the absence
@@ -345,10 +346,15 @@ async function listForAdmin({ page, limit, offset }, filters = {}) {
   const { clause, params } = buildUserFilters(filters)
   const order = USER_SORTS[filters.sort] || USER_SORTS.newest
 
+  // LIMIT/OFFSET are interpolated, not bound, so re-clamp them to integers
+  // here regardless of the caller -- the one guard against an injected
+  // LIMIT clause. See utils/pagination.js.
+  const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
+
   const [rows] = await pool.execute(
     `SELECT ${ADMIN_FIELDS} ${USER_SOURCE} ${clause}
       ORDER BY ${order}
-      LIMIT ${limit} OFFSET ${offset}`,
+      LIMIT ${safeLimit} OFFSET ${safeOffset}`,
     params,
   )
 
@@ -357,7 +363,7 @@ async function listForAdmin({ page, limit, offset }, filters = {}) {
     params,
   )
 
-  return { rows, total: Number(total), page, limit }
+  return { rows, total: Number(total), page, limit: safeLimit }
 }
 
 /**

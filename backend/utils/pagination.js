@@ -42,6 +42,51 @@ function clamp(value, fallback, max) {
   return Math.min(Math.max(n, 1), max)
 }
 
+/** A non-negative integer offset, 0 when the input is not a usable number.
+    Unlike `clamp`, the floor is 0, not 1 -- page one legitimately starts
+    at row 0, and there is no such thing as a negative row position. The
+    ceiling mirrors the largest offset parsePagination can itself produce
+    ((MAX_PAGE - 1) * MAX_LIMIT), so a hand-built offset cannot ask the
+    database to skip further than paging ever would. */
+function clampOffset(value) {
+  const n = Number.parseInt(value, 10)
+  if (!Number.isFinite(n) || n < 0) return 0
+  return Math.min(n, MAX_PAGE * MAX_LIMIT)
+}
+
+/**
+ * Forces a caller-supplied LIMIT and OFFSET into safe integers.
+ *
+ * >>> WHY THIS EXISTS ALONGSIDE parsePagination <<<
+ * parsePagination turns `?page=&limit=` INTO a limit and offset -- it is
+ * what a controller calls at the edge. This is the other end: a last-line
+ * clamp for the MODEL functions that interpolate those two numbers into
+ * SQL. The admin listings receive { limit, offset } already computed and
+ * then write `LIMIT ${limit} OFFSET ${offset}` -- the only two values in
+ * the whole project interpolated rather than bound, because MySQL's
+ * prepared-statement protocol refuses a placeholder there.
+ *
+ * In the normal flow parsePagination has already made these safe, so this
+ * changes nothing. It is here so the query is safe REGARDLESS of how the
+ * values arrived -- a new admin endpoint that forgets parsePagination, a
+ * unit test calling the model directly, a future refactor. Defence in
+ * depth: the guarantee lives next to the interpolation, not only at the
+ * far-away edge that happens to call it today.
+ *
+ *   clampLimitOffset('5; DROP TABLE users', 40)  ->  { limit: 5,   offset: 40 }
+ *   clampLimitOffset(undefined, undefined)       ->  { limit: 20,  offset: 0 }
+ *   clampLimitOffset(-4, -100)                   ->  { limit: 1,   offset: 0 }
+ *   clampLimitOffset(99999, 50_000_000)          ->  { limit: 100, offset: 10_000_000 }
+ *
+ * There is no string that survives either clamp as a string.
+ */
+function clampLimitOffset(limit, offset, fallbackLimit = 20) {
+  return {
+    limit: clamp(limit, clamp(fallbackLimit, 20, MAX_LIMIT), MAX_LIMIT),
+    offset: clampOffset(offset),
+  }
+}
+
 /**
  * Page and limit as integers, plus the OFFSET they imply.
  *
@@ -87,4 +132,4 @@ function paginationMeta({ page, limit }, total) {
   }
 }
 
-module.exports = { parsePagination, resolvePagination, paginationMeta, MAX_LIMIT }
+module.exports = { parsePagination, resolvePagination, paginationMeta, clampLimitOffset, MAX_LIMIT }

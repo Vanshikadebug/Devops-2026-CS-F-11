@@ -25,6 +25,7 @@
  */
 
 const { pool } = require('../config/db')
+const { clampLimitOffset } = require('../utils/pagination')
 
 /* The ENUM in schema.sql. Duplicated here so a wrong value is caught
    by a readable error instead of MySQL's WARN_DATA_TRUNCATED, and so
@@ -182,13 +183,19 @@ async function list({ page, limit, offset }, filters = {}) {
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const order = SORTS[filters.sort] || SORTS.newest
 
+  // LIMIT and OFFSET are interpolated, not bound (the protocol forbids
+  // binding them), so they are re-clamped to integers here regardless of
+  // what the caller passed -- the last line of defence between this query
+  // and an injected LIMIT clause. See utils/pagination.js.
+  const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
+
   const [rows] = await pool.execute(
     `SELECT ${LOG_FIELDS}
        FROM audit_logs l
        LEFT JOIN users u ON u.id = l.admin_id
        ${clause}
       ORDER BY ${order}
-      LIMIT ${limit} OFFSET ${offset}`,
+      LIMIT ${safeLimit} OFFSET ${safeOffset}`,
     params,
   )
 
@@ -197,7 +204,7 @@ async function list({ page, limit, offset }, filters = {}) {
     params,
   )
 
-  return { rows, total: Number(total), page, limit }
+  return { rows, total: Number(total), page, limit: safeLimit }
 }
 
 /**

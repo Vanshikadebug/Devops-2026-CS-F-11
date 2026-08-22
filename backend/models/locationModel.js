@@ -32,6 +32,7 @@
  */
 
 const { pool } = require('../config/db')
+const { clampLimitOffset } = require('../utils/pagination')
 
 /**
  * Every city, alphabetically, with how many colleges it holds.
@@ -505,6 +506,11 @@ async function listCollegesForAdmin({ page, limit, offset }, filters = {}) {
   }
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
 
+  // LIMIT/OFFSET are the two values interpolated into SQL rather than
+  // bound, so they are re-clamped to integers here no matter what the
+  // caller passed. See utils/pagination.js.
+  const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
+
   const [rows] = await pool.execute(
     /* item_count here counts ALL items, not just Available ones --
        the opposite of the public findColleges(). An admin deciding
@@ -522,7 +528,7 @@ async function listCollegesForAdmin({ page, limit, offset }, filters = {}) {
        JOIN cities c ON c.id = a.city_id
        ${clause}
       ORDER BY co.short_name
-      LIMIT ${limit} OFFSET ${offset}`,
+      LIMIT ${safeLimit} OFFSET ${safeOffset}`,
     params,
   )
 
@@ -535,7 +541,7 @@ async function listCollegesForAdmin({ page, limit, offset }, filters = {}) {
     params,
   )
 
-  return { rows, total: Number(total), page, limit }
+  return { rows, total: Number(total), page, limit: safeLimit }
 }
 
 /**

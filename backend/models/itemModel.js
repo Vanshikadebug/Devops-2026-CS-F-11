@@ -31,6 +31,7 @@
  */
 
 const { pool } = require('../config/db')
+const { parsePagination, clampLimitOffset } = require('../utils/pagination')
 
 /* ---------------------------------------------------------------
    THE PUBLIC SHAPE OF AN ITEM
@@ -106,12 +107,13 @@ const ITEM_SOURCE = `
   LEFT JOIN cities   c  ON c.id  = a.city_id
 `
 
-// An upper bound on rows returned. With 12 seeded items this is
-// invisible, but an endpoint that returns "all rows, however many
-// that is" degrades badly the moment the table grows. Real paging
-// (page/limit query parameters) arrives in Phase 9; until then this
-// is the guard rail. It is a hard-coded integer, never user input,
-// so it cannot be used for injection.
+// The default page size for the PUBLIC browse list, and the cap
+// findByUser puts on the dashboard. Real paging (?page=&limit=) now
+// rides on top of this through parsePagination: MAX_ROWS is the size of
+// one page when the caller does not ask for a smaller one, and the hard
+// ceiling on any single page is MAX_LIMIT in utils/pagination.js (the
+// two happen to agree at 100). It is a hard-coded integer, never user
+// input, so it cannot be used for injection.
 const MAX_ROWS = 100
 
 /**
@@ -225,10 +227,11 @@ function escapeLike(term) {
  * There is no input, however hostile, that can add a clause, close a
  * quote, or append a second statement.
  *
- * THE ONE VALUE THAT IS INTERPOLATED is `safeLimit`, because LIMIT
- * cannot be bound. It is forced through Number.parseInt and clamped
- * to a range before it goes anywhere near the string, so by the time
- * it is interpolated it is provably an integer between 1 and 100.
+ * THE ONLY VALUES INTERPOLATED are the LIMIT and OFFSET, because MySQL
+ * cannot bind them. parsePagination forces each through Number.parseInt
+ * and clamps it to a range before it goes anywhere near the string, so
+ * by the time they are interpolated they are provably integers -- the
+ * limit between 1 and 100, the offset a non-negative row position.
  */
 async function findAll(filters = {}) {
   const where = []
@@ -321,18 +324,36 @@ async function findAll(filters = {}) {
     }
   }
 
-  const safeLimit = clampLimit(filters.limit)
+  /* Paging. parsePagination turns ?page=&limit= into three proven
+     integers; the public list keeps its historical default of MAX_ROWS
+     per page, because the browse grid has no pager yet and a smaller
+     default would hide most items with no way to reach them. page,
+     limit and offset are the only values interpolated below, and all
+     three come back as integers -- see utils/pagination.js. */
+  const { page, limit, offset } = parsePagination(filters, MAX_ROWS)
   const orderBy = SORTS[filters.sort] ?? SORTS.newest
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
 
   const [rows] = await pool.execute(
     `SELECT ${ITEM_FIELDS}
      ${ITEM_SOURCE}
-     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+     ${clause}
      ORDER BY ${orderBy}
-     LIMIT ${safeLimit}`,
+     LIMIT ${limit} OFFSET ${offset}`,
     params,
   )
-  return rows
+
+  /* The true total behind this page, so the response can say how many
+     items match even when only `limit` of them are returned. Same WHERE
+     and the same params -- ITEM_SOURCE carries the users join that the
+     u.status clause needs; ORDER BY, LIMIT and OFFSET are dropped
+     because none of them changes a count. */
+  const [[{ total }]] = await pool.execute(
+    `SELECT COUNT(*) AS total ${ITEM_SOURCE} ${clause}`,
+    params,
+  )
+
+  return { rows, total: Number(total), page, limit }
 }
 
 /**
@@ -723,12 +744,18 @@ async function listForAdmin({ page, limit, offset }, filters = {}) {
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const order = ADMIN_SORTS[filters.sort] || ADMIN_SORTS.newest
 
+  // LIMIT/OFFSET are interpolated, not bound, so re-clamp them to integers
+  // here regardless of the caller -- findAll and findByUser clamp their own
+  // LIMIT, and this listing must not be the one that forgets. See
+  // utils/pagination.js.
+  const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
+
   const [rows] = await pool.execute(
     `SELECT ${ITEM_ADMIN_FIELDS}
      ${ITEM_ADMIN_SOURCE}
      ${clause}
      ORDER BY ${order}
-     LIMIT ${limit} OFFSET ${offset}`,
+     LIMIT ${safeLimit} OFFSET ${safeOffset}`,
     params,
   )
 
@@ -740,7 +767,7 @@ async function listForAdmin({ page, limit, offset }, filters = {}) {
     params,
   )
 
-  return { rows, total: Number(total), page, limit }
+  return { rows, total: Number(total), page, limit: safeLimit }
 }
 
 /** One item with the full admin shape, or null. */

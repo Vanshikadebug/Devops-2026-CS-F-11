@@ -30,6 +30,7 @@ const itemModel = require('../models/itemModel')
 const locationModel = require('../models/locationModel')
 const ApiError = require('../utils/ApiError')
 const asyncHandler = require('../utils/asyncHandler')
+const { paginationMeta } = require('../utils/pagination')
 
 /* ---------------------------------------------------------------
    READING THE QUERY STRING
@@ -100,10 +101,12 @@ function optionalEnum(value, allowed, label) {
  *
  * WHY THE { success, count, data } ENVELOPE INSTEAD OF A BARE ARRAY?
  * Returning `[...]` directly seems simpler, but it leaves no room to
- * add anything later. Paging needs to send its info alongside the
- * rows; with a bare array there is nowhere to put it without
- * breaking every existing caller. The envelope also matches the
- * error shape from errorHandler.js, so the frontend has exactly one
+ * add anything later. That room is now used: paging rides alongside
+ * the rows in a `pagination` object, which a bare array had nowhere to
+ * put without breaking every existing caller. `count` stays the number
+ * of rows in THIS response (the frontend counts on that); `pagination.
+ * total` is how many match across every page. The envelope also matches
+ * the error shape from errorHandler.js, so the frontend has exactly one
  * rule: read `success`, then read `data` or `message`.
  */
 const getItems = asyncHandler(async (req, res) => {
@@ -118,6 +121,7 @@ const getItems = asyncHandler(async (req, res) => {
     status: optionalEnum(req.query.status, itemModel.STATUSES, 'status'),
     sort: optionalEnum(req.query.sort, itemModel.SORT_KEYS, 'sort'),
     limit: req.query.limit,
+    page: req.query.page,
 
     /* Trimmed, because a search box sends the spaces around what was
        typed and ' laptop ' should find the same rows as 'laptop'.
@@ -127,12 +131,13 @@ const getItems = asyncHandler(async (req, res) => {
     search: typeof search === 'string' && search.trim() ? search.trim() : undefined,
   }
 
-  const items = await itemModel.findAll(filters)
+  const { rows, total, page, limit } = await itemModel.findAll(filters)
 
   res.status(200).json({
     success: true,
-    count: items.length,
-    data: items,
+    count: rows.length,
+    data: rows,
+    pagination: paginationMeta({ page, limit }, total),
   })
 })
 
