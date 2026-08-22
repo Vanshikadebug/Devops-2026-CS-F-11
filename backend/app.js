@@ -136,6 +136,9 @@ app.get('/api', (req, res) => {
       requests:
         'POST /api/requests, GET /api/requests/sent, GET /api/requests/received, ' +
         'PATCH /api/requests/:id',
+      admin:
+        'GET /api/admin/overview, GET /api/admin/users, GET /api/admin/users/:id, ' +
+        'PATCH /api/admin/users/:id/status, PATCH /api/admin/users/:id/role',
     },
     // The filters GET /api/items understands. Documented here so the
     // API describes itself -- someone exploring with curl finds them
@@ -154,6 +157,7 @@ app.use('/api/items', require('./routes/itemRoutes'))
 app.use('/api/locations', require('./routes/locationRoutes'))
 app.use('/api/dashboard', require('./routes/dashboardRoutes'))
 app.use('/api/requests', require('./routes/requestRoutes'))
+app.use('/api/admin', require('./routes/adminRoutes'))
 
 /* ---------------------------------------------------------------
    5 & 6. Fallbacks -- MUST be registered last.

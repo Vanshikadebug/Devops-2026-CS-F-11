@@ -3,7 +3,7 @@
 > A platform for listing items you no longer need, so someone else can reuse them
 > instead of them becoming waste.
 
-**Status:** 🚧 Under active development — Phase 11 of 18 complete (search and filtering by campus, the request system wired end to end, and a 232-test backend suite).
+**Status:** 🚧 Under active development — Phase 11 of 18 complete (search and filtering by campus, the request system wired end to end, the first slice of the admin API — an overview snapshot plus account management — and a 265-test backend suite).
 
 This README is a placeholder. The full documentation (architecture, database
 design, installation, API reference, Docker, Jenkins, CI/CD) is written in
@@ -71,7 +71,7 @@ is accepted.
 **Tests:**
 
 ```bash
-cd backend && npm test    # 232 tests
+cd backend && npm test    # 265 tests
 ```
 
 ## API endpoints
@@ -99,6 +99,11 @@ cd backend && npm test    # 232 tests
 | `GET` | `/api/requests/sent` | Bearer token | 10 |
 | `GET` | `/api/requests/received` | Bearer token | 10 |
 | `PATCH` | `/api/requests/:id` | Bearer token + **item owner** | 10 |
+| `GET` | `/api/admin/overview` | Bearer token + **staff** | admin |
+| `GET` | `/api/admin/users` | Bearer token + **admin** | admin |
+| `GET` | `/api/admin/users/:id` | Bearer token + **admin** | admin |
+| `PATCH` | `/api/admin/users/:id/status` | Bearer token + **admin** | admin |
+| `PATCH` | `/api/admin/users/:id/role` | Bearer token + **super-admin** | admin |
 
 Protected endpoints expect the token in a header:
 
@@ -115,6 +120,18 @@ later: only the owner of the *requested item* may accept or decline it, so the
 request controller loads the row and compares its `owner_id` against
 `req.user.id` before touching anything. A stranger's `PATCH` answers `403`; a
 request id that does not exist answers `404`.
+
+**Staff / admin / super-admin** on the `/api/admin` routes are ranks, not
+separate flags: a single `role` column orders `user < moderator < admin <
+super_admin`, and each route names the *minimum* rank that may enter it. The
+overview is staff-level (a moderator may read aggregate counts); managing
+accounts is admin-level; changing a role — the power that grants powers — is
+super-admin-only. A logged-in user below the bar answers `403`, and no token at
+all answers `401`. Two further checks live in the controller, because a
+route-level "is at least an admin" guard cannot see *who the target is*: you
+cannot act on your own account from the panel (`422`), and you cannot act on a
+peer or a superior or grant a role above your own (`403`). Every block, unblock
+and role change writes an `audit_logs` row after it commits.
 
 ## Security notes
 
