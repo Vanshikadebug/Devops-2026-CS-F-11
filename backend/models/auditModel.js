@@ -26,6 +26,7 @@
 
 const { pool } = require('../config/db')
 const { clampLimitOffset } = require('../utils/pagination')
+const escapeLike = require('../utils/escapeLike')
 
 /* The ENUM in schema.sql. Duplicated here so a wrong value is caught
    by a readable error instead of MySQL's WARN_DATA_TRUNCATED, and so
@@ -165,8 +166,10 @@ async function list({ page, limit, offset }, filters = {}) {
     params.push(filters.targetType)
   }
   if (filters.search) {
+    // escapeLike so wildcard characters in the query are matched
+    // literally instead of scanning the whole audit log.
     where.push('(l.description LIKE ? OR l.admin_email LIKE ?)')
-    const like = `%${filters.search}%`
+    const like = `%${escapeLike(filters.search)}%`
     params.push(like, like)
   }
   if (filters.from) {

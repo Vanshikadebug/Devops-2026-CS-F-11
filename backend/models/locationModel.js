@@ -33,6 +33,7 @@
 
 const { pool } = require('../config/db')
 const { clampLimitOffset } = require('../utils/pagination')
+const escapeLike = require('../utils/escapeLike')
 
 /**
  * Every city, alphabetically, with how many colleges it holds.
@@ -500,8 +501,10 @@ async function listCollegesForAdmin({ page, limit, offset }, filters = {}) {
     params.push(filters.cityId)
   }
   if (filters.search) {
+    // escapeLike so a college search for "St. Xavier_" treats the _ as
+    // text, not as a single-character wildcard over the directory.
     where.push('(co.name LIKE ? OR co.short_name LIKE ?)')
-    const like = `%${filters.search}%`
+    const like = `%${escapeLike(filters.search)}%`
     params.push(like, like)
   }
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''

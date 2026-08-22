@@ -194,7 +194,12 @@ const imageUrlRule = () =>
 
 const statusRule = () =>
   body('status')
-    .optional()
+    // { values: 'falsy' } so an empty string counts as "not sent", the
+    // same as locationRule and imageUrlRule above. A bare .optional()
+    // only skips `undefined`, so an edit form posting status='' -- the
+    // natural value of an untouched <select> -- would reach .isIn() and
+    // 400, even though the user was not trying to set a status at all.
+    .optional({ values: 'falsy' })
     .isIn(itemModel.STATUSES)
     .withMessage(`Status must be one of: ${itemModel.STATUSES.join(', ')}`)
 

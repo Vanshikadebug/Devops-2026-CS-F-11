@@ -26,6 +26,7 @@
 
 const { pool } = require('../config/db')
 const { clampLimitOffset } = require('../utils/pagination')
+const escapeLike = require('../utils/escapeLike')
 
 /* Mirrors of the two ENUMs in schema.sql, exported so the validators
    check against the same list the database enforces. */
@@ -141,8 +142,10 @@ async function list({ page, limit, offset }, filters = {}) {
   if (filters.target === 'user') where.push('r.reported_user_id IS NOT NULL')
 
   if (filters.search) {
+    // escapeLike so a '%' or '_' in the moderator's query is matched as
+    // text rather than acting as a wildcard over every report.
     where.push('(r.details LIKE ? OR rep.email LIKE ? OR it.name LIKE ? OR ru.email LIKE ?)')
-    const like = `%${filters.search}%`
+    const like = `%${escapeLike(filters.search)}%`
     params.push(like, like, like, like)
   }
 

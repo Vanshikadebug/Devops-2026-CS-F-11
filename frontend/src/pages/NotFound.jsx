@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Button from '../components/Button'
+import './Placeholder.css'
 
 /**
  * NotFound -- rendered when no route matches the URL.

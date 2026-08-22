@@ -32,6 +32,7 @@
 const bcrypt = require('bcryptjs')
 const { pool } = require('../config/db')
 const { clampLimitOffset } = require('../utils/pagination')
+const escapeLike = require('../utils/escapeLike')
 const config = require('../config/env')
 
 /* The columns that are safe to send to a client. Note the absence
@@ -323,11 +324,13 @@ function buildUserFilters(filters) {
     params.push(filters.collegeId)
   }
   if (filters.search) {
-    /* Bound as parameters, wildcards and all. The '%' belongs in the
-       VALUE, never in the SQL text -- `LIKE '%${search}%'` is the
+    /* Bound as parameters: the surrounding % are ours; any % or _ the
+       user typed is escaped to a literal by escapeLike, so a search for
+       "a_b" looks for that text and not "a<anything>b". The '%' belongs
+       in the VALUE, never in the SQL text -- `LIKE '%${search}%'` is the
        classic injection in a search box. */
     where.push('(u.name LIKE ? OR u.email LIKE ? OR u.mobile LIKE ?)')
-    const like = `%${filters.search}%`
+    const like = `%${escapeLike(filters.search)}%`
     params.push(like, like, like)
   }
 

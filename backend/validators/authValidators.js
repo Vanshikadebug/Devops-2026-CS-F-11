@@ -95,7 +95,7 @@ const registerRules = [
     // differs from the one typed at login. Only trim fields you will
     // compare loosely -- never a password.
     .isLength({ min: 8, max: 72 })
-    .withMessage('Password must be at least 8 characters')
+    .withMessage('Password must be 8 to 72 characters')
     // WHY A 72-CHARACTER MAXIMUM? This is a real bcrypt limitation,
     // not a style choice: bcrypt silently IGNORES everything past 72
     // bytes. A user with a 100-character passphrase would find that

@@ -32,6 +32,7 @@
 
 const { pool } = require('../config/db')
 const { parsePagination, clampLimitOffset } = require('../utils/pagination')
+const escapeLike = require('../utils/escapeLike')
 
 /* ---------------------------------------------------------------
    THE PUBLIC SHAPE OF AN ITEM
@@ -165,24 +166,12 @@ const CATEGORIES = ['Books', 'Electronics', 'Clothing', 'Furniture', 'Stationery
 const CONDITIONS = ['New', 'Like New', 'Good', 'Fair', 'Poor']
 const STATUSES = ['Available', 'Reserved', 'Unavailable']
 
-/**
- * Escapes the wildcard characters in a LIKE pattern.
- *
- * >>> THIS IS NOT THE SAME PROBLEM AS SQL INJECTION <<<
- * The search term is already a bound parameter, so it cannot become
- * SQL. But INSIDE a LIKE pattern, `%` and `_` are still operators:
- * `%` matches any run of characters and `_` matches exactly one. A
- * user searching for the literal text "100%" would otherwise get a
- * pattern of `%100%%`, which matches every row that contains "100"
- * followed by anything -- and a user searching for just "%" would
- * match the entire table.
- *
- * The backslash must be escaped FIRST. Doing it last would also
- * escape the backslashes this function just added, doubling them.
- */
-function escapeLike(term) {
-  return term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
-}
+/* escapeLike moved to utils/escapeLike.js when the admin user, college,
+   report and audit searches started needing the same wildcard escaping
+   this file's search already used. One shared copy, imported above, so
+   the five call sites cannot drift apart. The full reasoning -- why a
+   bound parameter still needs escaping inside a LIKE -- lives with the
+   code there. */
 
 /**
  * Items matching a set of filters, newest first, with their owner
