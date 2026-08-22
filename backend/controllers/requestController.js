@@ -103,11 +103,50 @@ const createRequest = asyncHandler(async (req, res) => {
     throw ApiError.unprocessable('This item is not available to request')
   }
 
+  const message = emptyToNull(req.body.message)
+
+  /* --- The re-request policy -------------------------------------
+     One person holds at most one request row per item
+     (UNIQUE(item_id, requester_id)). If they have asked before, what
+     happens next depends on that row's state:
+
+       Rejected  -> re-open it (requestModel.reopen). A decline is not
+                    final: they may have been auto-rejected when someone
+                    else was accepted, and the item is Available again
+                    now, or the status gate above would have turned this
+                    request away already.
+       Pending   -> a live request already exists: 409.
+       Accepted  -> they already hold this item: 409. (Usually caught by
+                    the Available check above, but not once an owner
+                    frees a previously accepted item.)
+
+     Checking first and then writing carries a harmless race: two
+     first-time requests can both try to INSERT, and the UNIQUE key
+     turns the loser into the ER_DUP_ENTRY handled below. */
+  const previous = await requestModel.findByItemAndRequester(itemId, req.user.id)
+
+  if (previous) {
+    if (previous.status === 'Rejected') {
+      const reopened = await requestModel.reopen(previous.id, message)
+      if (!reopened) {
+        // It stopped being Rejected between the read and the write.
+        throw ApiError.conflict('You have already requested this item')
+      }
+      return res.status(201).json({
+        success: true,
+        message: 'Request sent',
+        data: shapeRequest(reopened),
+      })
+    }
+    // Pending or Accepted -- a live request is already on file.
+    throw ApiError.conflict('You have already requested this item')
+  }
+
   try {
     const created = await requestModel.create({
       itemId,
       requesterId: req.user.id,
-      message: emptyToNull(req.body.message),
+      message,
     })
 
     res.status(201).json({

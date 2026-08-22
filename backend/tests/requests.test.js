@@ -370,3 +370,76 @@ describe('accept and reject', () => {
     expect(res.status).toBe(422)
   })
 })
+
+/* ===============================================================
+   RE-REQUESTING AFTER A REJECTION -- the re-request policy
+   ===============================================================
+   >>> REGRESSION <<<
+   A rejected request is left in the table as 'Rejected', and
+   UNIQUE(item_id, requester_id) meant a second POST was a PERMANENT
+   409 -- so a decline could never be undone, not even when the reject
+   was only a SIDE EFFECT of someone else being accepted and the item
+   later came free again. The fix re-opens the existing row back to
+   Pending rather than inserting a duplicate, so the pair stays unique.
+=============================================================== */
+describe('re-requesting after a rejection', () => {
+  it('lets a rejected requester ask again, reopening the same row', async () => {
+    const listed = await createItem(aaravToken)
+    const first = await sendRequest(priyaToken, {
+      itemId: listed.body.data.id,
+      message: 'First ask',
+    })
+    expect(first.status).toBe(201)
+
+    // Owner declines.
+    await request(app)
+      .patch(`/api/requests/${first.body.data.id}`)
+      .set('Authorization', `Bearer ${aaravToken}`)
+      .send({ status: 'Rejected' })
+
+    // Priya asks again -- once a permanent 409, now allowed.
+    const again = await sendRequest(priyaToken, {
+      itemId: listed.body.data.id,
+      message: 'Has anything changed?',
+    })
+
+    expect(again.status).toBe(201)
+    expect(again.body.data.status).toBe('Pending')
+    // The SAME row was reopened, not a duplicate inserted...
+    expect(again.body.data.id).toBe(first.body.data.id)
+    // ...carrying the new message.
+    expect(again.body.data.message).toBe('Has anything changed?')
+
+    // And the requester still has exactly one request for this item.
+    const sent = await request(app)
+      .get(`/api/requests/sent?item=${listed.body.data.id}`)
+      .set('Authorization', `Bearer ${priyaToken}`)
+    expect(sent.body.data).toHaveLength(1)
+    expect(sent.body.data[0].status).toBe('Pending')
+  })
+
+  it('lets an auto-rejected requester ask again once the item is free', async () => {
+    const listed = await createItem(aaravToken)
+    const priyaReq = await sendRequest(priyaToken, { itemId: listed.body.data.id })
+    const thirdReq = await sendRequest(thirdToken, { itemId: listed.body.data.id })
+
+    // Owner accepts Priya: the item is Reserved and Third is auto-Rejected.
+    await request(app)
+      .patch(`/api/requests/${priyaReq.body.data.id}`)
+      .set('Authorization', `Bearer ${aaravToken}`)
+      .send({ status: 'Accepted' })
+
+    // The deal falls through; the owner puts the item back on the market.
+    await request(app)
+      .patch(`/api/items/${listed.body.data.id}/status`)
+      .set('Authorization', `Bearer ${aaravToken}`)
+      .send({ status: 'Available' })
+
+    // Third -- rejected only as a side effect -- can now ask again.
+    const again = await sendRequest(thirdToken, { itemId: listed.body.data.id })
+
+    expect(again.status).toBe(201)
+    expect(again.body.data.status).toBe('Pending')
+    expect(again.body.data.id).toBe(thirdReq.body.data.id)
+  })
+})

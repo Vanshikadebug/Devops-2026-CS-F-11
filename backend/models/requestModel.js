@@ -111,6 +111,40 @@ async function create({ itemId, requesterId, message = null }) {
 }
 
 /**
+ * Re-opens a previously REJECTED request from the same
+ * (item_id, requester_id) pair, flipping it back to Pending with a
+ * fresh message.
+ *
+ * >>> WHY THIS EXISTS: THE re-request POLICY <<<
+ * UNIQUE(item_id, requester_id) means one person holds at most one row
+ * per item, and reject() leaves that row in place as 'Rejected' rather
+ * than deleting it. Without a way to revive it, a second POST is a
+ * PERMANENT 409 -- which is unfair in the common case. When an owner
+ * ACCEPTS someone, accept() auto-rejects every OTHER pending request
+ * for that item; those people were not turned down on their merits, and
+ * if the item later returns to Available they still could never ask
+ * again. Re-opening the existing row lets them back in while keeping the
+ * UNIQUE rule intact -- one row per pair, no pile of duplicates, and the
+ * owner sees a single request rather than a fresh one every time.
+ *
+ * The `AND status = 'Rejected'` guard is the safety belt: this can only
+ * ever revive a DEAD request, never quietly overwrite a live Pending or
+ * Accepted one. If the row stopped being Rejected between the
+ * controller's read and this write (a concurrent decision), zero rows
+ * change and we return null -- which the controller reports as a 409,
+ * the same answer a live duplicate would get.
+ */
+async function reopen(id, message = null) {
+  const [result] = await pool.execute(
+    `UPDATE requests
+        SET status = 'Pending', message = ?, updated_at = NOW()
+      WHERE id = ? AND status = 'Rejected'`,
+    [message, id],
+  )
+  return result.affectedRows > 0 ? findById(id) : null
+}
+
+/**
  * Owner accepts one pending request: this row Accepted, every other
  * pending request for the same item Rejected, the item Reserved.
  *
@@ -230,6 +264,7 @@ module.exports = {
   findReceived,
   findByItemAndRequester,
   create,
+  reopen,
   accept,
   reject,
   STATUSES,
