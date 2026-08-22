@@ -3,7 +3,7 @@
 > A platform for listing items you no longer need, so someone else can reuse them
 > instead of them becoming waste.
 
-**Status:** 🚧 Under active development — Phase 8 of 18 complete (item management: listing, editing, deleting your own items).
+**Status:** 🚧 Under active development — Phase 11 of 18 complete (search and filtering by campus, the request system wired end to end, and a 211-test backend suite).
 
 This README is a placeholder. The full documentation (architecture, database
 design, installation, API reference, Docker, Jenkins, CI/CD) is written in
@@ -63,12 +63,15 @@ You can register a new account, or use a demo login:
 
 Logging in lands you on **/dashboard** — your own items, your own request
 counts, nobody else's. From there, **List an item** opens the form and
-**My items** manages what you have already posted.
+**My items** manages what you have already posted. **Requests** shows what
+others have asked for on your items — accept or decline each one — alongside
+the requests you have sent; contact details are exchanged only after a request
+is accepted.
 
 **Tests:**
 
 ```bash
-cd backend && npm test    # 183 tests
+cd backend && npm test    # 211 tests
 ```
 
 ## API endpoints
@@ -87,6 +90,15 @@ cd backend && npm test    # 183 tests
 | `PATCH` | `/api/items/:id/status` | Bearer token + **owner** | 8 |
 | `DELETE` | `/api/items/:id` | Bearer token + **owner** | 8 |
 | `GET` | `/api/dashboard` | Bearer token | 7 |
+| `GET` | `/api/locations/cities` | — | 9 |
+| `GET` | `/api/locations/cities/:id/areas` | — | 9 |
+| `GET` | `/api/locations/colleges` | — | 9 |
+| `GET` | `/api/locations/colleges/:id` | — | 9 |
+| `PUT` | `/api/users/me/college` | Bearer token | 9 |
+| `POST` | `/api/requests` | Bearer token | 10 |
+| `GET` | `/api/requests/sent` | Bearer token | 10 |
+| `GET` | `/api/requests/received` | Bearer token | 10 |
+| `PATCH` | `/api/requests/:id` | Bearer token + **item owner** | 10 |
 
 Protected endpoints expect the token in a header:
 
@@ -97,6 +109,12 @@ Authorization: Bearer <token>
 **Owner** means the `checkItemOwnership` middleware runs after `protect`: a
 missing item answers `404`, and someone else's item answers `403` — before the
 controller runs at all.
+
+**Item owner** on `PATCH /api/requests/:id` is the same idea enforced a step
+later: only the owner of the *requested item* may accept or decline it, so the
+request controller loads the row and compares its `owner_id` against
+`req.user.id` before touching anything. A stranger's `PATCH` answers `403`; a
+request id that does not exist answers `404`.
 
 ## Security notes
 
@@ -137,9 +155,9 @@ controller runs at all.
 - [x] **Phase 6** — Registration and authentication
 - [x] **Phase 7** — Dashboard
 - [x] **Phase 8** — Item management
-- [ ] Phase 9 — Search and filtering
-- [ ] Phase 10 — Request system
-- [ ] Phase 11 — Testing
+- [x] **Phase 9** — Search and filtering
+- [x] **Phase 10** — Request system
+- [x] **Phase 11** — Testing
 - [ ] Phase 12 — Git and GitHub
 - [ ] Phase 13 — Docker
 - [ ] Phase 14 — Jenkins
