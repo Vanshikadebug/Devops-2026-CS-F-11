@@ -154,6 +154,42 @@ export function useLocationSelection() {
     setSelection({ cityId: null, areaId: null, collegeId: null })
   }, [])
 
+  /* --- Job 4: reset the browse scope when the user logs OUT --------
+     Fires only on the truthy -> null transition of `user`, and only
+     once auth has resolved. This is deliberately narrow, and the two
+     things it must NOT do are the reason it needs a ref rather than
+     just `if (!user) clear()`:
+
+       - a guest who never signed in stays null the whole time, so
+         there is no transition and their chosen campus survives --
+         which is the entire point of not putting the picker behind a
+         login;
+       - a stale token that fails to restore on load also never became
+         a `user` here, so it is treated like a guest, not a logout,
+         and does not wipe a selection the visitor may still want.
+
+     Only pressing Logout takes us from a real user to null, and that
+     is the single case this clears. See AuthProvider.logout(), which
+     clears the STORED selection for the same reason; this clears the
+     ON-SCREEN one so logging out while looking at a campus empties the
+     grid at once instead of waiting for a refresh.
+
+     `wasAuthed` is a ref, not state, because it records what already
+     happened -- it is never rendered, and changing it must not cause
+     one. */
+  const wasAuthed = useRef(false)
+  useEffect(() => {
+    if (authLoading) return
+    if (user) {
+      wasAuthed.current = true
+      return
+    }
+    if (wasAuthed.current) {
+      wasAuthed.current = false
+      clear()
+    }
+  }, [authLoading, user, clear])
+
   return {
     selection,
     setSelection,

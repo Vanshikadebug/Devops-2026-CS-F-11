@@ -39,6 +39,14 @@
  * browsing choice into a profile fact, and only a signed-in user
  * making a deliberate choice triggers it.
  *
+ * ONE EXCEPTION, ADDED DELIBERATELY: pressing Logout clears this too.
+ * A guest who never signed in keeps their selection across visits, but
+ * an explicit logout on a shared machine should not leave the previous
+ * user's campus -- often seeded from their profile -- sitting there for
+ * the next person. So the decoupling above holds for everyone EXCEPT
+ * the moment of logout. See AuthProvider.logout() (clears the stored
+ * value) and useLocationSelection (clears the on-screen one).
+ *
  * =================================================================
  * WHY THE SHAPE IS VALIDATED ON THE WAY OUT
  * =================================================================
