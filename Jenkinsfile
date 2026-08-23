@@ -11,43 +11,54 @@
 //  reviewer can look at to see the whole build at a glance.
 //
 //  WHAT ONE BUILD DOES, IN ORDER
-//    1. Checkout ................ pull this commit from GitHub
-//    2. Backend  - Install ...... install backend dependencies
-//    3. Database - Start MySQL .. launch a THROWAWAY MySQL 8 in Docker
-//    4. Database - Schema/Seed/Migrate . build the test database
-//    5. Backend  - Test (321) ... run the Jest + Supertest suite -> JUnit XML
-//    6. Frontend - Install ...... install frontend dependencies
-//    7. Frontend - Build ........ produce the production Vite bundle
-//    8. Archive ................. keep the built frontend as an artifact
-//  Then, always: tear the database container down and publish the results.
+//    1. Checkout ................. pull this commit from GitHub
+//    2. Backend  - Install ....... install backend dependencies
+//    3. Database - Wait for MySQL  confirm the local MySQL service answers
+//    4. Database - Schema/Seed/Migrate . build the CI database
+//    5. Backend  - Test (341) .... run the Jest + Supertest suite -> JUnit XML
+//    6. Frontend - Install ....... install frontend dependencies
+//    7. Frontend - Build ......... produce the production Vite bundle
+//    8. Archive .................. keep the built frontend as an artifact
 //
-//  WHY A THROWAWAY DOCKER DATABASE INSTEAD OF THE REAL LOCAL MYSQL
-//  The tests need a live MySQL. Pointing them at the developer's real MySQL
-//  on :3306 would (a) depend on that machine's current data and (b) risk
-//  mutating it. Instead each build spins up a brand-new mysql:8 container on
-//  host port 3307, builds the schema into it, runs the tests, and destroys
-//  it. The build is therefore reproducible and side-effect-free -- the CI
-//  ideal -- and it never touches port 3306 or the developer's data.
+//  WHERE THE TEST DATABASE COMES FROM  (this used to be a Docker container)
+//  The tests need a live MySQL. This pipeline uses the LOCAL MySQL already
+//  installed on this machine -- the always-on "MySQL80" Windows service -- so
+//  there is NOTHING to start, open, or keep running for a build to go green.
+//  A push builds on its own, with no Docker Desktop in the loop. (The app's
+//  own Docker image is a separate, later phase and is deliberately NOT wired
+//  into CI -- that coupling is exactly what used to make a push go red when
+//  Docker Desktop happened to be closed.)
+//
+//  The one thing that must be true of a shared MySQL is that CI must not touch
+//  the developer's real data. It doesn't: every build works inside a SEPARATE
+//  database called `reusehub_ci`, reached through a DEDICATED MySQL account
+//  (`reusehub_ci`) that has rights on nothing else. `db:setup` drops and
+//  rebuilds only reusehub_ci, so each run starts clean and the dev `reusehub`
+//  database is never opened. DB_NAME below is what steers the build into
+//  reusehub_ci; setup-db.js honours it (see the note there).
+//
+//  ONE-TIME SETUP (run once, then never again -- see JENKINS_SETUP.md)
+//  Create that database and account by running database/ci-setup.sql as root.
+//  After that this pipeline is entirely self-contained.
 //
 //  SECRETS
-//  DB_PASSWORD and JWT_SECRET below are DISPOSABLE values: each lives only for
-//  the lifetime of one build and is never exposed beyond localhost. They are
-//  deliberately NOT real credentials. Real secrets (a production DB password,
-//  a production JWT secret) must come from Jenkins > Manage Credentials and be
-//  referenced with credentials('id') -- see JENKINS_SETUP.md. The Jest suite
-//  runs as NODE_ENV=test and needs neither, but the DB-prep scripts run in
-//  "development" mode and DO require JWT_SECRET, so we supply a throwaway one.
-//  config/env.js only ever logs whether a secret is "[set]", never its value.
+//  DB_USER / DB_PASSWORD below are a DEDICATED, NON-SECRET CI login scoped to
+//  the reusehub_ci database only (created by database/ci-setup.sql). They are
+//  deliberately not real credentials and can reach no real data, which is why
+//  they can live in the repo. JWT_SECRET is disposable in the same spirit: the
+//  Jest suite runs as NODE_ENV=test and needs neither, but the DB-prep scripts
+//  run in "development" mode and config/env.js requires JWT_SECRET there, so we
+//  supply a throwaway one. Real secrets (a production DB password or JWT
+//  secret) must come from Jenkins > Manage Credentials via credentials('id') --
+//  see JENKINS_SETUP.md. config/env.js only ever logs whether a secret is
+//  "[set]", never its value.
 //
 //  ASSUMPTIONS ABOUT THE AGENT (all covered in JENKINS_SETUP.md)
 //    - This is a WINDOWS agent, so every shell step uses `bat` (not `sh`).
 //    - `node` / `npm` are on the PATH of the account Jenkins runs as. If npm
 //      is missing, install the NodeJS plugin and uncomment the `tools` block.
-//    - Docker does NOT need to be on PATH, and Jenkins does NOT need to run as
-//      a named user: we call docker by full path (DOCKER) and reach the engine
-//      over TCP (DOCKER_HOST). The one manual step is ticking "Expose daemon
-//      on tcp://localhost:2375 without TLS" in Docker Desktop -- see the
-//      environment block below and JENKINS_SETUP.md.
+//    - The MySQL80 service is running (it starts with Windows by default) and
+//      database/ci-setup.sql has been run once. No Docker is required.
 // =============================================================================
 
 pipeline {
@@ -67,9 +78,10 @@ pipeline {
   options {
     // Prefix every log line with a timestamp (Timestamper plugin).
     timestamps()
-    // A hung docker pull or DB wait must not block an executor forever.
+    // A hung npm install or DB wait must not block an executor forever.
     timeout(time: 30, unit: 'MINUTES')
-    // Two builds at once would collide on the container name and port 3307.
+    // Two builds at once would both drop and rebuild the shared reusehub_ci
+    // database and race each other's tests. Serialise them.
     disableConcurrentBuilds()
     // Keep the last 20 builds -- enough history for a meaningful trend graph
     // without letting artifacts and logs grow without bound.
@@ -100,20 +112,28 @@ pipeline {
   }
 
   environment {
-    // ---- The throwaway CI database (see the header note on secrets) -------
-    CI_DB_CONTAINER = 'reusehub-ci-db'
-    CI_DB_IMAGE     = 'mysql:8.0'
-
-    // ---- Connection settings the backend reads via config/env.js ----------
+    // ---- Local MySQL connection the backend reads via config/env.js -------
     // 127.0.0.1, NOT "localhost": on Windows "localhost" can resolve to the
-    // IPv6 address ::1, but the container publishes on IPv4 0.0.0.0:3307, so
-    // an IPv6 connection is refused. Pinning IPv4 avoids that trap.
+    // IPv6 address ::1, and a MySQL listening only on IPv4 then refuses the
+    // connection. Pinning IPv4 avoids that trap. Port 3306 is the normal port
+    // of the always-on MySQL80 service -- no container, nothing to launch.
     DB_HOST     = '127.0.0.1'
-    // 3307 on the host -> 3306 in the container. Keeps CI off the real MySQL.
-    DB_PORT     = '3307'
-    DB_USER     = 'root'
-    DB_PASSWORD = 'ci_only_ephemeral_pw'
-    DB_NAME     = 'reusehub'
+    DB_PORT     = '3306'
+
+    // ---- The dedicated, NON-SECRET CI login (see header + ci-setup.sql) ----
+    // This account exists ONLY to run CI and can touch ONLY reusehub_ci. It is
+    // created once by database/ci-setup.sql. Because it can reach no real
+    // data, committing these values is safe -- they are not a real credential.
+    DB_USER     = 'reusehub_ci'
+    DB_PASSWORD = 'reusehub_ci_pw'
+
+    // ---- The ISOLATED CI database -- the one line that protects dev data ---
+    // setup-db.js reads DB_NAME and rewrites schema.sql's CREATE DATABASE /
+    // USE onto it, so the entire build lands in reusehub_ci and never in the
+    // developer's `reusehub`. config/env.js defaults this to 'reusehub', so a
+    // dev machine (DB_NAME unset) is unaffected; here we deliberately point
+    // CI at a throwaway database instead.
+    DB_NAME     = 'reusehub_ci'
 
     // ---- App secret the DB-prep scripts require (see SECRETS header) -------
     // config/env.js demands JWT_SECRET whenever NODE_ENV is not "test". The
@@ -123,29 +143,6 @@ pipeline {
     // "[config] FATAL: required environment variable JWT_SECRET is missing".
     // Disposable CI value, never a real secret; config/env.js logs only "[set]".
     JWT_SECRET  = 'ci_only_ephemeral_jwt_secret'
-
-    // ---- How Jenkins reaches Docker while running as a Windows service -----
-    // Jenkins here runs as the "Local System" service account. We deliberately
-    // do NOT run it as a named user: this machine signs in with a Windows
-    // Hello PIN, and a PIN is not a usable service password (trying it just
-    // gives a "logon failure" and Jenkins won't start). Local System has two
-    // Docker blind spots, and these two variables cover both:
-    //
-    //   DOCKER      Local System does not have Docker's CLI on its PATH, so a
-    //               bare `docker` gives "'docker' is not recognized". We invoke
-    //               docker by its FULL path instead, sidestepping PATH. This is
-    //               Docker Desktop's PER-USER install path (under AppData\Local)
-    //               on this machine, from `where.exe docker`; update it only if
-    //               Docker is later reinstalled somewhere else.
-    //
-    //   DOCKER_HOST Local System cannot see Docker Desktop's per-user engine
-    //               pipe, so it talks to the daemon over TCP. You must enable
-    //               "Expose daemon on tcp://localhost:2375 without TLS" in
-    //               Docker Desktop > Settings > General. We connect via
-    //               127.0.0.1 (not "localhost") to dodge the IPv6 ::1 trap,
-    //               the same reason DB_HOST above is 127.0.0.1.
-    DOCKER      = 'C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
-    DOCKER_HOST = 'tcp://127.0.0.1:2375'
   }
 
   stages {
@@ -172,21 +169,14 @@ pipeline {
       }
     }
 
-    stage('Database - Start MySQL (Docker)') {
+    stage('Database - Wait for MySQL') {
       steps {
-        // Remove any container left over from a previous aborted build.
-        // returnStatus:true means "ignore the exit code" -- on the normal
-        // path there is nothing to remove and `docker rm` would error.
-        bat(script: '"%DOCKER%" rm -f %CI_DB_CONTAINER%', returnStatus: true)
-
-        // Launch a fresh MySQL 8. -d = detached. The env vars seed the root
-        // password and pre-create an empty `reusehub` database. One line on
-        // purpose: mixing Windows `^` line-continuation with a Groovy string
-        // is fragile, so we keep the whole command on a single line.
-        bat '"%DOCKER%" run -d --name %CI_DB_CONTAINER% -e MYSQL_ROOT_PASSWORD=%DB_PASSWORD% -e MYSQL_DATABASE=%DB_NAME% -p %DB_PORT%:3306 %CI_DB_IMAGE%'
-
-        // The container is "up" long before MySQL accepts queries. Block
-        // until it truly answers, so the next stage does not connect early.
+        // No container to launch anymore -- the local MySQL80 service is
+        // already running. wait-for-db stays as a fast, honest readiness AND
+        // credentials check: it connects with the CI account above and, if
+        // the service is down or database/ci-setup.sql was never run, fails
+        // HERE with a clear message instead of deep inside db:setup. When
+        // MySQL is up (the normal case) it returns almost immediately.
         dir('backend') {
           bat 'node scripts/wait-for-db.js'
         }
@@ -197,12 +187,13 @@ pipeline {
       steps {
         dir('backend') {
           // Same three steps a developer runs locally, in the same order:
-          //   setup   -> create the schema from database/schema.sql
+          //   setup   -> build the schema from database/schema.sql, but into
+          //              reusehub_ci (DB_NAME), never the dev `reusehub`
           //   seed    -> insert the demo rows the suite logs in as
           //              (e.g. aarav@example.com, used by several tests)
           //   migrate -> apply the additive, idempotent later-phase changes
           // These scripts use the mysql2 driver and read DB_* from the
-          // environment above, so they target the container, not :3306.
+          // environment above, so they act on reusehub_ci only.
           bat 'npm run db:setup'
           bat 'npm run db:seed'
           bat 'npm run db:migrate'
@@ -210,7 +201,7 @@ pipeline {
       }
     }
 
-    stage('Backend - Test (321)') {
+    stage('Backend - Test (341)') {
       steps {
         dir('backend') {
           // test:ci runs Jest with --ci and the jest-junit reporter, writing
@@ -258,14 +249,14 @@ pipeline {
 
   post {
     always {
-      // Tear down the throwaway database no matter how the build ended, so
-      // containers never accumulate. returnStatus:true keeps a failed
-      // cleanup (e.g. the container was never created) from turning an
-      // otherwise-green build red.
-      bat(script: '"%DOCKER%" rm -f %CI_DB_CONTAINER%', returnStatus: true)
+      // Nothing to tear down: CI uses the local MySQL service, not a
+      // container, and reusehub_ci is left in place (db:setup rebuilds it
+      // from scratch at the start of the next run). Results are published by
+      // the Test stage's own post block above.
+      echo 'Build finished -- see the Stage View and Test Result Trend above.'
     }
     success {
-      echo 'BUILD GREEN: 321 tests passed, frontend built, database torn down.'
+      echo 'BUILD GREEN: 341 tests passed and the frontend built.'
     }
     failure {
       echo 'BUILD RED: open the failed stage and the Test Result trend to see what broke.'

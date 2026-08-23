@@ -3,7 +3,7 @@
 > A platform for listing items you no longer need, so someone else can reuse them
 > instead of them becoming waste.
 
-**Status:** 🚧 Under active development — core phases 1–11 complete, plus Git/GitHub (Phase 12) and a Jenkins CI pipeline (Phase 14). Highlights: search and filtering by campus, the request system wired end to end, the first slices of the admin API — an overview snapshot, item moderation, report review, and account management — the user-facing route that lets members file the reports that queue works from, and a 341-test backend suite that a Jenkins pipeline now runs automatically on every push (spinning up a throwaway MySQL container, then building the frontend).
+**Status:** 🚧 Under active development — core phases 1–11 complete, plus Git/GitHub (Phase 12) and a Jenkins CI pipeline (Phase 14). Highlights: search and filtering by campus, the request system wired end to end, the first slices of the admin API — an overview snapshot, item moderation, report review, and account management — the user-facing route that lets members file the reports that queue works from, and a 341-test backend suite that a Jenkins pipeline now runs automatically on every push (against an isolated `reusehub_ci` database on the local MySQL, then building the frontend).
 
 This README is a placeholder. The full documentation (architecture, database
 design, installation, API reference, Docker, Jenkins, CI/CD) is written in
@@ -20,7 +20,7 @@ design, installation, API reference, Docker, Jenkins, CI/CD) is written in
 | Database | MySQL 8 (port `3306`) |
 | Auth | JWT + bcrypt |
 | Tests | Jest + Supertest |
-| CI/CD | Jenkins + Docker + Docker Compose |
+| CI/CD | Jenkins |
 
 > ⚠️ The backend uses port **5000**, not 8080, because Jenkins occupies 8080
 > on the development machine.
