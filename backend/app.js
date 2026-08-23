@@ -136,6 +136,7 @@ app.get('/api', (req, res) => {
       requests:
         'POST /api/requests, GET /api/requests/sent, GET /api/requests/received, ' +
         'PATCH /api/requests/:id',
+      reports: 'POST /api/reports',
       admin:
         'GET /api/admin/overview, ' +
         'GET /api/admin/items, GET /api/admin/items/:id, ' +
@@ -162,6 +163,7 @@ app.use('/api/items', require('./routes/itemRoutes'))
 app.use('/api/locations', require('./routes/locationRoutes'))
 app.use('/api/dashboard', require('./routes/dashboardRoutes'))
 app.use('/api/requests', require('./routes/requestRoutes'))
+app.use('/api/reports', require('./routes/reportRoutes'))
 app.use('/api/admin', require('./routes/adminRoutes'))
 
 /* ---------------------------------------------------------------

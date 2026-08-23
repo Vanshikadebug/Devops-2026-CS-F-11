@@ -11,15 +11,16 @@
  * separate acts, and the last describe proves the review leaves the item
  * exactly where it was.
  *
- * >>> WHY REPORTS ARE SEEDED WITH DIRECT SQL, NOT AN ENDPOINT <<<
+ * >>> WHY REPORTS ARE SEEDED WITH DIRECT SQL, NOT THE ENDPOINT <<<
  * The same reason adminItems seeds items directly: a test owns its
- * database. There is no user-facing "file a report" route wired yet
- * (reportModel.create has no caller -- the queue is structurally empty
- * until one exists), so a direct INSERT is the ONLY way to put a report
- * in front of the review endpoint at all. Seeding by hand also lets this
- * suite arrange the states a reviewer actually faces -- an Open item
- * report, an Under Review user report, a Resolved one -- which no single
- * call could produce.
+ * database. A user-facing "file a report" route now exists
+ * (POST /api/reports -> reportModel.create; exercised in reports.test.js),
+ * but it only ever mints a fresh 'Open' report and refuses to let one
+ * person report the same target twice. This suite needs the states a
+ * reviewer actually faces -- an Open item report, an Under Review user
+ * report, a Resolved one -- which that endpoint cannot produce on its own,
+ * so a direct INSERT remains the right tool here and keeps this suite
+ * independent of the create route's own rules.
  *
  * >>> THE ONE SEEDING RULE THAT BITES <<<
  * A report names EITHER an item OR a user, never both and never neither
@@ -97,11 +98,11 @@ async function insertItem({ ownerId, name, moderation = 'Approved', status = 'Av
   return result.insertId
 }
 
-/* One report, seeded directly -- the only way to get a row in front of
-   the review endpoint (no create route is wired yet). Exactly one of
-   itemId/userId must be non-null or the schema triggers reject the row;
-   the caller is responsible for that, and every seed below honours it.
-   `details` is always prefixed so afterAll can find the row. */
+/* One report, seeded directly so this suite can arrange states the create
+   route cannot (Under Review, Resolved) and stay independent of it.
+   Exactly one of itemId/userId must be non-null or the schema triggers
+   reject the row; the caller is responsible for that, and every seed below
+   honours it. `details` is always prefixed so afterAll can find the row. */
 async function insertReport({ reporterId, itemId = null, userId = null, reason = 'Spam', status = 'Open', details }) {
   const [result] = await pool.execute(
     `INSERT INTO reports

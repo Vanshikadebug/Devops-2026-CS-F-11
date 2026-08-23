@@ -3,7 +3,7 @@
 > A platform for listing items you no longer need, so someone else can reuse them
 > instead of them becoming waste.
 
-**Status:** 🚧 Under active development — core phases 1–11 complete, plus Git/GitHub (Phase 12) and a Jenkins CI pipeline (Phase 14). Highlights: search and filtering by campus, the request system wired end to end, the first slices of the admin API — an overview snapshot, item moderation, report review, and account management — and a 321-test backend suite that a Jenkins pipeline now runs automatically on every push (spinning up a throwaway MySQL container, then building the frontend).
+**Status:** 🚧 Under active development — core phases 1–11 complete, plus Git/GitHub (Phase 12) and a Jenkins CI pipeline (Phase 14). Highlights: search and filtering by campus, the request system wired end to end, the first slices of the admin API — an overview snapshot, item moderation, report review, and account management — the user-facing route that lets members file the reports that queue works from, and a 341-test backend suite that a Jenkins pipeline now runs automatically on every push (spinning up a throwaway MySQL container, then building the frontend).
 
 This README is a placeholder. The full documentation (architecture, database
 design, installation, API reference, Docker, Jenkins, CI/CD) is written in
@@ -71,7 +71,7 @@ is accepted.
 **Tests:**
 
 ```bash
-cd backend && npm test    # 321 tests
+cd backend && npm test    # 341 tests
 ```
 
 ## API endpoints
@@ -99,6 +99,7 @@ cd backend && npm test    # 321 tests
 | `GET` | `/api/requests/sent` | Bearer token | 10 |
 | `GET` | `/api/requests/received` | Bearer token | 10 |
 | `PATCH` | `/api/requests/:id` | Bearer token + **item owner** | 10 |
+| `POST` | `/api/reports` | Bearer token | admin |
 | `GET` | `/api/admin/overview` | Bearer token + **staff** | admin |
 | `GET` | `/api/admin/items` | Bearer token + **staff** | admin |
 | `GET` | `/api/admin/items/:id` | Bearer token + **staff** | admin |
@@ -142,6 +143,16 @@ peer or a superior or grant a role above your own (`403`). Every block, unblock
 and role change writes an `audit_logs` row after it commits — as does every
 moderation decision and every report review, so "who hid this listing, who
 closed this complaint, and why" always has an answer.
+
+**Filing a report** is the one report route that is *not* staff-only:
+`POST /api/reports` is open to any logged-in member, because the complaint
+queue staff work has to be fed from somewhere. A report names exactly one
+target — a listing **or** an account, never both and never neither — and you
+cannot report your own listing or yourself. The reporter is always taken from
+the token, never the request body, and a per-reporter uniqueness rule means the
+same person cannot report the same target twice; a second attempt answers
+`409`. Reading and resolving those reports stays on the staff-only
+`/api/admin/reports` routes above.
 
 ## Security notes
 
