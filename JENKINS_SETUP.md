@@ -242,6 +242,18 @@ The account exists but wasn't granted rights on `reusehub_ci`. Re-running
 `database\ci-setup.sql` fixes it — the `GRANT ALL PRIVILEGES ON reusehub_ci.*`
 lines are what the build needs.
 
+**The build fails at *Database - Schema + Seed + Migrate* with
+`ER_BINLOG_CREATE_ROUTINE_NEED_SUPER`.**
+Every table builds, then it dies creating `schema.sql`'s report triggers. This
+is a MySQL 8 gate, not a bug: with binary logging on (the default), MySQL won't
+let an account *without* the global SUPER privilege create a trigger — and the
+`reusehub_ci` account deliberately isn't SUPER (it's fenced to one database).
+The one-time `database\ci-setup.sql` now sets the global
+`log_bin_trust_function_creators=1` that lifts this. If you set up CI before
+that line existed, just **re-run `database\ci-setup.sql` as root once** and
+rebuild. It's a harmless relaxation on a dev/CI server with no replication, and
+`SET PERSIST` makes it survive a MySQL restart.
+
 **A test unexpectedly touched my dev data.**
 It shouldn't be possible from CI: the `reusehub_ci` account has no rights on
 `reusehub`. If you saw this, check that the `Jenkinsfile` still sets

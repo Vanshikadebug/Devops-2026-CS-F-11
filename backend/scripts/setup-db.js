@@ -150,6 +150,12 @@ async function main() {
     } else if (err.code === 'ECONNREFUSED') {
       console.error(`        Nothing is listening on ${config.db.host}:${config.db.port}.`)
       console.error('        Start the MySQL80 service and try again.')
+    } else if (err.code === 'ER_BINLOG_CREATE_ROUTINE_NEED_SUPER') {
+      console.error('        MySQL is refusing to create the report triggers: binary logging')
+      console.error('        is on and this account is not SUPER (by design -- it is scoped to')
+      console.error('        one database). Run database/ci-setup.sql once as root; it sets the')
+      console.error('        global log_bin_trust_function_creators=1 that lets a non-SUPER')
+      console.error('        account create them. (Harmless on a dev/CI server with no replicas.)')
     } else {
       console.error(`        ${err.code || err.name}: ${err.message}`)
     }

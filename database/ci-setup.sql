@@ -15,7 +15,8 @@
 -- database. The real one is unreachable to it.
 --
 -- RUN THIS ONCE. After that every build works with no further steps.
--- Re-running it is harmless -- every statement is IF NOT EXISTS / GRANT.
+-- Re-running it is harmless -- every statement is IF NOT EXISTS / GRANT, or
+-- sets a server flag to the same value it already has (step 4).
 --
 -- HOW TO RUN IT (any one):
 --   * MySQL Workbench:  File > Open SQL Script > this file > run (⚡)
@@ -57,13 +58,38 @@ CREATE USER IF NOT EXISTS 'reusehub_ci'@'127.0.0.1' IDENTIFIED BY 'reusehub_ci_p
 --    the report triggers, seed and truncate WITHIN reusehub_ci, and do
 --    nothing whatsoever to `reusehub` or any other database. Database-
 --    level ALL PRIVILEGES includes CREATE (so setup-db.js's
---    `CREATE DATABASE IF NOT EXISTS reusehub_ci` is permitted) and
---    TRIGGER (so schema.sql's two report triggers install cleanly).
+--    `CREATE DATABASE IF NOT EXISTS reusehub_ci` is permitted) and the
+--    TRIGGER privilege that schema.sql's two report triggers need. NOTE:
+--    that TRIGGER privilege is necessary but, on its own, NOT sufficient
+--    while binary logging is on -- there is a second, server-level gate
+--    that step 4 below lifts.
 GRANT ALL PRIVILEGES ON reusehub_ci.* TO 'reusehub_ci'@'localhost';
 GRANT ALL PRIVILEGES ON reusehub_ci.* TO 'reusehub_ci'@'127.0.0.1';
 
 -- Make the new account and grants take effect immediately.
 FLUSH PRIVILEGES;
+
+-- 4. Let that NON-SUPER account actually create schema.sql's report triggers.
+--    This is the gate that turned build #13 red with
+--    ER_BINLOG_CREATE_ROUTINE_NEED_SUPER, and it catches almost everyone:
+--    when binary logging is ON (the default on MySQL 8) the server refuses
+--    to let any account WITHOUT the global SUPER privilege create a trigger,
+--    function or stored procedure -- the worry being that a non-deterministic
+--    routine could desync statement-based replication. reusehub_ci is
+--    deliberately NOT SUPER (that fence is the whole point of this file), so
+--    the build creates every table fine and then dies on the
+--    trg_reports_one_target_* triggers.
+--
+--    log_bin_trust_function_creators = 1 is the documented fix: it tells the
+--    server to trust the routines these users create, so a non-SUPER account
+--    may create them. It is a GLOBAL server setting -- there is no per-database
+--    grant for it -- so root sets it here, once. SET PERSIST (MySQL 8) writes
+--    it to mysqld-auto.cnf so it SURVIVES a service restart; a plain
+--    SET GLOBAL would be forgotten on the next reboot and quietly re-break the
+--    build. On a local dev/CI server with no replicas this relaxation has no
+--    downside. (If you are ever on a MySQL older than 8.0, use SET GLOBAL and
+--    also add `log_bin_trust_function_creators=1` under [mysqld] in my.ini.)
+SET PERSIST log_bin_trust_function_creators = 1;
 
 SELECT 'reusehub_ci database and CI user are ready -- Jenkins can now build'
   AS status;
