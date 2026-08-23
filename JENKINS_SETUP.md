@@ -72,10 +72,10 @@ part 9 first**, then this Jenkins commit.)
 1. Jenkins → **New Item**.
 2. Name it `reusehub` (or `reusehub-ci`), choose **Pipeline**, click **OK**.
 3. **Build Triggers** — you can leave this alone. The `Jenkinsfile` already
-   declares `triggers { pollSCM('H/5 * * * *') }`, so once the job has run once,
-   Jenkins polls GitHub about every 5 minutes and builds automatically on a new
+   declares `triggers { pollSCM('H/2 * * * *') }`, so once the job has run once,
+   Jenkins polls GitHub about every 2 minutes and builds automatically on a new
    push. (If you want polling active *before* that first run, tick **Poll SCM**
-   here and enter `H/5 * * * *` — same effect.) See
+   here and enter `H/2 * * * *` — same effect.) See
    [Automatic builds on every push](#automatic-builds-on-every-push) below.
 4. **Pipeline** section:
    - **Definition:** `Pipeline script from SCM`
@@ -98,11 +98,11 @@ Once the job exists you do **not** keep clicking **Build Now**. The
 
 ```groovy
 triggers {
-  pollSCM('H/5 * * * *')
+  pollSCM('H/2 * * * *')
 }
 ```
 
-which tells Jenkins to check GitHub about every 5 minutes and start a build
+which tells Jenkins to check GitHub about every 2 minutes and start a build
 whenever a new commit has landed. (The `H` just spreads the poll across the
 window so many jobs don't all hit GitHub on the same tick.)
 
@@ -123,13 +123,13 @@ it on:
 1. Push the commit that contains the `triggers { pollSCM(...) }` block.
 2. Click **Build Now** once — this is the build where Jenkins first *reads*
    the trigger.
-3. From then on every `git push` builds on its own within ~5 minutes, no
+3. From then on every `git push` builds on its own within ~2 minutes, no
    clicking.
 
 To confirm polling is live, open the job and look for **Git Polling Log** in
 the left menu (it appears after that first build); it logs each poll and
-whether it found a change. For a snappier demo, lower the schedule to
-`H/2 * * * *`.
+whether it found a change. It is set to `H/2 * * * *` (~2 min) for a snappy
+demo; raise it to `H/5 * * * *` to poll less often day to day.
 
 **Why polling and not an instant webhook?** A GitHub webhook would build the
 moment you push, but GitHub has to reach Jenkins over the internet to deliver

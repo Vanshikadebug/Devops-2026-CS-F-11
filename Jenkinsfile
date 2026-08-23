@@ -80,10 +80,11 @@ pipeline {
   //  AUTO-BUILD ON EVERY PUSH -- no more clicking "Build Now"
   // ---------------------------------------------------------------------------
   //  pollSCM asks Jenkins to check GitHub on a schedule and start a build
-  //  whenever the commit it last built has changed. 'H/5 * * * *' is a cron
-  //  expression meaning "about every 5 minutes" -- the H "hashes" the exact
-  //  minute so lots of jobs don't all poll on the same tick. Lower it to
-  //  'H/2 * * * *' for a snappier demo; Build Now still works for an instant run.
+  //  whenever the commit it last built has changed. 'H/2 * * * *' is a cron
+  //  expression meaning "about every 2 minutes" -- the H "hashes" the exact
+  //  minute so lots of jobs don't all poll on the same tick. It is set snappy
+  //  for a live demo; raise it to 'H/5 * * * *' (~every 5 min) to poll less
+  //  often afterwards. Build Now still works for an instant run.
   //
   //  IMPORTANT -- the trigger watches GITHUB, not your local folder. The chain is
   //      save in VS Code  ->  git commit  ->  git push  ->  Jenkins polls  ->  build
@@ -95,7 +96,7 @@ pipeline {
   //  that builds on its own. (A localhost Jenkins can't receive GitHub webhooks
   //  without a public URL, so polling is the right fit here -- see JENKINS_SETUP.md.)
   triggers {
-    pollSCM('H/5 * * * *')
+    pollSCM('H/2 * * * *')
   }
 
   environment {
