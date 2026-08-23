@@ -27,12 +27,19 @@ into Jenkins by hand except the job configuration below.
 
 ## Prerequisites (on the machine running Jenkins)
 
-1. **Jenkins** is running (you have it on `http://localhost:8080`).
-2. **Docker Desktop** is running — the pipeline starts a throwaway MySQL 8
-   container for the tests.
-3. **Node.js + npm** and **docker** are reachable from the account Jenkins
-   runs as. Quick check: on the job's first run, the *Backend - Install*
-   stage runs `npm ci`; if it errors with *"'npm' is not recognized"*, see
+1. **Jenkins** is running (you have it on `http://localhost:8080`). Leave it on
+   the default **Local System** service account — you do **not** need to switch
+   it to your own user (see the Docker note below for why that route is a dead
+   end on this machine).
+2. **Docker Desktop** is running **and** its daemon is exposed over TCP:
+   **Settings → General → tick "Expose daemon on tcp://localhost:2375 without
+   TLS" → Apply & restart.** The pipeline talks to Docker over that port, so
+   this one toggle is the single manual step it depends on. (Why TCP and not the
+   normal pipe: see [Troubleshooting](#troubleshooting).)
+3. **Node.js + npm** are reachable from the account Jenkins runs as. Docker does
+   **not** need to be on PATH — the pipeline calls `docker.exe` by its full
+   path. Quick check: on the job's first run the *Backend - Install* stage runs
+   `npm ci`; if it errors with *"'npm' is not recognized"*, see
    [Troubleshooting](#troubleshooting).
 4. **Plugins** (all in Jenkins' default "recommended" set): Pipeline, Git,
    JUnit, Timestamper. The NodeJS plugin is optional (only if npm is not on
@@ -126,14 +133,26 @@ Node is not on the PATH of the account Jenkins runs as. Two fixes:
   NodeJS installations**, add one named exactly **`node20`**, then uncomment
   the `tools { nodejs 'node20' }` block near the top of the `Jenkinsfile`.
 
-**`docker: command not found` or `error during connect ... dockerDesktopLinuxEngine`.**
-Jenkins cannot reach Docker. The usual cause on Windows: **Docker Desktop
-runs per-user, but Jenkins runs as a service under a different account** that
-cannot see Docker Desktop's pipe. Options:
-- Make sure Docker Desktop is running, and run the Jenkins service as **your
-  own user account** (Services → Jenkins → Log On tab), or add the Jenkins
-  account to the **docker-users** group and restart.
-- Or use the **local-MySQL fallback** below (no Docker needed).
+**`'docker' is not recognized`, or `error during connect ... dockerDesktopLinuxEngine`.**
+Jenkins runs as the **Local System** service account, which has two Docker
+blind spots on Windows. The `Jenkinsfile` is already written to cover both, so
+this is really about checking the two things it relies on:
+
+- **`'docker' is not recognized`** → the full path in the `Jenkinsfile`'s
+  `DOCKER = '...docker.exe'` line does not match this machine. Find the real one
+  in PowerShell with `where.exe docker` and update that one line. (Local System
+  has no `docker` on its PATH, which is exactly why we call it by full path.)
+- **`error during connect ... dockerDesktopLinuxEngine`** → Docker's TCP
+  endpoint isn't reachable. Confirm **Docker Desktop is running** and that
+  **"Expose daemon on tcp://localhost:2375 without TLS"** is ticked (Settings →
+  General). Local System can't see Docker Desktop's per-user named pipe, so the
+  pipeline connects over TCP via `DOCKER_HOST = 'tcp://127.0.0.1:2375'` instead.
+
+Note we deliberately do **not** fix this by running Jenkins as your own user.
+This machine signs in with a Windows Hello **PIN**, and a PIN is not a usable
+service logon password — pointing the Jenkins service at your account with it
+just gives a *"logon failure"* and Jenkins won't start. Full path + TCP keeps
+Jenkins on Local System and sidesteps that entirely.
 
 **`Bind for 0.0.0.0:3307 failed: port is already allocated`.**
 Something already uses 3307. Change `DB_PORT` in the `Jenkinsfile`
@@ -147,28 +166,39 @@ builds are fast. `wait-for-db.js` waits up to ~60s for the DB to be ready.
 
 ## Fallback: use the local MySQL instead of Docker
 
-If Docker-from-Jenkins is more trouble than it is worth on your setup, point
-the pipeline at your existing MySQL on 3306 and drop the container stages:
+If Docker-from-Jenkins is genuinely more trouble than it is worth on your
+setup, you can point the pipeline at your existing MySQL on 3306 — but read
+this caveat first, because it is the reason Docker is the recommended path:
+
+> ⚠️ **`db:setup` ignores `DB_NAME` for the database it *builds*.**
+> `database/schema.sql` hardcodes `CREATE DATABASE IF NOT EXISTS reusehub` and
+> `USE reusehub;`, so `npm run db:setup` always rebuilds a database literally
+> named **`reusehub`** — which on your dev machine is your real dev database.
+> Running CI against local MySQL therefore **clobbers your dev data** every
+> build. The throwaway Docker container exists precisely to avoid this: it gets
+> its own empty `reusehub` in an isolated container that is destroyed after the
+> run. If you still want the local route, treat it as disposable (a machine
+> whose `reusehub` DB you don't mind rebuilding), or first edit `schema.sql`
+> and `setup-db.js` to honour a separate CI database name.
+
+With that understood:
 
 1. In the `Jenkinsfile` `environment {}` block, set:
    ```groovy
    DB_HOST = '127.0.0.1'
-   DB_PORT = '3306'
-   DB_NAME = 'reusehub_ci'   // a dedicated CI database, NOT your dev one
+   DB_PORT = '3306'   // your real MySQL; note the clobber warning above
    ```
 2. Delete the **`Database - Start MySQL (Docker)`** stage and the
-   `docker rm -f` line in the `post { always { } }` block. Keep the
-   `wait-for-db.js` call by moving it into the Schema stage (harmless — it
-   returns immediately when MySQL is already up).
+   `"%DOCKER%" rm -f` line in the `post { always { } }` block (you can also drop
+   the `DOCKER` / `DOCKER_HOST` env vars). Keep the `wait-for-db.js` call by
+   moving it into the Schema stage (harmless — it returns immediately when
+   MySQL is already up).
 3. Provide the password **without hardcoding it**: add it under **Manage
    Jenkins → Credentials** as a *Secret text* with id `ci-db-password`, then
    in the `environment {}` block use:
    ```groovy
    DB_PASSWORD = credentials('ci-db-password')
    ```
-
-This keeps your real MySQL data safe by using a separate `reusehub_ci`
-database that `db:setup` rebuilds each run.
 
 ---
 

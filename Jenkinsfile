@@ -40,10 +40,13 @@
 //
 //  ASSUMPTIONS ABOUT THE AGENT (all covered in JENKINS_SETUP.md)
 //    - This is a WINDOWS agent, so every shell step uses `bat` (not `sh`).
-//    - `node` / `npm` and `docker` are on the PATH of the account Jenkins
-//      runs as. If npm is missing, install the NodeJS plugin and uncomment
-//      the `tools` block below. If docker is unreachable, use the
-//      local-MySQL fallback documented in JENKINS_SETUP.md.
+//    - `node` / `npm` are on the PATH of the account Jenkins runs as. If npm
+//      is missing, install the NodeJS plugin and uncomment the `tools` block.
+//    - Docker does NOT need to be on PATH, and Jenkins does NOT need to run as
+//      a named user: we call docker by full path (DOCKER) and reach the engine
+//      over TCP (DOCKER_HOST). The one manual step is ticking "Expose daemon
+//      on tcp://localhost:2375 without TLS" in Docker Desktop -- see the
+//      environment block below and JENKINS_SETUP.md.
 // =============================================================================
 
 pipeline {
@@ -87,6 +90,29 @@ pipeline {
     DB_USER     = 'root'
     DB_PASSWORD = 'ci_only_ephemeral_pw'
     DB_NAME     = 'reusehub'
+
+    // ---- How Jenkins reaches Docker while running as a Windows service -----
+    // Jenkins here runs as the "Local System" service account. We deliberately
+    // do NOT run it as a named user: this machine signs in with a Windows
+    // Hello PIN, and a PIN is not a usable service password (trying it just
+    // gives a "logon failure" and Jenkins won't start). Local System has two
+    // Docker blind spots, and these two variables cover both:
+    //
+    //   DOCKER      Local System does not have Docker's CLI on its PATH, so a
+    //               bare `docker` gives "'docker' is not recognized". We invoke
+    //               docker by its FULL path instead, sidestepping PATH. This is
+    //               Docker Desktop's PER-USER install path (under AppData\Local)
+    //               on this machine, from `where.exe docker`; update it only if
+    //               Docker is later reinstalled somewhere else.
+    //
+    //   DOCKER_HOST Local System cannot see Docker Desktop's per-user engine
+    //               pipe, so it talks to the daemon over TCP. You must enable
+    //               "Expose daemon on tcp://localhost:2375 without TLS" in
+    //               Docker Desktop > Settings > General. We connect via
+    //               127.0.0.1 (not "localhost") to dodge the IPv6 ::1 trap,
+    //               the same reason DB_HOST above is 127.0.0.1.
+    DOCKER      = 'C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
+    DOCKER_HOST = 'tcp://127.0.0.1:2375'
   }
 
   stages {
@@ -118,13 +144,13 @@ pipeline {
         // Remove any container left over from a previous aborted build.
         // returnStatus:true means "ignore the exit code" -- on the normal
         // path there is nothing to remove and `docker rm` would error.
-        bat(script: 'docker rm -f %CI_DB_CONTAINER%', returnStatus: true)
+        bat(script: '"%DOCKER%" rm -f %CI_DB_CONTAINER%', returnStatus: true)
 
         // Launch a fresh MySQL 8. -d = detached. The env vars seed the root
         // password and pre-create an empty `reusehub` database. One line on
         // purpose: mixing Windows `^` line-continuation with a Groovy string
         // is fragile, so we keep the whole command on a single line.
-        bat 'docker run -d --name %CI_DB_CONTAINER% -e MYSQL_ROOT_PASSWORD=%DB_PASSWORD% -e MYSQL_DATABASE=%DB_NAME% -p %DB_PORT%:3306 %CI_DB_IMAGE%'
+        bat '"%DOCKER%" run -d --name %CI_DB_CONTAINER% -e MYSQL_ROOT_PASSWORD=%DB_PASSWORD% -e MYSQL_DATABASE=%DB_NAME% -p %DB_PORT%:3306 %CI_DB_IMAGE%'
 
         // The container is "up" long before MySQL accepts queries. Block
         // until it truly answers, so the next stage does not connect early.
@@ -203,7 +229,7 @@ pipeline {
       // containers never accumulate. returnStatus:true keeps a failed
       // cleanup (e.g. the container was never created) from turning an
       // otherwise-green build red.
-      bat(script: 'docker rm -f %CI_DB_CONTAINER%', returnStatus: true)
+      bat(script: '"%DOCKER%" rm -f %CI_DB_CONTAINER%', returnStatus: true)
     }
     success {
       echo 'BUILD GREEN: 321 tests passed, frontend built, database torn down.'
