@@ -4,10 +4,12 @@
  *
  * WHAT IS AND IS NOT HERE
  * Only the WRITES have a body to validate: PATCH /users/:id/status
- * carries a status, PATCH /users/:id/role carries a role, and
+ * carries a status, PATCH /users/:id/role carries a role,
  * PATCH /items/:id/moderation carries a moderation_status (and,
- * sometimes, a reason). The reads (GET /users, GET /users/:id,
- * GET /items, GET /items/:id, GET /overview) have no body -- their
+ * sometimes, a reason), and PATCH /reports/:id/review carries the
+ * review status (and, sometimes, a note). The reads (GET /users,
+ * GET /users/:id, GET /items, GET /items/:id, GET /reports,
+ * GET /reports/:id, GET /overview) have no body -- their
  * inputs are the URL id, checked in the controller with the same
  * Number.isInteger guard the item and request controllers use, and the
  * query filters, which the model treats leniently on purpose (an
@@ -15,13 +17,13 @@
  * bookmark -- see userModel.USER_SORTS and itemModel.ADMIN_SORTS).
  *
  * WHY THE ALLOWED VALUES COME FROM THE MODELS, NOT A LITERAL HERE
- * `isIn(userModel.STATUSES)`, `isIn(userModel.ROLES)` and
- * `isIn(itemModel.MODERATION_STATUSES)` all check against the very
- * arrays the models build their SQL from, which are themselves mirrors
- * of the ENUMs in schema.sql. A hand-typed ['active','blocked'] here
- * would be a fourth copy of that list, and the day someone adds a role
- * to the ENUM and the model, this validator would start rejecting a
- * value the database is perfectly happy to store.
+ * `isIn(userModel.STATUSES)`, `isIn(userModel.ROLES)`,
+ * `isIn(itemModel.MODERATION_STATUSES)` and `isIn(reportModel.REVIEWABLE)`
+ * all check against the very arrays the models build their SQL from,
+ * which are themselves mirrors of the ENUMs in schema.sql. A hand-typed
+ * ['active','blocked'] here would be a fourth copy of that list, and the
+ * day someone adds a role to the ENUM and the model, this validator
+ * would start rejecting a value the database is perfectly happy to store.
  *
  * These rules only decide that the value is WELL FORMED. Whether this
  * particular admin may apply it to this particular account -- not to
@@ -33,6 +35,7 @@
 const { body } = require('express-validator')
 const userModel = require('../models/userModel')
 const itemModel = require('../models/itemModel')
+const reportModel = require('../models/reportModel')
 
 /* PATCH /api/admin/users/:id/status
    `exists({ values: 'falsy' })` so '' and null are rejected as missing
@@ -94,4 +97,35 @@ const moderationRules = [
     .exists({ values: 'falsy' }).withMessage('A reason is required when rejecting an item'),
 ]
 
-module.exports = { statusRules, roleRules, moderationRules }
+/* PATCH /api/admin/reports/:id/review
+   The body key is plainly `status`: a report has exactly one status and
+   this endpoint sets it, so there is no second column to disambiguate
+   from -- the way an item's moderation_status has to be told apart from
+   the owner's status.
+
+   `isIn(reportModel.REVIEWABLE)`, NOT reportModel.STATUSES. STATUSES
+   includes 'Open', the state every report is born in; REVIEWABLE is the
+   three states a reviewer may move one INTO. Validating against REVIEWABLE
+   is what turns "you cannot reopen a closed report" into a 400 at the
+   edge rather than a rule the model has to defend deeper in -- and it is
+   the same array reportModel.review checks, so the two cannot disagree.
+
+   The note is optional on EVERY transition, and deliberately so. An item
+   rejection REQUIRES a reason because the owner is shown it and a silent
+   rejection is a listing that just vanishes; a report's resolution_note
+   is an internal record, and the audit row captures the from/to of every
+   review whether or not a note was typed. So the only rule the note needs
+   is the column's own width -- resolution_note is VARCHAR(500). */
+const reportRules = [
+  body('status')
+    .exists({ values: 'falsy' }).withMessage('A review status is required')
+    .isIn(reportModel.REVIEWABLE)
+    .withMessage(`Review status must be one of: ${reportModel.REVIEWABLE.join(', ')}`),
+
+  body('note')
+    .optional({ values: 'falsy' })
+    .trim()
+    .isLength({ max: 500 }).withMessage('Resolution note must be at most 500 characters'),
+]
+
+module.exports = { statusRules, roleRules, moderationRules, reportRules }

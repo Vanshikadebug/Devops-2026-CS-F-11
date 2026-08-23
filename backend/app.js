@@ -140,6 +140,8 @@ app.get('/api', (req, res) => {
         'GET /api/admin/overview, ' +
         'GET /api/admin/items, GET /api/admin/items/:id, ' +
         'PATCH /api/admin/items/:id/moderation, ' +
+        'GET /api/admin/reports, GET /api/admin/reports/:id, ' +
+        'PATCH /api/admin/reports/:id/review, ' +
         'GET /api/admin/users, GET /api/admin/users/:id, ' +
         'PATCH /api/admin/users/:id/status, PATCH /api/admin/users/:id/role',
     },

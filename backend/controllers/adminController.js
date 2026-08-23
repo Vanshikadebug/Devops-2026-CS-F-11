@@ -447,6 +447,147 @@ const setItemModeration = asyncHandler(async (req, res) => {
   })
 })
 
+/* ===================================================================
+   REPORTS
+   ===================================================================
+   The other half of a moderator's day, and the reason the reports table
+   exists: a normal user flags a listing or an account, and staff work
+   the queue. requireStaff, like item moderation -- reading and closing
+   complaints is core moderation, not an account-management power.
+
+   A report names EXACTLY ONE target, an item OR a user (schema.sql
+   enforces it with two triggers). listReports and getReport surface both
+   kinds through the same shape; the reviewer tells them apart by which
+   of the joined item/user name+email columns is filled.
+
+   Like setItemModeration, and for the same two reasons, reviewReport has
+   NO self/rank guard (a report is a work item, not a person with a rank
+   -- a moderator reviewing a report they happened to file is audited, not
+   forbidden) and NO no-op short-circuit (reportModel.review re-stamps
+   reviewed_at on every write, so a null return means the row is genuinely
+   gone, not that nothing changed). */
+
+/**
+ * GET /api/admin/reports  (requireStaff)
+ *
+ * One filtered, paginated page of the moderation queue. Mirrors
+ * listUsers and listItems: the filters (status / reason / target /
+ * search / sort) go straight to reportModel.list, which treats an
+ * unknown value leniently, and the page size is clamped inside the model.
+ * The default sort is 'priority' -- Open before Under Review before the
+ * closed states -- which is the order a reviewer works in, not the order
+ * alphabetical or ENUM position would give (see reportModel.SORTS).
+ */
+const listReports = asyncHandler(async (req, res) => {
+  const { page, limit, offset } = await resolvePagination(req.query)
+
+  const filters = {
+    status: req.query.status,
+    reason: req.query.reason,
+    target: req.query.target,
+    search: req.query.search,
+    sort: req.query.sort,
+  }
+
+  const result = await reportModel.list({ page, limit, offset }, filters)
+
+  res.status(200).json({
+    success: true,
+    count: result.rows.length,
+    data: result.rows,
+    pagination: paginationMeta({ page: result.page, limit: result.limit }, result.total),
+  })
+})
+
+/**
+ * GET /api/admin/reports/:id  (requireStaff)
+ *
+ * One report in full -- the three joins reportModel.findById adds (the
+ * reporter, the reported item or user, and the reviewer who closed it),
+ * so the detail screen can show WHO reported WHAT without a second round
+ * trip. There is no public counterpart: a report is only ever read by
+ * staff.
+ */
+const getReport = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id) || id <= 0) {
+    throw ApiError.badRequest('Report id must be a positive whole number')
+  }
+
+  const report = await reportModel.findById(id)
+  if (!report) {
+    throw ApiError.notFound(`No report found with id ${id}`)
+  }
+
+  res.status(200).json({ success: true, data: report })
+})
+
+/**
+ * PATCH /api/admin/reports/:id/review  (requireStaff)
+ *
+ * Move a report to Under Review, Resolved, or Rejected, with an optional
+ * note. The body carries `status` (validated against REVIEWABLE, so
+ * 'Open' -- reopening a closed complaint -- is refused at the edge) and
+ * an optional `note`.
+ *
+ * >>> REVIEWING A REPORT DOES NOT TOUCH THE THING IT REPORTS <<<
+ * Resolving a report about a spam listing records that the COMPLAINT was
+ * handled; it is a separate act from hiding that listing via
+ * PATCH /items/:id/moderation. Keeping them apart is deliberate -- a
+ * reviewer may resolve a report because the item was already dealt with,
+ * or reject it as unfounded, and neither should silently move the target.
+ * The one place the two meet is the audit log, where both decisions leave
+ * a row, so the full story of "who did what to this listing" reads back
+ * in order.
+ */
+const reviewReport = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id) || id <= 0) {
+    throw ApiError.badRequest('Report id must be a positive whole number')
+  }
+
+  const report = await reportModel.findById(id)
+  if (!report) {
+    throw ApiError.notFound(`No report found with id ${id}`)
+  }
+
+  const status = req.body.status // one of REVIEWABLE
+  // falsy -> null so a blank note is stored as NULL, not ''.
+  const note = req.body.note || null
+
+  const updated = await reportModel.review(id, {
+    status,
+    reviewerId: req.user.id,
+    note,
+  })
+  if (!updated) {
+    // Deleted between the load and the write -- a genuine race. Not a
+    // no-op: review re-stamps reviewed_at on every write, so the row
+    // always changes and this null means it is truly gone.
+    throw ApiError.notFound(`No report found with id ${id}`)
+  }
+
+  await auditModel.record({
+    adminId: req.user.id,
+    adminEmail: req.user.email,
+    action: 'report.review',
+    targetType: 'report',
+    targetId: id,
+    description: `Reviewed report #${id} as ${status}${note ? ` (${note})` : ''}`,
+    changes: {
+      status: { from: report.status, to: status },
+      ...(note ? { note } : {}),
+    },
+    ip: req.ip,
+  })
+
+  res.status(200).json({
+    success: true,
+    message: `Report marked ${status}`,
+    data: updated,
+  })
+})
+
 module.exports = {
   getOverview,
   listUsers,
@@ -456,4 +597,7 @@ module.exports = {
   listItems,
   getItem,
   setItemModeration,
+  listReports,
+  getReport,
+  reviewReport,
 }

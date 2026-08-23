@@ -19,6 +19,8 @@
  *   overview            requireStaff        moderators and up may look
  *   items list/detail   requireStaff        moderating content is staff work
  *   moderate an item    requireStaff        approve / reject / hide / requeue
+ *   reports list/detail requireStaff        the complaint queue is staff work
+ *   review a report     requireStaff        under review / resolve / reject
  *   users list/detail   requireAdmin        managing accounts is admin work
  *   block / unblock     requireAdmin
  *   change role         requireSuperAdmin   the power that grants powers
@@ -29,7 +31,11 @@
  * not block its author (an action that reaches a person) -- so the item
  * routes sit one rung below the user routes on purpose. Overview is
  * staff-level for the same reason: reading the aggregate counts is a
- * moderator's job, acting on a named account is not.
+ * moderator's job, acting on a named account is not. Reviewing reports
+ * sits alongside item moderation at requireStaff for the same reason
+ * again -- working the complaint queue is content moderation; the account
+ * action a report might ultimately justify stays up on the requireAdmin
+ * routes, and reviewing the report never performs it.
  *
  * These guards run AFTER protect (they read req.user.role, which protect
  * loads), which is exactly the order `router.use(protect)` then the
@@ -46,8 +52,11 @@ const {
   listItems,
   getItem,
   setItemModeration,
+  listReports,
+  getReport,
+  reviewReport,
 } = require('../controllers/adminController')
-const { statusRules, roleRules, moderationRules } = require('../validators/adminValidators')
+const { statusRules, roleRules, moderationRules, reportRules } = require('../validators/adminValidators')
 const validate = require('../middleware/validate')
 const protect = require('../middleware/protect')
 const {
@@ -73,6 +82,17 @@ router.get('/overview', requireStaff, getOverview)
 router.get('/items', requireStaff, listItems)
 router.get('/items/:id', requireStaff, getItem)
 router.patch('/items/:id/moderation', requireStaff, moderationRules, validate, setItemModeration)
+
+/* Reports -- the complaint queue, also the moderator's core job, so also
+   staff-level. Same shape as the items block: two ungated reads (the
+   queue and one report in full), then the one write, which carries a body
+   (the review status + an optional note) and so runs reportRules then
+   `validate` before the controller. reportRules is where "you cannot
+   reopen a closed report" lives -- it validates against REVIEWABLE, which
+   omits 'Open'. */
+router.get('/reports', requireStaff, listReports)
+router.get('/reports/:id', requireStaff, getReport)
+router.patch('/reports/:id/review', requireStaff, reportRules, validate, reviewReport)
 
 /* Account management. The list and the detail view are read-only but
    still administrative: they surface every account and its activity, so
