@@ -71,9 +71,12 @@ part 9 first**, then this Jenkins commit.)
 
 1. Jenkins → **New Item**.
 2. Name it `reusehub` (or `reusehub-ci`), choose **Pipeline**, click **OK**.
-3. *(Optional)* **Build Triggers** → tick **Poll SCM** and enter `H/5 * * * *`
-   to check GitHub for new commits every ~5 minutes. (Or set up a GitHub
-   webhook later.)
+3. **Build Triggers** — you can leave this alone. The `Jenkinsfile` already
+   declares `triggers { pollSCM('H/5 * * * *') }`, so once the job has run once,
+   Jenkins polls GitHub about every 5 minutes and builds automatically on a new
+   push. (If you want polling active *before* that first run, tick **Poll SCM**
+   here and enter `H/5 * * * *` — same effect.) See
+   [Automatic builds on every push](#automatic-builds-on-every-push) below.
 4. **Pipeline** section:
    - **Definition:** `Pipeline script from SCM`
    - **SCM:** `Git`
@@ -85,6 +88,55 @@ part 9 first**, then this Jenkins commit.)
 
 The first build is the slowest because Docker pulls the `mysql:8.0` image
 once; later builds reuse it.
+
+---
+
+## Automatic builds on every push
+
+Once the job exists you do **not** keep clicking **Build Now**. The
+`Jenkinsfile` declares:
+
+```groovy
+triggers {
+  pollSCM('H/5 * * * *')
+}
+```
+
+which tells Jenkins to check GitHub about every 5 minutes and start a build
+whenever a new commit has landed. (The `H` just spreads the poll across the
+window so many jobs don't all hit GitHub on the same tick.)
+
+**The chain is: save → commit → push → poll → build.**
+
+```
+edit in VS Code  →  git commit  →  git push  →  Jenkins polls GitHub  →  build
+```
+
+The trigger watches **GitHub**, not your local folder — so a change you have
+only saved (or even committed) but **not pushed** is invisible to Jenkins.
+"Changes show up in Jenkins" means *changes you have pushed*.
+
+**One catch the first time:** a trigger declared inside the `Jenkinsfile`
+only starts working *after* Jenkins has run one build and read it. So to turn
+it on:
+
+1. Push the commit that contains the `triggers { pollSCM(...) }` block.
+2. Click **Build Now** once — this is the build where Jenkins first *reads*
+   the trigger.
+3. From then on every `git push` builds on its own within ~5 minutes, no
+   clicking.
+
+To confirm polling is live, open the job and look for **Git Polling Log** in
+the left menu (it appears after that first build); it logs each poll and
+whether it found a change. For a snappier demo, lower the schedule to
+`H/2 * * * *`.
+
+**Why polling and not an instant webhook?** A GitHub webhook would build the
+moment you push, but GitHub has to reach Jenkins over the internet to deliver
+it. This Jenkins lives on `http://localhost:8080`, which has no public
+address, so a webhook can't get in without a tunnel. Polling has Jenkins
+reach *out* to GitHub instead, which works fine from localhost — so it is the
+right fit here.
 
 ---
 
