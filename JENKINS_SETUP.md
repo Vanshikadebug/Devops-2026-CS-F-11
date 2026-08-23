@@ -206,8 +206,12 @@ With that understood:
 
 The `DB_PASSWORD` in the committed `Jenkinsfile` is a **disposable value for a
 throwaway container** that lives only for one build and is reachable only on
-localhost — it is intentionally not a real credential. Anything genuinely
-secret (a production database password, a real `JWT_SECRET`) must live in
-**Jenkins → Credentials** and be pulled in with `credentials('id')`, never
-written into the repo. In test mode the app supplies its own throwaway
-`JWT_SECRET`, so none is needed here.
+localhost — it is intentionally not a real credential. The `Jenkinsfile` sets a
+disposable **`JWT_SECRET`** for the same reason: the DB-prep scripts
+(`wait-for-db`, `db:setup`/`db:seed`/`db:migrate`) load `config/env.js`, which
+**requires `JWT_SECRET` whenever `NODE_ENV` is not `test`** — and those scripts
+run in development mode, not test mode. Both values are throwaway CI-only
+secrets. Anything genuinely secret (a production database password, a real
+`JWT_SECRET`) must live in **Jenkins → Credentials** and be pulled in with
+`credentials('id')`, never written into the repo. The test suite itself runs as
+`NODE_ENV=test` and uses a built-in dummy, so it needs neither value.

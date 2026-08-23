@@ -30,13 +30,14 @@
 //  ideal -- and it never touches port 3306 or the developer's data.
 //
 //  SECRETS
-//  DB_PASSWORD below is a DISPOSABLE value for a container that exists only
-//  for the lifetime of one build and is never exposed to the network beyond
-//  localhost. It is deliberately NOT a real credential. Real secrets (a
-//  production DB password, a JWT secret) must come from Jenkins > Manage
-//  Credentials and be referenced with credentials('id') -- see JENKINS_SETUP.md.
-//  In test mode the app does not even need JWT_SECRET (config/env.js supplies
-//  a test-only fallback), so nothing sensitive appears in this file.
+//  DB_PASSWORD and JWT_SECRET below are DISPOSABLE values: each lives only for
+//  the lifetime of one build and is never exposed beyond localhost. They are
+//  deliberately NOT real credentials. Real secrets (a production DB password,
+//  a production JWT secret) must come from Jenkins > Manage Credentials and be
+//  referenced with credentials('id') -- see JENKINS_SETUP.md. The Jest suite
+//  runs as NODE_ENV=test and needs neither, but the DB-prep scripts run in
+//  "development" mode and DO require JWT_SECRET, so we supply a throwaway one.
+//  config/env.js only ever logs whether a secret is "[set]", never its value.
 //
 //  ASSUMPTIONS ABOUT THE AGENT (all covered in JENKINS_SETUP.md)
 //    - This is a WINDOWS agent, so every shell step uses `bat` (not `sh`).
@@ -90,6 +91,15 @@ pipeline {
     DB_USER     = 'root'
     DB_PASSWORD = 'ci_only_ephemeral_pw'
     DB_NAME     = 'reusehub'
+
+    // ---- App secret the DB-prep scripts require (see SECRETS header) -------
+    // config/env.js demands JWT_SECRET whenever NODE_ENV is not "test". The
+    // Jest suite (test:ci) runs as NODE_ENV=test and uses a built-in dummy,
+    // but wait-for-db / db:setup / db:seed / db:migrate run in the default
+    // "development" mode -- without this they abort at startup with
+    // "[config] FATAL: required environment variable JWT_SECRET is missing".
+    // Disposable CI value, never a real secret; config/env.js logs only "[set]".
+    JWT_SECRET  = 'ci_only_ephemeral_jwt_secret'
 
     // ---- How Jenkins reaches Docker while running as a Windows service -----
     // Jenkins here runs as the "Local System" service account. We deliberately
