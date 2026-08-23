@@ -17,11 +17,14 @@
 -- RUN THIS ONCE. After that every build works with no further steps.
 -- Re-running it is harmless -- every statement is IF NOT EXISTS / GRANT.
 --
--- HOW TO RUN IT (either one):
+-- HOW TO RUN IT (any one):
 --   * MySQL Workbench:  File > Open SQL Script > this file > run (⚡)
---   * Command line (you will be prompted for your root password, which
---     is NOT stored anywhere):
---       "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p < database/ci-setup.sql
+--   * PowerShell -- it has NO `<` redirect and needs `&` to run a quoted
+--     path, so pipe the file in instead (you will be prompted for your root
+--     password, which is NOT stored anywhere):
+--       Get-Content database\ci-setup.sql | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p
+--   * cmd.exe -- the classic redirect works here:
+--       "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p < database\ci-setup.sql
 --
 -- >>> WHY THE PASSWORD BELOW IS COMMITTED ON PURPOSE <<<
 -- 'reusehub_ci_pw' is NOT a secret. This account can reach only the

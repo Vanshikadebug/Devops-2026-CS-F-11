@@ -65,11 +65,18 @@ database. Create both by running [`database/ci-setup.sql`](./database/ci-setup.s
 
 ```powershell
 cd C:\ReUseHub
-"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p < database\ci-setup.sql
+Get-Content database\ci-setup.sql | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p
 ```
 
-You will be prompted for your MySQL **root** password (it is not stored). Or
-open the file in **MySQL Workbench** and run it with the ⚡ button.
+You will be prompted for your MySQL **root** password (it is not stored).
+
+> **PowerShell note.** PowerShell doesn't support the `<` input redirect and
+> needs the `&` call operator to run a quoted path, so the classic
+> `mysql ... < file.sql` form errors there ("The '<' operator is reserved").
+> The `Get-Content … | &` line above is the PowerShell equivalent. (In
+> `cmd.exe` the classic `"...\mysql.exe" -u root -p < database\ci-setup.sql`
+> works as-is.) Easiest of all: open the file in **MySQL Workbench** and run it
+> with the ⚡ button.
 
 Why this exists, in one line: it lets the committed `Jenkinsfile` carry a
 **working, non-secret** login (`reusehub_ci` / `reusehub_ci_pw`) that can only
