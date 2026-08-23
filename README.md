@@ -3,7 +3,7 @@
 > A platform for listing items you no longer need, so someone else can reuse them
 > instead of them becoming waste.
 
-**Status:** 🚧 Under active development — Phase 11 of 18 complete (search and filtering by campus, the request system wired end to end, the first slices of the admin API — an overview snapshot, item moderation, and account management — and a 293-test backend suite).
+**Status:** 🚧 Under active development — core phases 1–11 complete, plus Git/GitHub (Phase 12) and a Jenkins CI pipeline (Phase 14). Highlights: search and filtering by campus, the request system wired end to end, the first slices of the admin API — an overview snapshot, item moderation, report review, and account management — and a 321-test backend suite that a Jenkins pipeline now runs automatically on every push (spinning up a throwaway MySQL container, then building the frontend).
 
 This README is a placeholder. The full documentation (architecture, database
 design, installation, API reference, Docker, Jenkins, CI/CD) is written in
@@ -71,7 +71,7 @@ is accepted.
 **Tests:**
 
 ```bash
-cd backend && npm test    # 293 tests
+cd backend && npm test    # 321 tests
 ```
 
 ## API endpoints
@@ -103,6 +103,9 @@ cd backend && npm test    # 293 tests
 | `GET` | `/api/admin/items` | Bearer token + **staff** | admin |
 | `GET` | `/api/admin/items/:id` | Bearer token + **staff** | admin |
 | `PATCH` | `/api/admin/items/:id/moderation` | Bearer token + **staff** | admin |
+| `GET` | `/api/admin/reports` | Bearer token + **staff** | admin |
+| `GET` | `/api/admin/reports/:id` | Bearer token + **staff** | admin |
+| `PATCH` | `/api/admin/reports/:id/review` | Bearer token + **staff** | admin |
 | `GET` | `/api/admin/users` | Bearer token + **admin** | admin |
 | `GET` | `/api/admin/users/:id` | Bearer token + **admin** | admin |
 | `PATCH` | `/api/admin/users/:id/status` | Bearer token + **admin** | admin |
@@ -127,16 +130,18 @@ request id that does not exist answers `404`.
 **Staff / admin / super-admin** on the `/api/admin` routes are ranks, not
 separate flags: a single `role` column orders `user < moderator < admin <
 super_admin`, and each route names the *minimum* rank that may enter it. The
-overview and item moderation are staff-level (a moderator may read the
-aggregate counts and approve, reject, hide or requeue a listing); managing
-accounts is admin-level; changing a role — the power that grants powers — is
-super-admin-only. A logged-in user below the bar answers `403`, and no token at
+overview, item moderation and report review are staff-level (a moderator may
+read the aggregate counts, approve/reject/hide/requeue a listing, and work
+the complaint queue); managing accounts is admin-level; changing a role — the
+power that grants powers — is super-admin-only. A logged-in user below the bar
+answers `403`, and no token at
 all answers `401`. Two further checks live in the controller, because a
 route-level "is at least an admin" guard cannot see *who the target is*: you
 cannot act on your own account from the panel (`422`), and you cannot act on a
 peer or a superior or grant a role above your own (`403`). Every block, unblock
 and role change writes an `audit_logs` row after it commits — as does every
-moderation decision, so "who hid this listing, and why" always has an answer.
+moderation decision and every report review, so "who hid this listing, who
+closed this complaint, and why" always has an answer.
 
 ## Security notes
 
@@ -180,9 +185,9 @@ moderation decision, so "who hid this listing, and why" always has an answer.
 - [x] **Phase 9** — Search and filtering
 - [x] **Phase 10** — Request system
 - [x] **Phase 11** — Testing
-- [ ] Phase 12 — Git and GitHub
+- [x] **Phase 12** — Git and GitHub
 - [ ] Phase 13 — Docker
-- [ ] Phase 14 — Jenkins
+- [x] **Phase 14** — Jenkins — declarative pipeline in [`Jenkinsfile`](./Jenkinsfile); see [JENKINS_SETUP.md](./JENKINS_SETUP.md)
 - [ ] Phase 15 — CI/CD
 - [ ] Phase 16 — Deployment preparation
 - [ ] Phase 17 — README and documentation

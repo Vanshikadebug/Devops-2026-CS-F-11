@@ -27,6 +27,9 @@ build/
 coverage/
 *.lcov
 .nyc_output/
+# JUnit XML from `npm run test:ci` -- consumed by Jenkins at build time,
+# regenerated on every run, so it is never committed.
+reports/
 
 # Logs
 logs/

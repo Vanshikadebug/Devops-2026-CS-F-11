@@ -14,7 +14,8 @@
     "db:admin": "node scripts/create-admin.js",
     "test": "cross-env NODE_ENV=test jest --runInBand",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
-    "test:coverage": "cross-env NODE_ENV=test jest --runInBand --coverage"
+    "test:coverage": "cross-env NODE_ENV=test jest --runInBand --coverage",
+    "test:ci": "cross-env NODE_ENV=test jest --runInBand --ci --reporters=default --reporters=jest-junit"
   },
   "keywords": [
     "express",
@@ -39,6 +40,13 @@
       "utils/**/*.js"
     ]
   },
+  "jest-junit": {
+    "outputDirectory": "reports",
+    "outputName": "junit.xml",
+    "ancestorSeparator": " › ",
+    "classNameTemplate": "{classname}",
+    "titleTemplate": "{title}"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
@@ -52,6 +60,7 @@
   "devDependencies": {
     "cross-env": "^10.1.0",
     "jest": "^30.4.2",
+    "jest-junit": "^16.0.0",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
   }
