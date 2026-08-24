@@ -48,6 +48,7 @@
     "titleTemplate": "{title}"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -55,13 +56,15 @@
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.11.0",
-    "mysql2": "^3.23.2"
+    "mysql2": "^3.23.2",
+    "reusehub": "file:.."
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
     "jest": "^30.4.2",
     "jest-junit": "^16.0.0",
     "nodemon": "^3.1.14",
+    "prisma": "^6.19.2",
     "supertest": "^7.2.2"
   }
 }

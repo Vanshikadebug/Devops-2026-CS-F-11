@@ -1,0 +1,321 @@
+// ReuseHub -- Prisma schema.
+//
+// Introspected from the live database that database/schema.sql built,
+// then refined: models and enums renamed to PascalCase with @@map back
+// to the real table names, and relation fields given readable names.
+//
+// >>> WHY SCALAR FIELDS KEEP THEIR snake_case NAMES <<<
+// Idiomatic Prisma would camelCase them. They are deliberately left
+// alone, because the API already returns snake_case keys -- an item
+// response carries image_url, college_name, created_at, and the React
+// app and all 341 tests read exactly those. Renaming the scalars would
+// force every repository to translate back on the way out: over a
+// hundred hand-written mappings, each one a chance to silently reshape
+// a response and break a test. Matching the database keeps the whole
+// chain -- column, model, JSON key -- spelled one way.
+//
+// Pinned to Prisma 6: v7 removed `url` from the datasource block and
+// requires a TypeScript prisma.config.ts plus an experimental driver
+// adapter. This project is plain CommonJS with no TS toolchain, and an
+// experimental flag does not belong under the data layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  // Supplied by scripts/prisma-cli.js, derived from DB_* in .env so the
+  // password is never duplicated. See config/env.js databaseUrl.
+  url      = env("DATABASE_URL")
+}
+
+model City {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  name       String   @db.VarChar(100)
+  state      String   @db.VarChar(100)
+  slug       String   @unique(map: "uq_cities_slug") @db.VarChar(120)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  areas      Area[]
+
+  @@unique([name, state], map: "uq_cities_name_state")
+  @@map("cities")
+}
+
+model Area {
+  id         Int        @id @default(autoincrement()) @db.UnsignedInt
+  city_id    Int        @db.UnsignedInt
+  name       String     @db.VarChar(100)
+  slug       String     @db.VarChar(120)
+  created_at DateTime   @default(now()) @db.Timestamp(0)
+  city       City       @relation(fields: [city_id], references: [id], onDelete: Cascade, map: "fk_areas_city")
+  colleges   College[]
+
+  @@unique([city_id, name], map: "uq_areas_city_name")
+  @@unique([city_id, slug], map: "uq_areas_city_slug")
+  @@index([city_id], map: "idx_areas_city")
+  @@map("areas")
+}
+
+model College {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  area_id     Int      @db.UnsignedInt
+  name        String   @db.VarChar(200)
+  short_name  String   @db.VarChar(60)
+  slug        String   @unique(map: "uq_colleges_slug") @db.VarChar(220)
+  description String?  @db.VarChar(1000)
+  image_url   String?  @db.VarChar(500)
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+  area        Area     @relation(fields: [area_id], references: [id], onDelete: Cascade, map: "fk_colleges_area")
+  items       Item[]
+  users       User[]
+
+  @@index([area_id], map: "idx_colleges_area")
+  @@map("colleges")
+}
+
+model User {
+  id            Int        @id @default(autoincrement()) @db.UnsignedInt
+  name          String     @db.VarChar(100)
+  email         String     @unique(map: "uq_users_email") @db.VarChar(255)
+  mobile        String     @db.VarChar(15)
+  password      String     @db.VarChar(255)
+  college_id    Int?       @db.UnsignedInt
+  role          UserRole   @default(user)
+  status        UserStatus @default(active)
+  last_login_at DateTime?  @db.Timestamp(0)
+  created_at    DateTime   @default(now()) @db.Timestamp(0)
+  updated_at    DateTime   @default(now()) @db.Timestamp(0)
+
+  college         College?          @relation(fields: [college_id], references: [id], map: "fk_users_college")
+  items           Item[]            @relation("ItemOwner")
+  moderatedItems  Item[]            @relation("ItemModerator")
+  requests        Request[]
+  reportsFiled    Report[]          @relation("ReportReporter")
+  reportsAgainst  Report[]          @relation("ReportedUser")
+  reportsReviewed Report[]          @relation("ReportReviewer")
+  auditLogs       AuditLog[]
+  updatedSettings PlatformSetting[]
+
+  @@index([college_id], map: "idx_users_college")
+  @@index([role], map: "idx_users_role")
+  @@index([status], map: "idx_users_status")
+  @@map("users")
+}
+
+model Item {
+  id                Int                  @id @default(autoincrement()) @db.UnsignedInt
+  user_id           Int                  @db.UnsignedInt
+  name              String               @db.VarChar(150)
+  description       String               @db.Text
+  category          ItemCategory
+  item_condition    ItemCondition
+  location          String               @db.VarChar(150)
+  college_id        Int?                 @db.UnsignedInt
+  image_url         String?              @db.VarChar(500)
+  status            ItemStatus           @default(Available)
+  moderation_status ItemModerationStatus @default(Approved)
+  moderated_by      Int?                 @db.UnsignedInt
+  moderated_at      DateTime?            @db.Timestamp(0)
+  moderation_reason String?              @db.VarChar(500)
+  created_at        DateTime             @default(now()) @db.Timestamp(0)
+  updated_at        DateTime             @default(now()) @db.Timestamp(0)
+
+  owner     User      @relation("ItemOwner", fields: [user_id], references: [id], onDelete: Cascade, map: "fk_items_user")
+  moderator User?     @relation("ItemModerator", fields: [moderated_by], references: [id], map: "fk_items_moderator")
+  college   College?  @relation(fields: [college_id], references: [id], map: "fk_items_college")
+  requests  Request[]
+  reports   Report[]
+
+  @@index([moderated_by], map: "fk_items_moderator")
+  @@index([category], map: "idx_items_category")
+  @@index([college_id, status, created_at], map: "idx_items_college_status_created")
+  @@index([created_at], map: "idx_items_created")
+  @@index([moderation_status], map: "idx_items_moderation")
+  @@index([status], map: "idx_items_status")
+  @@index([user_id], map: "idx_items_user")
+  @@fulltext([name, description], map: "ft_items_search")
+  @@map("items")
+}
+
+model Request {
+  id           Int           @id @default(autoincrement()) @db.UnsignedInt
+  item_id      Int           @db.UnsignedInt
+  requester_id Int           @db.UnsignedInt
+  message      String?       @db.VarChar(500)
+  status       RequestStatus @default(Pending)
+  created_at   DateTime      @default(now()) @db.Timestamp(0)
+  updated_at   DateTime      @default(now()) @db.Timestamp(0)
+
+  item      Item @relation(fields: [item_id], references: [id], onDelete: Cascade, map: "fk_requests_item")
+  requester User @relation(fields: [requester_id], references: [id], onDelete: Cascade, map: "fk_requests_requester")
+
+  @@unique([item_id, requester_id], map: "uq_requests_item_requester")
+  @@index([item_id], map: "idx_requests_item")
+  @@index([requester_id], map: "idx_requests_requester")
+  @@index([status], map: "idx_requests_status")
+  @@map("requests")
+}
+
+model Report {
+  id               Int          @id @default(autoincrement()) @db.UnsignedInt
+  reporter_id      Int          @db.UnsignedInt
+  reported_item_id Int?         @db.UnsignedInt
+  reported_user_id Int?         @db.UnsignedInt
+  reason           ReportReason
+  details          String?      @db.VarChar(1000)
+  status           ReportStatus @default(Open)
+  reviewed_by      Int?         @db.UnsignedInt
+  reviewed_at      DateTime?    @db.Timestamp(0)
+  resolution_note  String?      @db.VarChar(500)
+  created_at       DateTime     @default(now()) @db.Timestamp(0)
+  updated_at       DateTime     @default(now()) @db.Timestamp(0)
+
+  item         Item? @relation(fields: [reported_item_id], references: [id], onDelete: Cascade, map: "fk_reports_item")
+  reporter     User  @relation("ReportReporter", fields: [reporter_id], references: [id], onDelete: Cascade, map: "fk_reports_reporter")
+  reportedUser User? @relation("ReportedUser", fields: [reported_user_id], references: [id], onDelete: Cascade, map: "fk_reports_user")
+  reviewer     User? @relation("ReportReviewer", fields: [reviewed_by], references: [id], map: "fk_reports_reviewer")
+
+  @@unique([reported_item_id, reporter_id], map: "uq_reports_item_reporter")
+  @@unique([reported_user_id, reporter_id], map: "uq_reports_user_reporter")
+  @@index([reviewed_by], map: "fk_reports_reviewer")
+  @@index([created_at], map: "idx_reports_created")
+  @@index([reporter_id], map: "idx_reports_reporter")
+  @@index([status], map: "idx_reports_status")
+  @@map("reports")
+}
+
+model AuditLog {
+  id          Int                @id @default(autoincrement()) @db.UnsignedInt
+  admin_id    Int?               @db.UnsignedInt
+  admin_email String             @db.VarChar(255)
+  action      String             @db.VarChar(60)
+  target_type AuditLogTargetType
+  target_id   Int?               @db.UnsignedInt
+  description String             @db.VarChar(500)
+  changes     Json?
+  ip_address  String?            @db.VarChar(45)
+  created_at  DateTime           @default(now()) @db.Timestamp(0)
+
+  admin User? @relation(fields: [admin_id], references: [id], map: "fk_audit_admin")
+
+  @@index([action], map: "idx_audit_action")
+  @@index([admin_id], map: "idx_audit_admin")
+  @@index([created_at], map: "idx_audit_created")
+  @@index([target_type, target_id], map: "idx_audit_target")
+  @@map("audit_logs")
+}
+
+model PlatformSetting {
+  setting_key   String                 @id @db.VarChar(60)
+  setting_value String?                @db.Text
+  value_type    PlatformSettingType    @default(string)
+  label         String                 @db.VarChar(120)
+  description   String?                @db.VarChar(300)
+  category      PlatformSettingCategory @default(general)
+  is_editable   Boolean                @default(true)
+  updated_by    Int?                   @db.UnsignedInt
+  updated_at    DateTime               @default(now()) @db.Timestamp(0)
+
+  updatedByUser User? @relation(fields: [updated_by], references: [id], map: "fk_settings_updated_by")
+
+  @@index([updated_by], map: "fk_settings_updated_by")
+  @@index([category], map: "idx_settings_category")
+  @@map("platform_settings")
+}
+
+// --- Enums -------------------------------------------------------
+// In MySQL an enum is an inline column type, not a named database
+// object, so these names exist only in the Prisma client. The @map on
+// individual values IS load-bearing though: the database stores
+// "Like New" and "Wrong Category" with a space, which is not a legal
+// identifier in Prisma.
+
+enum UserRole {
+  user
+  moderator
+  admin
+  super_admin
+}
+
+enum UserStatus {
+  active
+  blocked
+}
+
+enum ItemCategory {
+  Books
+  Electronics
+  Clothing
+  Furniture
+  Stationery
+  Other
+}
+
+enum ItemCondition {
+  New
+  Like_New @map("Like New")
+  Good
+  Fair
+  Poor
+}
+
+enum ItemStatus {
+  Available
+  Reserved
+  Unavailable
+}
+
+enum ItemModerationStatus {
+  Pending
+  Approved
+  Rejected
+  Hidden
+}
+
+enum RequestStatus {
+  Pending
+  Accepted
+  Rejected
+}
+
+enum ReportReason {
+  Spam
+  Inappropriate
+  Fraud
+  Duplicate
+  Wrong_Category @map("Wrong Category")
+  Other
+}
+
+enum ReportStatus {
+  Open
+  Under_Review @map("Under Review")
+  Resolved
+  Rejected
+}
+
+enum AuditLogTargetType {
+  user
+  item
+  college
+  city
+  area
+  report
+  setting
+  category
+}
+
+enum PlatformSettingType {
+  string
+  number
+  boolean
+  json
+}
+
+enum PlatformSettingCategory {
+  general
+  users
+  items
+  moderation
+}
