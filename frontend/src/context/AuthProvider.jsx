@@ -44,6 +44,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from './authContext'
 import { authService } from '../services/authService'
 import { getToken, setToken, clearToken } from '../services/tokenStorage'
+import { clearSavedLocation } from '../services/locationStorage'
 
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -134,6 +135,19 @@ function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     clearToken()
+    /* Also forget which campus was being browsed. That selection is a
+       device-level view preference (see locationStorage.js), NOT part
+       of the session -- which is exactly why a guest who never signed
+       in keeps it across visits. But an explicit logout is not a guest:
+       on a shared or lab machine the campus was often seeded from the
+       account that is now leaving, so leaving it on screen for the next
+       person is untidy and a small leak of where they study. So logout
+       -- and only logout, never ordinary guest browsing -- resets it.
+       useLocationSelection clears the on-screen copy the moment `user`
+       goes null; this clears the STORED copy, so a refresh from any
+       page (including the protected ones you get bounced off) starts
+       neutral rather than restoring the campus from localStorage. */
+    clearSavedLocation()
     setUser(null)
     /* WHY NO REQUEST TO THE SERVER?
        There is nothing to tell it. A JWT is stateless -- the server

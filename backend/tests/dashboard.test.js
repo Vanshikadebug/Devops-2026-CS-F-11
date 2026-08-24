@@ -60,9 +60,9 @@ async function addItem(userId, name, status) {
 beforeAll(async () => {
   for (const [who, target] of [['alice', alice], ['bob', bob]]) {
     const res = await request(app).post('/api/auth/register').send(credentials(who))
-    target.id = res.body.user.id
-    target.token = res.body.token
-    target.auth = `Bearer ${res.body.token}`
+    target.id = res.body.data.user.id
+    target.token = res.body.data.token
+    target.auth = `Bearer ${res.body.data.token}`
   }
 
   alice.items = [
@@ -155,7 +155,7 @@ describe('GET /api/dashboard', () => {
     const fresh = await request(app).post('/api/auth/register').send(credentials('fresh'))
     const res = await request(app)
       .get('/api/dashboard')
-      .set('Authorization', `Bearer ${fresh.body.token}`)
+      .set('Authorization', `Bearer ${fresh.body.data.token}`)
 
     expect(res.status).toBe(200)
     expect(res.body.data.stats.items).toEqual({

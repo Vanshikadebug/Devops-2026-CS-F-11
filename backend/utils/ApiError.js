@@ -73,6 +73,35 @@ class ApiError extends Error {
     return new ApiError(409, message)
   }
 
+  /** 422 -- the request is well formed, and still cannot be carried out.
+   *
+   *  >>> HOW THIS DIFFERS FROM 400, WHICH IS THE USUAL CONFUSION <<<
+   *  400 means the request was not understood: a missing field, a
+   *  non-numeric id, a string where a number belongs. 422 means it was
+   *  understood perfectly and is refused on its meaning -- "demote
+   *  yourself and nobody is left who can grant roles" is not a typo in
+   *  the body, it is a coherent instruction with an unacceptable
+   *  result.
+   *
+   *  The existing field-level validators keep answering 400, because
+   *  the frontend and the tests already depend on that and the shape
+   *  errors they catch genuinely are 400s. This is for the admin
+   *  actions where the objection is to the CONSEQUENCE. */
+  static unprocessable(message = 'That change cannot be applied', details) {
+    return new ApiError(422, message, details)
+  }
+
+  /** 429 -- too many requests, slow down.
+   *
+   *  Rate limiting is not decoration on an admin API: /api/auth/login
+   *  is a password oracle that answers in milliseconds, and without a
+   *  limit an attacker can try a dictionary against a known admin
+   *  address at whatever rate the network allows. bcrypt makes each
+   *  guess expensive; this makes the ATTEMPTS finite. */
+  static tooManyRequests(message = 'Too many requests. Please try again shortly.') {
+    return new ApiError(429, message)
+  }
+
   /** 500 -- we broke, not the caller. */
   static internal(message = 'Internal server error') {
     return new ApiError(500, message)

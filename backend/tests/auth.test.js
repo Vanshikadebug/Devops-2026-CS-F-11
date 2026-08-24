@@ -31,6 +31,23 @@ const newUser = (n) => ({
   password: 'correct-horse-9',
 })
 
+// last_login_at is written fire-and-forget by the login controller, so
+// a read taken the instant login returns can lose the race with the
+// UPDATE. Poll for up to a couple of seconds and return the value the
+// moment it appears; null means it never did.
+async function waitForLastLogin(id, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    const [[row]] = await pool.execute(
+      'SELECT last_login_at FROM users WHERE id = ?',
+      [id],
+    )
+    if (row && row.last_login_at !== null) return row.last_login_at
+    await new Promise((resolve) => setTimeout(resolve, 25))
+  }
+  return null
+}
+
 afterAll(async () => {
   // ON DELETE CASCADE removes any items and requests these users
   // created, so one statement is enough.
@@ -47,18 +64,18 @@ describe('POST /api/auth/register', () => {
 
     expect(res.status).toBe(201)
     expect(res.body.success).toBe(true)
-    expect(typeof res.body.token).toBe('string')
+    expect(typeof res.body.data.token).toBe('string')
     // A JWT is three dot-separated parts.
-    expect(res.body.token.split('.')).toHaveLength(3)
-    expect(res.body.user.email).toBe(`${TEST_TAG}.create@test.local`)
-    expect(res.body.user.id).toBeGreaterThan(0)
+    expect(res.body.data.token.split('.')).toHaveLength(3)
+    expect(res.body.data.user.email).toBe(`${TEST_TAG}.create@test.local`)
+    expect(res.body.data.user.id).toBeGreaterThan(0)
   })
 
   it('never returns the password or its hash', async () => {
     // >>> SECURITY <<<
     const res = await request(app).post('/api/auth/register').send(newUser('nopass'))
 
-    expect(res.body.user).not.toHaveProperty('password')
+    expect(res.body.data.user).not.toHaveProperty('password')
     const body = JSON.stringify(res.body)
     expect(body).not.toMatch(/correct-horse-9/) // the plain text
     expect(body).not.toMatch(/\$2[aby]\$/)      // a bcrypt hash
@@ -123,7 +140,7 @@ describe('POST /api/auth/register', () => {
 
     expect(res.status).toBe(201)
     // Lowercased, but the dots survive.
-    expect(res.body.user.email).toBe(`${TEST_TAG}.dotted.name@gmail.com`)
+    expect(res.body.data.user.email).toBe(`${TEST_TAG}.dotted.name@gmail.com`)
   })
 
   it('reports every invalid field at once, not just the first', async () => {
@@ -173,9 +190,40 @@ describe('POST /api/auth/login', () => {
       .send({ email: user.email, password: user.password })
 
     expect(res.status).toBe(200)
-    expect(res.body.token.split('.')).toHaveLength(3)
-    expect(res.body.user.email).toBe(user.email)
-    expect(res.body.user).not.toHaveProperty('password')
+    expect(res.body.data.token.split('.')).toHaveLength(3)
+    expect(res.body.data.user.email).toBe(user.email)
+    expect(res.body.data.user).not.toHaveProperty('password')
+  })
+
+  it('lets a Gmail user with dots in their address log back in', async () => {
+    // >>> REGRESSION: register and login normalisation must AGREE <<<
+    // Gmail treats dots as insignificant, so express-validator's
+    // normalizeEmail() strips them BY DEFAULT. Registration switches
+    // that off, so the dots are kept -- but if login uses a bare
+    // normalizeEmail(), it strips them, searches for a different
+    // string, finds nothing and returns 401. The account exists yet
+    // can never log in.
+    //
+    // The existing "preserves the email exactly as typed" test only
+    // exercises REGISTER, so it never caught this. This one registers
+    // WITH dots and then logs in with the very same address -- the
+    // round-trip that actually reproduces the bug.
+    const dotted = {
+      name: 'Dotted Login',
+      email: `${TEST_TAG}.Dot.Ted.Login@Gmail.com`,
+      mobile: '9876500000',
+      password: 'correct-horse-9',
+    }
+    await request(app).post('/api/auth/register').send(dotted)
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: dotted.email, password: dotted.password })
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.token.split('.')).toHaveLength(3)
+    // Lowercased, but the dots survive BOTH register and login.
+    expect(res.body.data.user.email).toBe(`${TEST_TAG}.dot.ted.login@gmail.com`)
   })
 
   it('rejects a wrong password with 401', async () => {
@@ -184,7 +232,7 @@ describe('POST /api/auth/login', () => {
       .send({ email: user.email, password: 'wrong-password-1' })
 
     expect(res.status).toBe(401)
-    expect(res.body.token).toBeUndefined()
+    expect(res.body.data).toBeUndefined()
   })
 
   it('gives an IDENTICAL response for unknown email and wrong password', async () => {
@@ -214,7 +262,109 @@ describe('POST /api/auth/login', () => {
       .send({ email: user.email, password: "' OR '1'='1" })
 
     expect(res.status).toBe(401)
-    expect(res.body.token).toBeUndefined()
+    expect(res.body.data).toBeUndefined()
+  })
+
+  it('refuses a blocked account, even with the correct password', async () => {
+    // >>> SECURITY / REGRESSION <<<
+    // protect.js rejects a blocked user on every authenticated request,
+    // but login used to issue the token FIRST and let protect catch it
+    // on the next call -- so the login screen accepted the password,
+    // said "Logged in successfully", and the app then behaved as though
+    // it were broken. A block must be honest at the door: 403 here, no
+    // token, and the same wording protect.js uses mid-session.
+    const blocked = newUser('blocked')
+    const reg = await request(app).post('/api/auth/register').send(blocked)
+
+    await pool.execute(
+      "UPDATE users SET status = 'blocked' WHERE id = ?",
+      [reg.body.data.user.id],
+    )
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: blocked.email, password: blocked.password })
+
+    expect(res.status).toBe(403)
+    expect(res.body.success).toBe(false)
+    expect(res.body.data).toBeUndefined()
+  })
+
+  it('does not reveal the block to someone who lacks the password', async () => {
+    // >>> SECURITY: the block adds no new enumeration signal <<<
+    // The status check runs AFTER the password check, so a wrong guess
+    // against a blocked account is indistinguishable from a wrong guess
+    // against any other -- the generic "Invalid email or password", not
+    // the "blocked" message. The block is disclosed only to someone who
+    // has already proved they hold the credentials.
+    const blocked = newUser('blocked-wrong')
+    const reg = await request(app).post('/api/auth/register').send(blocked)
+
+    await pool.execute(
+      "UPDATE users SET status = 'blocked' WHERE id = ?",
+      [reg.body.data.user.id],
+    )
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: blocked.email, password: 'wrong-password-1' })
+
+    expect(res.status).toBe(401)
+    expect(res.body.message).toBe('Invalid email or password')
+  })
+
+  it('stamps last_login_at on a successful login', async () => {
+    // >>> REGRESSION: the timestamp the admin "dormant accounts" sort
+    //     relies on <<<
+    // touchLastLogin shipped from day one with a docblock claiming
+    // login called it -- but nothing did. So last_login_at stayed NULL
+    // for every account forever, and the admin list's `active` sort had
+    // nothing to order by. A fresh account starts NULL; a real login
+    // must fill it in.
+    const u = newUser('lastlogin')
+    const reg = await request(app).post('/api/auth/register').send(u)
+    const id = reg.body.data.user.id
+
+    // A brand-new account has never signed in.
+    const [[before]] = await pool.execute(
+      'SELECT last_login_at FROM users WHERE id = ?',
+      [id],
+    )
+    expect(before.last_login_at).toBeNull()
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: u.email, password: u.password })
+    expect(res.status).toBe(200)
+
+    // The stamp is fire-and-forget (see authController), so the write
+    // can land a beat after the response returns -- poll rather than
+    // read once and race it.
+    const stamped = await waitForLastLogin(id)
+    expect(stamped).not.toBeNull()
+  })
+
+  it('does not stamp last_login_at when the password is wrong', async () => {
+    // >>> the flip side: only a SUCCESSFUL login is recorded <<<
+    // The stamp sits after the password and blocked checks, so a failed
+    // attempt fires no write at all -- which is why this can read the
+    // row immediately, with no poll: there is no in-flight UPDATE to
+    // race. Guards against a future refactor that moves the stamp ahead
+    // of the checks, which would record attempts that never signed in.
+    const u = newUser('nostamp')
+    const reg = await request(app).post('/api/auth/register').send(u)
+    const id = reg.body.data.user.id
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: u.email, password: 'wrong-password-1' })
+    expect(res.status).toBe(401)
+
+    const [[row]] = await pool.execute(
+      'SELECT last_login_at FROM users WHERE id = ?',
+      [id],
+    )
+    expect(row.last_login_at).toBeNull()
   })
 })
 
@@ -228,8 +378,8 @@ describe('GET /api/auth/me', () => {
 
   beforeAll(async () => {
     const res = await request(app).post('/api/auth/register').send(user)
-    token = res.body.token
-    userId = res.body.user.id
+    token = res.body.data.token
+    userId = res.body.data.user.id
   })
 
   it('returns the current user for a valid token', async () => {
@@ -238,8 +388,8 @@ describe('GET /api/auth/me', () => {
       .set('Authorization', `Bearer ${token}`)
 
     expect(res.status).toBe(200)
-    expect(res.body.user.id).toBe(userId)
-    expect(res.body.user).not.toHaveProperty('password')
+    expect(res.body.data.user.id).toBe(userId)
+    expect(res.body.data.user).not.toHaveProperty('password')
   })
 
   it('rejects a request with no token', async () => {
@@ -270,7 +420,7 @@ describe('GET /api/auth/me', () => {
       .set('Authorization', `Bearer ${header}.${forged}.${signature}`)
 
     expect(res.status).toBe(401)
-    expect(res.body.user).toBeUndefined()
+    expect(res.body.data).toBeUndefined()
   })
 
   it('rejects a token signed with the wrong secret', async () => {
@@ -310,11 +460,11 @@ describe('GET /api/auth/me', () => {
     const doomed = newUser('deleted')
     const reg = await request(app).post('/api/auth/register').send(doomed)
 
-    await pool.execute('DELETE FROM users WHERE id = ?', [reg.body.user.id])
+    await pool.execute('DELETE FROM users WHERE id = ?', [reg.body.data.user.id])
 
     const res = await request(app)
       .get('/api/auth/me')
-      .set('Authorization', `Bearer ${reg.body.token}`)
+      .set('Authorization', `Bearer ${reg.body.data.token}`)
 
     expect(res.status).toBe(401)
   })
@@ -348,12 +498,12 @@ describe('token contents', () => {
     const res = await request(app).post('/api/auth/register').send(user)
 
     const payload = JSON.parse(
-      Buffer.from(res.body.token.split('.')[1], 'base64url').toString(),
+      Buffer.from(res.body.data.token.split('.')[1], 'base64url').toString(),
     )
 
     // iat = issued at, exp = expires. Both are standard JWT claims.
     expect(Object.keys(payload).sort()).toEqual(['exp', 'iat', 'id'])
-    expect(payload.id).toBe(res.body.user.id)
+    expect(payload.id).toBe(res.body.data.user.id)
 
     const decoded = JSON.stringify(payload)
     expect(decoded).not.toMatch(/correct-horse-9/)
@@ -364,7 +514,7 @@ describe('token contents', () => {
   it('expires, rather than lasting forever', async () => {
     const res = await request(app).post('/api/auth/register').send(newUser('expiry'))
     const payload = JSON.parse(
-      Buffer.from(res.body.token.split('.')[1], 'base64url').toString(),
+      Buffer.from(res.body.data.token.split('.')[1], 'base64url').toString(),
     )
 
     // A token with no exp claim would be a permanent password.

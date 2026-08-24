@@ -7,6 +7,7 @@ import Button from '../components/Button'
 import Modal from '../components/Modal'
 import { useAuth } from '../context/authContext'
 import { itemService } from '../services/itemService'
+import { requestService } from '../services/requestService'
 import { STATUS_VARIANTS } from '../utils/constants'
 import './ItemDetail.css'
 
@@ -71,6 +72,13 @@ function ItemDetail() {
   const [actionError, setActionError] = useState(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
 
+  const [mineRequest, setMineRequest] = useState(null)
+  const [mineReady, setMineReady] = useState(false)
+  const [requestOpen, setRequestOpen] = useState(false)
+  const [requestMessage, setRequestMessage] = useState('')
+  const [requestWorking, setRequestWorking] = useState(false)
+  const [requestError, setRequestError] = useState(null)
+
   useEffect(() => {
     const controller = new AbortController()
 
@@ -91,6 +99,31 @@ function ItemDetail() {
 
     return () => controller.abort()
   }, [id, attempt])
+
+  useEffect(() => {
+    if (!isAuthenticated || !item || !user || user.id === item.user_id) {
+      setMineRequest(null)
+      setMineReady(true)
+      return
+    }
+
+    const controller = new AbortController()
+    setMineReady(false)
+
+    requestService
+      .getSent({ item: item.id }, { signal: controller.signal })
+      .then((rows) => {
+        setMineRequest(rows[0] ?? null)
+        setMineReady(true)
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return
+        setMineRequest(null)
+        setMineReady(true)
+      })
+
+    return () => controller.abort()
+  }, [isAuthenticated, item, user])
 
   /* Both sides are numbers -- mysql2 returns INT UNSIGNED as a JS
      number, and the session user came from the same database. `===`
@@ -147,6 +180,25 @@ function ItemDetail() {
        unmounts this component, so clearing it there would be a state
        update on nothing. The catch clears it because that is the only
        branch where the page survives. */
+  }
+
+  async function submitRequest() {
+    setRequestWorking(true)
+    setRequestError(null)
+
+    try {
+      const created = await requestService.create({
+        itemId: item.id,
+        message: requestMessage,
+      })
+      setMineRequest(created)
+      setRequestOpen(false)
+      setRequestMessage('')
+    } catch (err) {
+      setRequestError(err.message)
+    } finally {
+      setRequestWorking(false)
+    }
   }
 
   if (status === 'loading') {
@@ -326,22 +378,75 @@ function ItemDetail() {
           )}
 
           {/* --- Everyone else ------------------------------------
-              The request flow is Phase 10. Until then this says what
-              will happen rather than rendering a button that does
-              nothing -- a dead control teaches the user the site is
-              broken. */}
+              Requesting is a write, so it needs an account. The
+              button is hidden from the owner because requesting your
+              own listing is 403 on the server anyway. */}
           {!isOwner && (
             <section className="item-detail__cta">
-              {isAuthenticated ? (
-                <p className="item-detail__cta-note">
-                  Requesting items arrives in the next phase. For now, this page
-                  shows everything the owner shared about it.
-                </p>
-              ) : (
+              {!isAuthenticated && (
                 <p className="item-detail__cta-note">
                   <Link to="/login">Log in</Link> or{' '}
-                  <Link to="/register">create an account</Link> to request items
-                  from other students.
+                  <Link to="/register">create an account</Link> to request this
+                  item.
+                </p>
+              )}
+
+              {isAuthenticated && !mineReady && (
+                <LoadingSpinner label="Checking your request" />
+              )}
+
+              {isAuthenticated && mineReady && mineRequest && (
+                <div className="item-detail__request-state">
+                  <p className="item-detail__cta-note">
+                    Your request is{' '}
+                    <span className={`badge badge--${STATUS_VARIANTS[mineRequest.status] ?? 'neutral'}`}>
+                      {mineRequest.status}
+                    </span>
+                  </p>
+                  {mineRequest.message && (
+                    <p className="item-detail__request-message">
+                      “{mineRequest.message}”
+                    </p>
+                  )}
+                  {mineRequest.status === 'Accepted' && (
+                    <p className="item-detail__contact">
+                      Contact {mineRequest.owner_name}:{' '}
+                      <a href={`mailto:${mineRequest.owner_email}`}>{mineRequest.owner_email}</a>
+                      {mineRequest.owner_mobile ? ` · ${mineRequest.owner_mobile}` : ''}
+                    </p>
+                  )}
+                  {mineRequest.status === 'Rejected' && (
+                    <p className="item-detail__cta-note">
+                      The owner declined this request. You cannot request the
+                      same listing again.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {isAuthenticated && mineReady && !mineRequest && item.status === 'Available' && (
+                <>
+                  <p className="item-detail__cta-note">
+                    Ask the owner if you can collect this. They will see your
+                    name; contact details are shared only if they accept.
+                  </p>
+                  {requestError && (
+                    <div className="item-detail__alert" role="alert">
+                      {requestError}
+                    </div>
+                  )}
+                  <div className="item-detail__actions">
+                    <Button onClick={() => { setRequestError(null); setRequestOpen(true) }}>
+                      Request this item
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {isAuthenticated && mineReady && !mineRequest && item.status !== 'Available' && (
+                <p className="item-detail__cta-note">
+                  This listing is {item.status.toLowerCase()}, so it cannot be
+                  requested right now.
                 </p>
               )}
             </section>
@@ -386,6 +491,50 @@ function ItemDetail() {
           <strong>given away</strong> keeps the listing visible to the people who
           asked for it.
         </p>
+      </Modal>
+
+      <Modal
+        open={requestOpen}
+        onClose={() => !requestWorking && setRequestOpen(false)}
+        title="Request this item?"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => setRequestOpen(false)}
+              disabled={requestWorking}
+            >
+              Cancel
+            </Button>
+            <Button loading={requestWorking} onClick={submitRequest}>
+              Send request
+            </Button>
+          </>
+        }
+      >
+        <p>
+          {item.owner_name} will see that you asked for{' '}
+          <strong>{item.name}</strong>. You can add a short note about when you
+          can collect it.
+        </p>
+        <label className="item-detail__message-label" htmlFor="request-message">
+          Message <span className="item-detail__optional">(optional)</span>
+        </label>
+        <textarea
+          id="request-message"
+          className="item-detail__message"
+          rows={4}
+          maxLength={500}
+          value={requestMessage}
+          onChange={(e) => setRequestMessage(e.target.value)}
+          placeholder="Could I collect this on Saturday?"
+          disabled={requestWorking}
+        />
+        {requestError && (
+          <p className="item-detail__alert" role="alert">
+            {requestError}
+          </p>
+        )}
       </Modal>
     </div>
   )

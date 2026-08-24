@@ -31,6 +31,8 @@
  */
 
 const { pool } = require('../config/db')
+const { parsePagination, clampLimitOffset } = require('../utils/pagination')
+const escapeLike = require('../utils/escapeLike')
 
 /* ---------------------------------------------------------------
    THE PUBLIC SHAPE OF AN ITEM
@@ -64,6 +66,16 @@ const { pool } = require('../config/db')
       existing, and only for the listings whose owner did not pick a
       campus. LEFT JOIN keeps them and returns null for the college
       fields, which is what `location` is there to cover.
+
+   4. moderation_status IS HERE; moderation_reason IS NOT.
+      Which state a listing is in is not a secret -- its owner needs
+      it to see "Awaiting review" in My Items, and on the public
+      browse page it is always 'Approved' anyway, because findAll
+      cannot return anything else. The REASON a moderator rejected
+      something is a different matter: it is an internal note written
+      by staff about a user, and it belongs only in the admin shape
+      below. Same for moderated_by, which would name the individual
+      moderator to the person they acted against.
 --------------------------------------------------------------- */
 const ITEM_FIELDS = `
   i.id,
@@ -79,6 +91,7 @@ const ITEM_FIELDS = `
   c.name        AS city_name,
   i.image_url,
   i.status,
+  i.moderation_status,
   i.created_at,
   u.name AS owner_name
 `
@@ -95,12 +108,13 @@ const ITEM_SOURCE = `
   LEFT JOIN cities   c  ON c.id  = a.city_id
 `
 
-// An upper bound on rows returned. With 12 seeded items this is
-// invisible, but an endpoint that returns "all rows, however many
-// that is" degrades badly the moment the table grows. Real paging
-// (page/limit query parameters) arrives in Phase 9; until then this
-// is the guard rail. It is a hard-coded integer, never user input,
-// so it cannot be used for injection.
+// The default page size for the PUBLIC browse list, and the cap
+// findByUser puts on the dashboard. Real paging (?page=&limit=) now
+// rides on top of this through parsePagination: MAX_ROWS is the size of
+// one page when the caller does not ask for a smaller one, and the hard
+// ceiling on any single page is MAX_LIMIT in utils/pagination.js (the
+// two happen to agree at 100). It is a hard-coded integer, never user
+// input, so it cannot be used for injection.
 const MAX_ROWS = 100
 
 /**
@@ -152,24 +166,12 @@ const CATEGORIES = ['Books', 'Electronics', 'Clothing', 'Furniture', 'Stationery
 const CONDITIONS = ['New', 'Like New', 'Good', 'Fair', 'Poor']
 const STATUSES = ['Available', 'Reserved', 'Unavailable']
 
-/**
- * Escapes the wildcard characters in a LIKE pattern.
- *
- * >>> THIS IS NOT THE SAME PROBLEM AS SQL INJECTION <<<
- * The search term is already a bound parameter, so it cannot become
- * SQL. But INSIDE a LIKE pattern, `%` and `_` are still operators:
- * `%` matches any run of characters and `_` matches exactly one. A
- * user searching for the literal text "100%" would otherwise get a
- * pattern of `%100%%`, which matches every row that contains "100"
- * followed by anything -- and a user searching for just "%" would
- * match the entire table.
- *
- * The backslash must be escaped FIRST. Doing it last would also
- * escape the backslashes this function just added, doubling them.
- */
-function escapeLike(term) {
-  return term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
-}
+/* escapeLike moved to utils/escapeLike.js when the admin user, college,
+   report and audit searches started needing the same wildcard escaping
+   this file's search already used. One shared copy, imported above, so
+   the five call sites cannot drift apart. The full reasoning -- why a
+   bound parameter still needs escaping inside a LIKE -- lives with the
+   code there. */
 
 /**
  * Items matching a set of filters, newest first, with their owner
@@ -214,14 +216,40 @@ function escapeLike(term) {
  * There is no input, however hostile, that can add a clause, close a
  * quote, or append a second statement.
  *
- * THE ONE VALUE THAT IS INTERPOLATED is `safeLimit`, because LIMIT
- * cannot be bound. It is forced through Number.parseInt and clamped
- * to a range before it goes anywhere near the string, so by the time
- * it is interpolated it is provably an integer between 1 and 100.
+ * THE ONLY VALUES INTERPOLATED are the LIMIT and OFFSET, because MySQL
+ * cannot bind them. parsePagination forces each through Number.parseInt
+ * and clamps it to a range before it goes anywhere near the string, so
+ * by the time they are interpolated they are provably integers -- the
+ * limit between 1 and 100, the offset a non-negative row position.
  */
 async function findAll(filters = {}) {
   const where = []
   const params = []
+
+  /* --- The public visibility rule ------------------------------
+     >>> THESE TWO CLAUSES ARE NOT FILTERS, AND THERE IS NO WAY TO
+         TURN THEM OFF <<<
+     Everything else in this function is optional and caller-driven.
+     These are unconditional, and that is the entire design: this is
+     the function behind the public browse page, so the safe answer
+     has to be the one you get when nobody passes anything.
+
+     A flag -- findAll({ includeUnapproved: true }) -- would have read
+     more flexibly and been a genuine hazard, because the filters
+     object is built from req.query one field at a time and the day
+     someone refactors that into a spread, `?includeUnapproved=1`
+     becomes a working bypass of the entire moderation system. There
+     is no flag to find. Admin listings come from listForAdmin()
+     below, which is a different function behind different middleware.
+
+     WHY u.status: blocking an account has to actually stop it
+     participating. If a spammer's listings stayed on the browse page
+     after they were blocked, the block would be a formality -- the
+     spam is the harm, not the login. Their items remain visible to
+     THEM in My Items (findByUser does not filter), so nothing is
+     destroyed and unblocking restores everything. */
+  where.push("i.moderation_status = 'Approved'")
+  where.push("u.status = 'active'")
 
   /* --- Location ------------------------------------------------
      Only ONE of these is applied, most specific first. Combining
@@ -285,18 +313,36 @@ async function findAll(filters = {}) {
     }
   }
 
-  const safeLimit = clampLimit(filters.limit)
+  /* Paging. parsePagination turns ?page=&limit= into three proven
+     integers; the public list keeps its historical default of MAX_ROWS
+     per page, because the browse grid has no pager yet and a smaller
+     default would hide most items with no way to reach them. page,
+     limit and offset are the only values interpolated below, and all
+     three come back as integers -- see utils/pagination.js. */
+  const { page, limit, offset } = parsePagination(filters, MAX_ROWS)
   const orderBy = SORTS[filters.sort] ?? SORTS.newest
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
 
   const [rows] = await pool.execute(
     `SELECT ${ITEM_FIELDS}
      ${ITEM_SOURCE}
-     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+     ${clause}
      ORDER BY ${orderBy}
-     LIMIT ${safeLimit}`,
+     LIMIT ${limit} OFFSET ${offset}`,
     params,
   )
-  return rows
+
+  /* The true total behind this page, so the response can say how many
+     items match even when only `limit` of them are returned. Same WHERE
+     and the same params -- ITEM_SOURCE carries the users join that the
+     u.status clause needs; ORDER BY, LIMIT and OFFSET are dropped
+     because none of them changes a count. */
+  const [[{ total }]] = await pool.execute(
+    `SELECT COUNT(*) AS total ${ITEM_SOURCE} ${clause}`,
+    params,
+  )
+
+  return { rows, total: Number(total), page, limit }
 }
 
 /**
@@ -316,6 +362,40 @@ async function findById(id) {
   )
 
   // execute() always returns an array, even for a unique key.
+  return rows[0] ?? null
+}
+
+/**
+ * One item by id AS THE PUBLIC MAY SEE IT, or null.
+ *
+ * >>> WHY THIS IS SEPARATE FROM findById <<<
+ * findById is the raw, ungated lookup, and it has to stay that way
+ * because create/update/updateStatus call it to echo back the row
+ * they just wrote -- gate it, and the moment item approval is switched
+ * on a freshly posted (Pending) listing would come back as null to its
+ * own author.
+ *
+ * This function is the PUBLIC detail read behind GET /api/items/:id,
+ * and it applies the EXACT rule findAll applies to the browse grid:
+ * an Approved listing whose owner is active, or nothing. Without it
+ * the detail route was a hole straight through moderation -- findAll
+ * hides a Hidden/Rejected item, and a blocked spammer's listings, from
+ * the grid, but anyone who knew (or guessed) an id could still read
+ * them one row at a time.
+ *
+ * Same pairing as findAll (gated, public) vs listForAdmin (ungated,
+ * admin): the two are DELIBERATELY separate functions, so there is no
+ * flag anyone could pass to turn the gate off by accident.
+ */
+async function findPublicById(id) {
+  const [rows] = await pool.execute(
+    `SELECT ${ITEM_FIELDS}
+     ${ITEM_SOURCE}
+     WHERE i.id = ?
+       AND i.moderation_status = 'Approved'
+       AND u.status = 'active'`,
+    [id],
+  )
   return rows[0] ?? null
 }
 
@@ -408,15 +488,28 @@ async function create({
   collegeId = null,
   imageUrl = null,
   status = 'Available',
+  /* >>> WHY THE DEFAULT IS 'Approved' AND NOT 'Pending' <<<
+     This parameter exists so the controller can queue new listings for
+     review when the `require_item_approval` setting is on. The default
+     has to match the behaviour the site already had: before moderation
+     existed, posting an item published it. If the default were
+     'Pending', enabling the admin panel would silently make every new
+     listing invisible until somebody noticed a queue nobody knew to
+     look at -- a working site broken by an unrelated feature.
+
+     The queue is not decoration either way: turn the setting on and
+     this argument becomes 'Pending' for real. The default is about
+     which behaviour you get when nobody has chosen. */
+  moderationStatus = 'Approved',
 }) {
   const [result] = await pool.execute(
     `INSERT INTO items
        (user_id, name, description, category, item_condition,
-        location, college_id, image_url, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        location, college_id, image_url, status, moderation_status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId, name, description, category, condition,
-      location, collegeId, imageUrl, status,
+      location, collegeId, imageUrl, status, moderationStatus,
     ],
   )
 
@@ -532,15 +625,231 @@ async function findOwnerId(id) {
   return rows[0]?.user_id ?? null
 }
 
+/* ===================================================================
+   MODERATION AND THE ADMIN LISTING
+   ===================================================================
+   >>> WHY items HAS TWO STATUS COLUMNS AND NOT ONE BIGGER ENUM <<<
+   `status` answers "can I still get this?" -- Available, Reserved,
+   Unavailable -- and it belongs to the OWNER, who marks their own
+   listing as gone. `moderation_status` answers "may the public see
+   this at all?" and belongs to STAFF. They are genuinely independent:
+   a listing can be Available and Hidden at the same time, and the
+   owner marking something Unavailable must not quietly count as
+   passing review.
+
+   Folding both into one column would have meant an owner's
+   "mark as reserved" could overwrite a moderator's decision to hide
+   it -- through an endpoint the owner is legitimately allowed to call.
+   =================================================================== */
+
+const MODERATION_STATUSES = ['Pending', 'Approved', 'Rejected', 'Hidden']
+
+/* The admin shape: the public fields, plus the three moderation
+   columns that are deliberately kept OUT of the public shape, plus the
+   owner's email so the moderation queue does not need a second request
+   to tell you whose listing you are looking at.
+
+   The email is the reason this is a separate constant and not an
+   addition to ITEM_FIELDS. items.test.js asserts the exact key list of
+   a public item precisely so that "add u.email to the JOIN just for
+   debugging" fails loudly instead of shipping. That test is a feature;
+   this constant is how the admin panel gets what it needs without
+   weakening it. */
+const ITEM_ADMIN_FIELDS = `
+  ${ITEM_FIELDS},
+  i.updated_at,
+  i.moderated_at,
+  i.moderated_by,
+  i.moderation_reason,
+  u.email AS owner_email,
+  u.status AS owner_status,
+  m.name  AS moderator_name,
+  (SELECT COUNT(*) FROM requests r WHERE r.item_id = i.id) AS request_count
+`
+
+/* ITEM_SOURCE plus the moderator. LEFT JOIN because moderated_by is
+   NULL for everything nobody has acted on yet -- which is most rows --
+   and is SET NULL if that moderator's own account is later deleted. An
+   inner join here would hide exactly the items that need attention. */
+const ITEM_ADMIN_SOURCE = `
+  ${ITEM_SOURCE}
+  LEFT JOIN users m ON m.id = i.moderated_by
+`
+
+const ADMIN_SORTS = {
+  newest: 'i.created_at DESC, i.id DESC',
+  oldest: 'i.created_at ASC, i.id ASC',
+  name: 'i.name ASC, i.id ASC',
+  requests: 'request_count DESC, i.id ASC',
+  // For the moderation queue: whatever was decided most recently
+  // first, with the undecided (NULL) rows last.
+  moderated: 'i.moderated_at IS NULL, i.moderated_at DESC',
+}
+
+/**
+ * One page of items for /admin/items and the moderation queue.
+ *
+ * Deliberately a SEPARATE function from findAll rather than findAll
+ * with an extra option -- see the long note on the visibility rule
+ * inside findAll for why that flag does not exist.
+ */
+async function listForAdmin({ page, limit, offset }, filters = {}) {
+  const where = []
+  const params = []
+
+  if (filters.moderation) {
+    where.push('i.moderation_status = ?')
+    params.push(filters.moderation)
+  }
+  if (filters.status) {
+    where.push('i.status = ?')
+    params.push(filters.status)
+  }
+  if (filters.category) {
+    where.push('i.category = ?')
+    params.push(filters.category)
+  }
+  if (filters.userId) {
+    where.push('i.user_id = ?')
+    params.push(filters.userId)
+  }
+  if (filters.college) {
+    where.push('i.college_id = ?')
+    params.push(filters.college)
+  }
+  if (filters.search) {
+    // escapeLike for the same reason the public search uses it: '%'
+    // is an operator inside a LIKE pattern, so an admin searching for
+    // "100%" would otherwise match the whole table.
+    where.push('(i.name LIKE ? OR i.description LIKE ? OR u.email LIKE ?)')
+    const pattern = `%${escapeLike(filters.search)}%`
+    params.push(pattern, pattern, pattern)
+  }
+  // An admin listing shows everything by default, including items
+  // belonging to blocked accounts -- those are usually the ones being
+  // looked for. That is the exact opposite of findAll's rule, and it
+  // is why these are two functions.
+
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
+  const order = ADMIN_SORTS[filters.sort] || ADMIN_SORTS.newest
+
+  // LIMIT/OFFSET are interpolated, not bound, so re-clamp them to integers
+  // here regardless of the caller -- findAll and findByUser clamp their own
+  // LIMIT, and this listing must not be the one that forgets. See
+  // utils/pagination.js.
+  const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
+
+  const [rows] = await pool.execute(
+    `SELECT ${ITEM_ADMIN_FIELDS}
+     ${ITEM_ADMIN_SOURCE}
+     ${clause}
+     ORDER BY ${order}
+     LIMIT ${safeLimit} OFFSET ${safeOffset}`,
+    params,
+  )
+
+  /* The COUNT does NOT include the moderator join: it is not needed to
+     count rows, and every join added to a COUNT is work the database
+     does to produce a number that was never going to change. */
+  const [[{ total }]] = await pool.execute(
+    `SELECT COUNT(*) AS total ${ITEM_SOURCE} ${clause}`,
+    params,
+  )
+
+  return { rows, total: Number(total), page, limit: safeLimit }
+}
+
+/** One item with the full admin shape, or null. */
+async function findByIdForAdmin(id) {
+  const [rows] = await pool.execute(
+    `SELECT ${ITEM_ADMIN_FIELDS} ${ITEM_ADMIN_SOURCE} WHERE i.id = ?`,
+    [id],
+  )
+  return rows[0] ?? null
+}
+
+/**
+ * Records a moderation decision: approve, reject, hide, or send back
+ * to the queue.
+ *
+ * All four moderation columns move together in ONE statement, and that
+ * is the point. Written as separate updates -- status here, timestamp
+ * there -- a failure between them leaves a listing that is Rejected
+ * with no reason and nobody's name against it, which is precisely the
+ * question the audit trail exists to answer.
+ *
+ * >>> WHY moderatorId AND reason ARE CLEARED WHEN REQUEUING <<<
+ * Passing status 'Pending' means "this needs looking at again", so the
+ * previous decision is no longer true and keeping the old moderator's
+ * name on it would misattribute a judgement they did not make about
+ * the current version. The DECISION is not lost: audit_logs holds
+ * every one of them, with who and when and why, and that is the record
+ * that is supposed to survive -- these four columns are only ever the
+ * CURRENT state.
+ */
+async function setModeration(id, { status, moderatorId = null, reason = null }) {
+  if (!MODERATION_STATUSES.includes(status)) {
+    throw new Error(
+      `itemModel.setModeration: "${status}" is not one of ${MODERATION_STATUSES.join(', ')}`,
+    )
+  }
+
+  const requeue = status === 'Pending'
+
+  const [result] = await pool.execute(
+    `UPDATE items
+        SET moderation_status = ?,
+            moderated_by      = ?,
+            moderated_at      = ?,
+            moderation_reason = ?
+      WHERE id = ?`,
+    [
+      status,
+      requeue ? null : moderatorId,
+      requeue ? null : new Date(),
+      requeue ? null : reason,
+      id,
+    ],
+  )
+
+  return result.affectedRows > 0 ? findByIdForAdmin(id) : null
+}
+
+/**
+ * How many items sit in each moderation state, for the dashboard card
+ * and the sidebar badge.
+ *
+ * Every key is present and zeroed first, because GROUP BY only returns
+ * states that exist -- with an empty queue there is no 'Pending' row
+ * at all, and a badge reading `counts.Pending` would render
+ * "undefined" rather than nothing.
+ */
+async function moderationCounts() {
+  const [rows] = await pool.execute(
+    'SELECT moderation_status, COUNT(*) AS n FROM items GROUP BY moderation_status',
+  )
+
+  const counts = Object.fromEntries(MODERATION_STATUSES.map((s) => [s, 0]))
+  for (const row of rows) counts[row.moderation_status] = Number(row.n)
+  return counts
+}
+
 module.exports = {
   findAll,
   findById,
+  findPublicById,
   findByUser,
   create,
   update,
   updateStatus,
   remove,
   findOwnerId,
+  // admin / moderation
+  listForAdmin,
+  findByIdForAdmin,
+  setModeration,
+  moderationCounts,
+  MODERATION_STATUSES,
   // Exported so the controller can validate a query parameter
   // against the SAME list the SQL relies on. Two separate copies of
   // the allowed categories is how the API starts rejecting a value
@@ -549,4 +858,5 @@ module.exports = {
   CONDITIONS,
   STATUSES,
   SORT_KEYS: Object.keys(SORTS),
+  ADMIN_SORT_KEYS: Object.keys(ADMIN_SORTS),
 }

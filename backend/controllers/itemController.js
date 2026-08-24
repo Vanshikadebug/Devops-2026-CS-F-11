@@ -30,6 +30,7 @@ const itemModel = require('../models/itemModel')
 const locationModel = require('../models/locationModel')
 const ApiError = require('../utils/ApiError')
 const asyncHandler = require('../utils/asyncHandler')
+const { paginationMeta } = require('../utils/pagination')
 
 /* ---------------------------------------------------------------
    READING THE QUERY STRING
@@ -100,10 +101,12 @@ function optionalEnum(value, allowed, label) {
  *
  * WHY THE { success, count, data } ENVELOPE INSTEAD OF A BARE ARRAY?
  * Returning `[...]` directly seems simpler, but it leaves no room to
- * add anything later. Paging needs to send its info alongside the
- * rows; with a bare array there is nowhere to put it without
- * breaking every existing caller. The envelope also matches the
- * error shape from errorHandler.js, so the frontend has exactly one
+ * add anything later. That room is now used: paging rides alongside
+ * the rows in a `pagination` object, which a bare array had nowhere to
+ * put without breaking every existing caller. `count` stays the number
+ * of rows in THIS response (the frontend counts on that); `pagination.
+ * total` is how many match across every page. The envelope also matches
+ * the error shape from errorHandler.js, so the frontend has exactly one
  * rule: read `success`, then read `data` or `message`.
  */
 const getItems = asyncHandler(async (req, res) => {
@@ -118,6 +121,7 @@ const getItems = asyncHandler(async (req, res) => {
     status: optionalEnum(req.query.status, itemModel.STATUSES, 'status'),
     sort: optionalEnum(req.query.sort, itemModel.SORT_KEYS, 'sort'),
     limit: req.query.limit,
+    page: req.query.page,
 
     /* Trimmed, because a search box sends the spaces around what was
        typed and ' laptop ' should find the same rows as 'laptop'.
@@ -127,12 +131,13 @@ const getItems = asyncHandler(async (req, res) => {
     search: typeof search === 'string' && search.trim() ? search.trim() : undefined,
   }
 
-  const items = await itemModel.findAll(filters)
+  const { rows, total, page, limit } = await itemModel.findAll(filters)
 
   res.status(200).json({
     success: true,
-    count: items.length,
-    data: items,
+    count: rows.length,
+    data: rows,
+    pagination: paginationMeta({ page, limit }, total),
   })
 })
 
@@ -150,6 +155,12 @@ const getItems = asyncHandler(async (req, res) => {
  * Number.isInteger(Number(x)) rejects 'abc', '1.5' and '' but accepts
  * '7'. The `> 0` matters too: ids are UNSIGNED in the schema, so a
  * negative id is not merely absent, it is impossible.
+ *
+ * >>> IT IS ALSO A PUBLIC ENDPOINT, so it must not leak what the
+ * browse grid hides. <<< The lookup goes through findPublicById, which
+ * applies findAll's visibility rule -- Approved, active owner -- so a
+ * Pending/Rejected/Hidden listing, or a blocked account's item,
+ * answers 404 by direct id, exactly as it is absent from the list.
  */
 const getItemById = asyncHandler(async (req, res) => {
   const id = Number(req.params.id)
@@ -158,10 +169,13 @@ const getItemById = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('Item id must be a positive whole number')
   }
 
-  const item = await itemModel.findById(id)
+  const item = await itemModel.findPublicById(id)
 
-  // The model reports "no such row" as null. Turning that into a 404
-  // is the controller's decision, because status codes are HTTP.
+  // The model reports "no such row" -- OR one the public may not see --
+  // as null. Turning that into a 404 is the controller's decision,
+  // because status codes are HTTP. A hidden item and a missing item are
+  // deliberately indistinguishable here: a different answer for the two
+  // would confirm that a hidden id exists.
   if (!item) {
     throw ApiError.notFound(`No item found with id ${id}`)
   }

@@ -77,6 +77,27 @@ const protect = asyncHandler(async (req, _res, next) => {
     throw ApiError.unauthorized('This account no longer exists')
   }
 
+  /* --- 3b. Refuse a blocked account --------------------------
+     >>> THIS IS THE OTHER HALF OF WHY STEP 3 QUERIES THE DATABASE <<<
+     A token is valid for 7 days and cannot be recalled -- nothing in
+     a signed string can be changed after it has been issued. So if
+     blocking were enforced only at login, an admin blocking an abusive
+     account would achieve nothing at all for up to a week: that person
+     already holds a token, and every existing session keeps working.
+     Checking here means the block takes effect on their very next
+     request.
+        403, not 401: the credentials are genuine and re-authenticating
+     will not help. Answering 401 would send the frontend to the login
+     screen, where a correct password produces the same refusal -- a
+     loop that looks like a broken site rather than a decision somebody
+     made. The message says so plainly, because a user who cannot tell
+     they have been blocked will simply keep trying. */
+  if (user.status === 'blocked') {
+    throw ApiError.forbidden(
+      'This account has been blocked. Contact support if you believe this is a mistake.',
+    )
+  }
+
   /* --- 4. Hand the identity to the controller -----------------
      From here on, req.user.id is the authenticated user. It comes
      from a signed token, NOT from the request body or a query

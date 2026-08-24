@@ -29,7 +29,9 @@ import { api } from './api.js'
  */
 async function register(payload) {
   const response = await api.post('/auth/register', payload)
-  return { token: response.token, user: response.user }
+  // token and user arrive under `data` -- the same envelope every
+  // other service unwraps. The shape returned to callers is unchanged.
+  return { token: response.data.token, user: response.data.user }
 }
 
 /**
@@ -40,7 +42,8 @@ async function register(payload) {
  */
 async function login(email, password) {
   const response = await api.post('/auth/login', { email, password })
-  return { token: response.token, user: response.user }
+  // Same { success, message, data: { token, user } } envelope as register.
+  return { token: response.data.token, user: response.data.user }
 }
 
 /**
@@ -63,7 +66,8 @@ async function login(email, password) {
  */
 async function getCurrentUser({ signal } = {}) {
   const response = await api.get('/auth/me', { signal })
-  return response.user
+  // /auth/me returns { success, data: { user } } -- unwrap to the user.
+  return response.data.user
 }
 
 export const authService = { register, login, getCurrentUser }

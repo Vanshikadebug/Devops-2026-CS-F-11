@@ -165,6 +165,55 @@
   color: var(--text-secondary);
 }
 
+.item-detail__request-state {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.item-detail__request-message {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.item-detail__contact {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--green-200);
+  border-radius: var(--radius-sm);
+  background: var(--green-50);
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+}
+
+.item-detail__message-label {
+  display: block;
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.item-detail__optional {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.item-detail__message {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  resize: vertical;
+}
+
+.item-detail__message:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .item-detail__modal-hint {
   margin-top: var(--space-3);
   font-size: 0.875rem;

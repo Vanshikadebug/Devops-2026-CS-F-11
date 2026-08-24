@@ -35,8 +35,58 @@ async function main() {
     process.exit(1)
   }
 
-  const sql = fs.readFileSync(SCHEMA_PATH, 'utf8')
-  console.log(`[setup] loaded schema (${(sql.length / 1024).toFixed(1)} kB)`)
+  const rawSql = fs.readFileSync(SCHEMA_PATH, 'utf8')
+  console.log(`[setup] loaded schema (${(rawSql.length / 1024).toFixed(1)} kB)`)
+
+  /* ---------------------------------------------------------------
+     TARGET DATABASE NAME -- the one thing this script overrides in the
+     schema file before running it.
+
+     database/schema.sql hardcodes the name in exactly two statements:
+         CREATE DATABASE IF NOT EXISTS reusehub ...
+         USE reusehub;
+     Everything after them (DROP/CREATE TABLE, the triggers) acts on
+     whatever database `USE` selected, so rewriting just those two lines
+     to config.db.database moves the ENTIRE build into a different
+     database without touching another byte of the schema.
+
+     WHY THIS EXISTS: the Jenkins pipeline runs against the SAME local
+     MySQL a developer uses, and must never clobber the real `reusehub`
+     data. It sets DB_NAME=reusehub_ci, so CI builds into an isolated
+     database and dev data is safe. config/env.js defaults DB_NAME to
+     'reusehub', so on a dev machine (DB_NAME unset) this is a NO-OP and
+     `npm run db:setup` behaves exactly as it always has.
+
+     The name is validated because it is about to be interpolated into
+     SQL as an identifier. It comes from our own environment, not user
+     input, but a hard guard is the honest way to build an identifier --
+     and it turns a typo'd DB_NAME into a clear error here instead of a
+     baffling SQL syntax error later. */
+  const dbName = config.db.database
+  if (!/^[A-Za-z0-9_]+$/.test(dbName)) {
+    console.error(`[setup] FATAL: unsafe database name '${dbName}'.`)
+    console.error('        DB_NAME may contain only letters, digits and underscore.')
+    process.exit(1)
+  }
+
+  const sql = rawSql
+    .replace(/CREATE DATABASE IF NOT EXISTS\s+`?reusehub`?/, `CREATE DATABASE IF NOT EXISTS \`${dbName}\``)
+    .replace(/\bUSE\s+`?reusehub`?\s*;/, `USE \`${dbName}\`;`)
+
+  /* Safety net: if we MEANT to redirect (a non-default DB_NAME) but the
+     two statements above were not found to rewrite -- e.g. schema.sql was
+     reformatted -- `sql` is unchanged and the build would silently land
+     in dev `reusehub`. Refuse rather than risk clobbering dev data. */
+  if (dbName !== 'reusehub' && sql === rawSql) {
+    console.error(`[setup] FATAL: could not redirect schema.sql to database "${dbName}".`)
+    console.error('        Expected "CREATE DATABASE IF NOT EXISTS reusehub" and "USE reusehub;"')
+    console.error('        to rewrite. schema.sql may have changed; refusing to run so the')
+    console.error('        dev database is not clobbered.')
+    process.exit(1)
+  }
+  if (dbName !== 'reusehub') {
+    console.log(`[setup] building into isolated database "${dbName}" (DB_NAME override)`)
+  }
 
   let connection
   try {
@@ -72,9 +122,12 @@ async function main() {
     const tableNames = tables.map((row) => Object.values(row)[0])
     console.log(`[setup] tables created: ${tableNames.join(', ')}`)
 
-    for (const table of ['cities', 'areas', 'colleges', 'users', 'items', 'requests']) {
+    for (const table of [
+      'cities', 'areas', 'colleges', 'users', 'items', 'requests',
+      'audit_logs', 'reports', 'platform_settings',
+    ]) {
       const [cols] = await connection.query(`SHOW COLUMNS FROM \`${table}\``)
-      console.log(`         ${table.padEnd(9)} ${cols.length} columns`)
+      console.log(`         ${table.padEnd(18)} ${cols.length} columns`)
     }
 
     const [fks] = await connection.query(
@@ -97,6 +150,12 @@ async function main() {
     } else if (err.code === 'ECONNREFUSED') {
       console.error(`        Nothing is listening on ${config.db.host}:${config.db.port}.`)
       console.error('        Start the MySQL80 service and try again.')
+    } else if (err.code === 'ER_BINLOG_CREATE_ROUTINE_NEED_SUPER') {
+      console.error('        MySQL is refusing to create the report triggers: binary logging')
+      console.error('        is on and this account is not SUPER (by design -- it is scoped to')
+      console.error('        one database). Run database/ci-setup.sql once as root; it sets the')
+      console.error('        global log_bin_trust_function_creators=1 that lets a non-SUPER')
+      console.error('        account create them. (Harmless on a dev/CI server with no replicas.)')
     } else {
       console.error(`        ${err.code || err.name}: ${err.message}`)
     }

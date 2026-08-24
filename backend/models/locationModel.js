@@ -32,6 +32,8 @@
  */
 
 const { pool } = require('../config/db')
+const { clampLimitOffset } = require('../utils/pagination')
+const escapeLike = require('../utils/escapeLike')
 
 /**
  * Every city, alphabetically, with how many colleges it holds.
@@ -166,6 +168,7 @@ async function findColleges({ areaId, cityId } = {}) {
 async function findCollegeById(id) {
   const [rows] = await pool.execute(
     `SELECT co.id, co.name, co.short_name, co.slug,
+            co.description, co.image_url,
             a.id AS area_id, a.name AS area_name, a.slug AS area_slug,
             c.id AS city_id, c.name AS city_name, c.slug AS city_slug,
             c.state
@@ -187,10 +190,448 @@ async function findCityById(id) {
   return rows[0] ?? null
 }
 
+/* ===================================================================
+   ADMIN: WRITES TO THE LOCATION DIRECTORY
+   ===================================================================
+   Everything above reads. Everything below is reached only through
+   /api/admin/locations/*, behind protect + requireAdmin.
+
+   >>> WHY THE DIRECTORY IS EDITABLE AT ALL <<<
+   Because the alternative is a seed file. A new campus wants to use
+   the site, and someone has to add it -- either an admin types it into
+   a form, or a developer edits seed-db.js, redeploys, and reseeds a
+   production database. The second is not a workflow; it is a reason
+   the college never gets added.
+
+   >>> AND WHY DELETES ARE THE DANGEROUS PART <<<
+   Read the foreign keys before touching anything here:
+
+     areas.city_id      ON DELETE CASCADE   -> deleting a city takes
+     colleges.area_id   ON DELETE CASCADE      its areas AND their colleges
+     users.college_id   ON DELETE SET NULL  -> and quietly detaches
+     items.college_id   ON DELETE SET NULL     every user and listing
+
+   So `DELETE FROM cities WHERE id = 1` is not a small statement. It
+   succeeds silently, cascades two levels, and strands every item that
+   was listed at those campuses -- no error, no warning, nothing to
+   undo it with. The database will not stop it, because SET NULL is a
+   legitimate answer in other contexts.
+
+   That is why every remove below is paired with a count of what
+   depends on it, and the controller refuses with a 409 unless the
+   admin explicitly confirms. The check has to live in the application
+   precisely BECAUSE the constraint does not enforce it.
+   =================================================================== */
+
+/**
+ * Turns 'Swami Keshvanand Institute of Technology' into
+ * 'swami-keshvanand-institute-of-technology'.
+ *
+ * >>> WHY THE ADMIN IS NEVER ASKED FOR A SLUG <<<
+ * It is a URL detail with a UNIQUE constraint on it, and a form field
+ * that rejects your input for reasons you cannot see ("slug already
+ * taken" -- what slug? you typed a college name) is a bad form. So the
+ * slug is derived, made unique automatically, and never mentioned in
+ * the UI.
+ *
+ * The normalise-then-strip order matters: NFKD decomposition turns
+ * accented letters into a base letter plus a combining mark, and the
+ * second replace removes the marks -- so 'Café' becomes 'cafe' rather
+ * than 'caf'.
+ */
+function slugify(text) {
+  return String(text)
+    .normalize('NFKD')
+    // U+0300..U+036F is the combining-diacritical-marks block that
+    // NFKD just split the accents into. Written as escapes, not as
+    // literal characters -- a combining mark pasted into source is
+    // invisible in most editors and impossible to review.
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 100) || 'x' // '' would violate NOT NULL; a name of only
+                          // punctuation is absurd but must not crash.
+}
+
+/**
+ * `slugify(name)`, then -2, -3, ... until `isTaken` says no.
+ *
+ * `isTaken` is a callback rather than a table name, because the three
+ * tables scope uniqueness differently: city and college slugs are
+ * unique globally, an area's only within its city. Passing the check
+ * in keeps that difference where it belongs -- at the call site that
+ * knows about it -- instead of encoding three special cases here.
+ *
+ * The loop is bounded. An unbounded "until it works" is how a bug in
+ * isTaken becomes a hung request rather than an error.
+ */
+async function uniqueSlug(name, isTaken) {
+  const base = slugify(name)
+  if (!(await isTaken(base))) return base
+
+  for (let n = 2; n <= 50; n += 1) {
+    const candidate = `${base}-${n}`
+    if (!(await isTaken(candidate))) return candidate
+  }
+  throw new Error(`locationModel: could not derive a unique slug from "${name}"`)
+}
+
+/* --- Cities ----------------------------------------------------- */
+
+/**
+ * Every city for the admin table, with the counts that make deletion
+ * a decision rather than a guess.
+ *
+ * The items count reaches through areas AND colleges, which is why
+ * COUNT(DISTINCT ...) is not optional here: three LEFT JOINs multiply
+ * rows, so a city with 2 areas and 3 colleges would report its areas
+ * six times over. DISTINCT counts the ids, not the join output.
+ */
+async function listCitiesForAdmin() {
+  const [rows] = await pool.execute(
+    `SELECT c.id, c.name, c.state, c.slug, c.created_at,
+            COUNT(DISTINCT a.id)  AS area_count,
+            COUNT(DISTINCT co.id) AS college_count,
+            COUNT(DISTINCT i.id)  AS item_count
+       FROM cities c
+       LEFT JOIN areas    a  ON a.city_id    = c.id
+       LEFT JOIN colleges co ON co.area_id   = a.id
+       LEFT JOIN items    i  ON i.college_id = co.id
+      GROUP BY c.id
+      ORDER BY c.name`,
+  )
+  return rows
+}
+
+async function createCity({ name, state }) {
+  const slug = await uniqueSlug(name, async (candidate) => {
+    const [[{ n }]] = await pool.execute(
+      'SELECT COUNT(*) AS n FROM cities WHERE slug = ?', [candidate],
+    )
+    return n > 0
+  })
+
+  const [result] = await pool.execute(
+    'INSERT INTO cities (name, state, slug) VALUES (?, ?, ?)',
+    [name, state, slug],
+  )
+  return findCityById(result.insertId)
+}
+
+/**
+ * Renames a city.
+ *
+ * >>> THE SLUG IS DELIBERATELY NOT REGENERATED <<<
+ * A slug is a stable public identifier: /browse/jaipur may already be
+ * bookmarked, linked from elsewhere, or sitting in someone's history.
+ * Rewriting it on every rename would break those links silently, to
+ * fix a cosmetic mismatch nobody sees. Correcting a typo in a NAME
+ * should not invalidate a URL.
+ */
+async function updateCity(id, { name, state }) {
+  const [result] = await pool.execute(
+    'UPDATE cities SET name = ?, state = ? WHERE id = ?',
+    [name, state, id],
+  )
+  return result.affectedRows > 0 ? findCityById(id) : null
+}
+
+/**
+ * What a city deletion would take with it. The controller turns a
+ * non-zero total into a 409 with these numbers in it, so the admin is
+ * told "this removes 2 areas, 5 colleges and detaches 31 items"
+ * instead of discovering it afterwards.
+ */
+async function cityDependants(id) {
+  const [[row]] = await pool.execute(
+    `SELECT
+       (SELECT COUNT(*) FROM areas WHERE city_id = ?) AS areas,
+       (SELECT COUNT(*) FROM colleges co
+          JOIN areas a ON a.id = co.area_id
+         WHERE a.city_id = ?) AS colleges,
+       (SELECT COUNT(*) FROM items i
+          JOIN colleges co ON co.id = i.college_id
+          JOIN areas a ON a.id = co.area_id
+         WHERE a.city_id = ?) AS items,
+       (SELECT COUNT(*) FROM users u
+          JOIN colleges co ON co.id = u.college_id
+          JOIN areas a ON a.id = co.area_id
+         WHERE a.city_id = ?) AS users`,
+    [id, id, id, id],
+  )
+  return {
+    areas: Number(row.areas),
+    colleges: Number(row.colleges),
+    items: Number(row.items),
+    users: Number(row.users),
+  }
+}
+
+async function removeCity(id) {
+  const [result] = await pool.execute('DELETE FROM cities WHERE id = ?', [id])
+  return result.affectedRows > 0
+}
+
+/* --- Areas ------------------------------------------------------ */
+
+/** One area with its city resolved, or null. */
+async function findAreaById(id) {
+  const [rows] = await pool.execute(
+    `SELECT a.id, a.name, a.slug, a.created_at,
+            a.city_id, c.name AS city_name, c.state
+       FROM areas a
+       JOIN cities c ON c.id = a.city_id
+      WHERE a.id = ?`,
+    [id],
+  )
+  return rows[0] ?? null
+}
+
+/**
+ * Every area for the admin table, across all cities unless one is
+ * named. Unlike the public findAreas(cityId), this is allowed to
+ * return the whole list -- an admin looking for "which Civil Lines did
+ * I mean?" needs to see both.
+ */
+async function listAreasForAdmin({ cityId } = {}) {
+  const where = []
+  const params = []
+  if (cityId) {
+    where.push('a.city_id = ?')
+    params.push(cityId)
+  }
+
+  const [rows] = await pool.execute(
+    `SELECT a.id, a.name, a.slug, a.created_at,
+            a.city_id, c.name AS city_name, c.state,
+            COUNT(DISTINCT co.id) AS college_count,
+            COUNT(DISTINCT i.id)  AS item_count
+       FROM areas a
+       JOIN cities c ON c.id = a.city_id
+       LEFT JOIN colleges co ON co.area_id   = a.id
+       LEFT JOIN items    i  ON i.college_id = co.id
+      ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+      GROUP BY a.id
+      ORDER BY c.name, a.name`,
+    params,
+  )
+  return rows
+}
+
+async function createArea({ cityId, name }) {
+  /* Area slugs are unique PER CITY (uq_areas_city_slug), so the check
+     is scoped to the city -- 'civil-lines' in Jaipur and 'civil-lines'
+     in Delhi are both correct, and forcing the second to be
+     'civil-lines-2' would be a worse URL for no reason. */
+  const slug = await uniqueSlug(name, async (candidate) => {
+    const [[{ n }]] = await pool.execute(
+      'SELECT COUNT(*) AS n FROM areas WHERE city_id = ? AND slug = ?',
+      [cityId, candidate],
+    )
+    return n > 0
+  })
+
+  const [result] = await pool.execute(
+    'INSERT INTO areas (city_id, name, slug) VALUES (?, ?, ?)',
+    [cityId, name, slug],
+  )
+  return findAreaById(result.insertId)
+}
+
+/**
+ * Renames an area, and can move it to a different city.
+ *
+ * Moving is supported because the realistic mistake is filing a
+ * locality under the wrong city, and the alternative -- delete and
+ * recreate -- would CASCADE every college in it out of existence to
+ * fix a one-field error.
+ */
+async function updateArea(id, { cityId, name }) {
+  const [result] = await pool.execute(
+    'UPDATE areas SET city_id = ?, name = ? WHERE id = ?',
+    [cityId, name, id],
+  )
+  return result.affectedRows > 0 ? findAreaById(id) : null
+}
+
+async function areaDependants(id) {
+  const [[row]] = await pool.execute(
+    `SELECT
+       (SELECT COUNT(*) FROM colleges WHERE area_id = ?) AS colleges,
+       (SELECT COUNT(*) FROM items i
+          JOIN colleges co ON co.id = i.college_id
+         WHERE co.area_id = ?) AS items,
+       (SELECT COUNT(*) FROM users u
+          JOIN colleges co ON co.id = u.college_id
+         WHERE co.area_id = ?) AS users`,
+    [id, id, id],
+  )
+  return {
+    colleges: Number(row.colleges),
+    items: Number(row.items),
+    users: Number(row.users),
+  }
+}
+
+async function removeArea(id) {
+  const [result] = await pool.execute('DELETE FROM areas WHERE id = ?', [id])
+  return result.affectedRows > 0
+}
+
+/* --- Colleges --------------------------------------------------- */
+
+/**
+ * One page of colleges for the admin table.
+ *
+ * Paginated where cities and areas are not, because this is the list
+ * that grows: a working deployment has a handful of cities and
+ * hundreds of campuses.
+ */
+async function listCollegesForAdmin({ page, limit, offset }, filters = {}) {
+  const where = []
+  const params = []
+
+  if (filters.areaId) {
+    where.push('co.area_id = ?')
+    params.push(filters.areaId)
+  }
+  if (filters.cityId) {
+    where.push('a.city_id = ?')
+    params.push(filters.cityId)
+  }
+  if (filters.search) {
+    // escapeLike so a college search for "St. Xavier_" treats the _ as
+    // text, not as a single-character wildcard over the directory.
+    where.push('(co.name LIKE ? OR co.short_name LIKE ?)')
+    const like = `%${escapeLike(filters.search)}%`
+    params.push(like, like)
+  }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
+
+  // LIMIT/OFFSET are the two values interpolated into SQL rather than
+  // bound, so they are re-clamped to integers here no matter what the
+  // caller passed. See utils/pagination.js.
+  const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
+
+  const [rows] = await pool.execute(
+    /* item_count here counts ALL items, not just Available ones --
+       the opposite of the public findColleges(). An admin deciding
+       whether a campus can be deleted needs the true number of rows
+       that would be detached; a browsing user wants to know what they
+       can actually still get. Same column, two different questions. */
+    `SELECT co.id, co.name, co.short_name, co.slug,
+            co.description, co.image_url, co.created_at,
+            a.id AS area_id, a.name AS area_name,
+            c.id AS city_id, c.name AS city_name, c.state,
+            (SELECT COUNT(*) FROM items i WHERE i.college_id = co.id) AS item_count,
+            (SELECT COUNT(*) FROM users u WHERE u.college_id = co.id) AS user_count
+       FROM colleges co
+       JOIN areas  a ON a.id = co.area_id
+       JOIN cities c ON c.id = a.city_id
+       ${clause}
+      ORDER BY co.short_name
+      LIMIT ${safeLimit} OFFSET ${safeOffset}`,
+    params,
+  )
+
+  const [[{ total }]] = await pool.execute(
+    `SELECT COUNT(*) AS total
+       FROM colleges co
+       JOIN areas  a ON a.id = co.area_id
+       JOIN cities c ON c.id = a.city_id
+       ${clause}`,
+    params,
+  )
+
+  return { rows, total: Number(total), page, limit: safeLimit }
+}
+
+/**
+ * Adds a college.
+ *
+ * description and image_url default to NULL and STAY null unless an
+ * admin supplies them. See the note on those columns in schema.sql:
+ * inventing a description or finding "a picture that looks like a
+ * campus" would put wrong information about a real institution on the
+ * site, so the honest default is to say nothing.
+ */
+async function createCollege({ areaId, name, shortName, description = null, imageUrl = null }) {
+  const slug = await uniqueSlug(name, async (candidate) => {
+    const [[{ n }]] = await pool.execute(
+      'SELECT COUNT(*) AS n FROM colleges WHERE slug = ?', [candidate],
+    )
+    return n > 0
+  })
+
+  const [result] = await pool.execute(
+    `INSERT INTO colleges (area_id, name, short_name, slug, description, image_url)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [areaId, name, shortName, slug, description, imageUrl],
+  )
+  return findCollegeById(result.insertId)
+}
+
+/**
+ * Edits a college. Can also move it to a different area, for the same
+ * reason updateArea can move a city: the fix for "filed under the
+ * wrong locality" must not be a delete that cascades.
+ *
+ * Note that the SET clause has no slot for `slug` -- see updateCity.
+ */
+async function updateCollege(id, { areaId, name, shortName, description = null, imageUrl = null }) {
+  const [result] = await pool.execute(
+    `UPDATE colleges
+        SET area_id = ?, name = ?, short_name = ?, description = ?, image_url = ?
+      WHERE id = ?`,
+    [areaId, name, shortName, description, imageUrl, id],
+  )
+  return result.affectedRows > 0 ? findCollegeById(id) : null
+}
+
+/**
+ * What a college deletion detaches. Both FKs are ON DELETE SET NULL,
+ * so nothing is destroyed -- but every listing at that campus loses
+ * its college, keeping only the free-text `location` sentence, and
+ * that is not reversible by re-adding the college afterwards.
+ */
+async function collegeDependants(id) {
+  const [[row]] = await pool.execute(
+    `SELECT
+       (SELECT COUNT(*) FROM items WHERE college_id = ?) AS items,
+       (SELECT COUNT(*) FROM users WHERE college_id = ?) AS users`,
+    [id, id],
+  )
+  return { items: Number(row.items), users: Number(row.users) }
+}
+
+async function removeCollege(id) {
+  const [result] = await pool.execute('DELETE FROM colleges WHERE id = ?', [id])
+  return result.affectedRows > 0
+}
+
 module.exports = {
   findCities,
   findAreas,
   findColleges,
   findCollegeById,
   findCityById,
+  // admin
+  slugify,
+  listCitiesForAdmin,
+  createCity,
+  updateCity,
+  cityDependants,
+  removeCity,
+  findAreaById,
+  listAreasForAdmin,
+  createArea,
+  updateArea,
+  areaDependants,
+  removeArea,
+  listCollegesForAdmin,
+  createCollege,
+  updateCollege,
+  collegeDependants,
+  removeCollege,
 }
