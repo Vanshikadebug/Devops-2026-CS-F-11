@@ -1,45 +1,40 @@
 /**
  * models/auditModel.js -- the append-only administrative trail.
  *
- * Every state-changing admin action writes exactly one row here. The
- * point is not tidiness: it is that three months from now, "who
- * blocked this account and why" has an answer that does not depend on
- * anybody remembering.
+ * Every state-changing admin action writes exactly one row here, so that
+ * three months from now "who blocked this account and why" has an answer
+ * that does not depend on anybody remembering.
  *
  * >>> THIS FILE HAS NO update() AND NO remove() <<<
- * Not an oversight. An audit trail that can be edited is not evidence
- * of anything -- the first thing a misbehaving admin would do is tidy
- * up after themselves. There is no route, no controller and no model
- * function that changes a row here, so removing an entry means opening
- * a MySQL client and doing it by hand, which is a decision somebody
- * has to make deliberately.
+ * Not an oversight. An audit trail that can be edited is not evidence of
+ * anything -- the first thing a misbehaving admin would do is tidy up
+ * after themselves. Removing an entry means opening a MySQL client by
+ * hand, which is a decision somebody has to make deliberately.
  *
  * WHAT MUST NEVER REACH THIS TABLE
- * The `changes` column is a JSON snapshot of what an action altered,
- * and the tempting way to build it is `{ before: user, after: body }`.
- * That would copy a bcrypt hash into a table which is READ far more
- * often than `users` is -- an admin opens /admin/activity casually,
- * and the response goes over the network to a browser. SENSITIVE_KEYS
- * below is stripped on the way in, so a careless caller cannot leak a
- * hash even by passing the whole row.
+ * `changes` is a JSON snapshot of what an action altered, and the
+ * tempting way to build it is `{ before: user, after: body }` -- which
+ * copies a bcrypt hash into a table that is READ far more often than
+ * `users` is, and sent to a browser. SENSITIVE_KEYS is stripped on the
+ * way in, so a careless caller cannot leak a hash even by passing a
+ * whole row.
  */
 
-const { pool } = require('../config/db')
+const { Prisma } = require('@prisma/client')
+const { prisma } = require('../config/prisma')
 const { clampLimitOffset } = require('../utils/pagination')
+const { formatDates } = require('../utils/sqlDateTime')
 const escapeLike = require('../utils/escapeLike')
 
-/* The ENUM in schema.sql. Duplicated here so a wrong value is caught
-   by a readable error instead of MySQL's WARN_DATA_TRUNCATED, and so
-   record() can normalise before it writes rather than throwing after
-   the action it is supposed to be recording has already happened. */
+/* Mirrors the enum in the schema. Kept here so a wrong value fails with
+   a readable error before the write, rather than as MySQL's
+   WARN_DATA_TRUNCATED after the action being recorded already happened. */
 const TARGET_TYPES = [
   'user', 'item', 'college', 'city', 'area', 'report', 'setting', 'category',
 ]
 
-/* Anything whose NAME looks like a secret is removed from `changes`,
-   at any depth. Matching on the key rather than on the value is what
-   makes this robust: a hash is just a string, and no value-based rule
-   could tell it from a legitimate one. */
+/* Matched on the KEY, not the value: a hash is just a string, and no
+   value-based rule could tell it from a legitimate one. */
 const SENSITIVE_KEYS = [
   'password', 'password_hash', 'passwordhash', 'token', 'secret',
   'authorization', 'jwt', 'refresh_token', 'api_key',
@@ -47,20 +42,17 @@ const SENSITIVE_KEYS = [
 
 /** Recursively drops sensitive keys. Returns a new object. */
 function redact(value, depth = 0) {
-  // A guard against a caller handing us a cyclic or absurdly nested
-  // object -- this runs inside a request, and JSON.stringify on a
-  // cycle throws.
+  // Guards against a cyclic or absurdly nested object -- this runs
+  // inside a request, and JSON.stringify on a cycle throws.
   if (depth > 6) return '[too deep]'
   if (value === null || typeof value !== 'object') return value
   if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1))
 
   const out = {}
   for (const [key, v] of Object.entries(value)) {
-    if (SENSITIVE_KEYS.includes(key.toLowerCase())) {
-      out[key] = '[redacted]'
-      continue
-    }
-    out[key] = redact(v, depth + 1)
+    out[key] = SENSITIVE_KEYS.includes(key.toLowerCase())
+      ? '[redacted]'
+      : redact(v, depth + 1)
   }
   return out
 }
@@ -71,21 +63,27 @@ function fit(text, max) {
   return s.length <= max ? s : `${s.slice(0, max - 1)}…`
 }
 
+const DATE_FIELDS = ['created_at']
+
+/** Flattens the joined admin name into the flat row shape callers expect. */
+function mapRow(row) {
+  const { admin, ...rest } = row
+  return formatDates({ ...rest, admin_name: admin?.name ?? null }, DATE_FIELDS)
+}
+
 /**
  * Writes one audit row.
  *
  * >>> WHY THIS TRUNCATES INSTEAD OF VALIDATING <<<
- * It is called AFTER the action it records has already committed. If
- * it threw because a description ran to 501 characters, the caller
- * would have to answer 500 for an operation that succeeded -- a lie to
- * the client, and still no audit row. So every value is coerced into
- * something the column accepts: an entry with a clipped description is
- * worth far more than no entry.
+ * It is called AFTER the action it records has committed. Throwing
+ * because a description ran to 501 characters would make the caller
+ * answer 500 for an operation that succeeded -- a lie to the client, and
+ * still no audit row. An entry with a clipped description is worth far
+ * more than no entry.
  *
- * It does still throw on a genuinely impossible write (the database is
- * down, `action` is missing). That is deliberate: a silent `catch {}`
- * here would produce an audit log with invisible holes, which is
- * strictly worse than an error somebody notices.
+ * It does still throw on a genuinely impossible write (database down,
+ * `action` missing): a silent `catch {}` would produce an audit log with
+ * invisible holes, which is strictly worse than an error somebody sees.
  */
 async function record({
   adminId,
@@ -104,110 +102,89 @@ async function record({
     )
   }
 
-  const [result] = await pool.execute(
-    `INSERT INTO audit_logs
-       (admin_id, admin_email, action, target_type, target_id,
-        description, changes, ip_address)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      adminId ?? null,
+  const created = await prisma.auditLog.create({
+    data: {
+      admin_id: adminId ?? null,
       // NOT NULL in the schema. If a caller somehow has no email, an
       // explicit marker beats failing the insert and losing the row.
-      fit(adminEmail || 'unknown', 255),
-      fit(action, 60),
-      targetType,
-      targetId ?? null,
-      fit(description, 500),
-      changes === null ? null : JSON.stringify(redact(changes)),
-      ip ? fit(ip, 45) : null,
-    ],
-  )
-  return result.insertId
+      admin_email: fit(adminEmail || 'unknown', 255),
+      action: fit(action, 60),
+      target_type: targetType,
+      target_id: targetId ?? null,
+      description: fit(description, 500),
+      /* Prisma.DbNull, not null. For a nullable Json column plain `null`
+         is ambiguous -- it could mean SQL NULL or the JSON value `null`
+         -- so Prisma rejects it and makes you say which. This wants a
+         genuinely empty column. */
+      changes: changes === null ? Prisma.DbNull : redact(changes),
+      ip_address: ip ? fit(ip, 45) : null,
+    },
+    select: { id: true },
+  })
+
+  return created.id
 }
 
-/* Sort options as a lookup table, for the same reason itemModel has
-   one: ORDER BY cannot be a bound parameter, so the only sort strings
-   that may reach the SQL are the ones written here. */
 const SORTS = {
-  newest: 'l.created_at DESC, l.id DESC',
-  oldest: 'l.created_at ASC, l.id ASC',
+  newest: [{ created_at: 'desc' }, { id: 'desc' }],
+  oldest: [{ created_at: 'asc' }, { id: 'asc' }],
 }
-
-const LOG_FIELDS = `
-  l.id, l.admin_id, l.admin_email, l.action,
-  l.target_type, l.target_id, l.description, l.changes,
-  l.ip_address, l.created_at,
-  u.name AS admin_name
-`
 
 /**
  * A page of log entries, newest first, optionally filtered.
  *
- * LEFT JOIN, not JOIN: admin_id is SET NULL when the account is
- * deleted, and an inner join would make exactly those entries -- the
- * ones about people who are no longer here -- disappear from the log.
- * The stored admin_email still names them, which is the whole reason
- * it is stored.
+ * The admin relation is optional, not required: admin_id is SET NULL when
+ * an account is deleted, and requiring it would make exactly those
+ * entries -- the ones about people who are no longer here -- disappear.
+ * The stored admin_email still names them, which is why it is stored.
  */
 async function list({ page, limit, offset }, filters = {}) {
-  const where = []
-  const params = []
+  const where = {}
 
-  if (filters.adminId) {
-    where.push('l.admin_id = ?')
-    params.push(filters.adminId)
-  }
-  if (filters.action) {
-    where.push('l.action = ?')
-    params.push(filters.action)
-  }
-  if (filters.targetType) {
-    where.push('l.target_type = ?')
-    params.push(filters.targetType)
-  }
+  if (filters.adminId) where.admin_id = filters.adminId
+  if (filters.action) where.action = filters.action
+  if (filters.targetType) where.target_type = filters.targetType
+
   if (filters.search) {
     // escapeLike so wildcard characters in the query are matched
     // literally instead of scanning the whole audit log.
-    where.push('(l.description LIKE ? OR l.admin_email LIKE ?)')
-    const like = `%${escapeLike(filters.search)}%`
-    params.push(like, like)
-  }
-  if (filters.from) {
-    where.push('l.created_at >= ?')
-    params.push(filters.from)
-  }
-  if (filters.to) {
-    // The caller passes a date; a plain `<= '2026-08-16'` would compare
-    // against midnight and silently exclude that whole day's entries.
-    where.push('l.created_at < DATE_ADD(?, INTERVAL 1 DAY)')
-    params.push(filters.to)
+    const term = escapeLike(filters.search)
+    where.OR = [
+      { description: { contains: term } },
+      { admin_email: { contains: term } },
+    ]
   }
 
-  const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
-  const order = SORTS[filters.sort] || SORTS.newest
+  if (filters.from || filters.to) {
+    where.created_at = {}
+    if (filters.from) where.created_at.gte = new Date(filters.from)
+    if (filters.to) {
+      /* Exclusive upper bound one day on. The caller passes a date, and a
+         plain `<= '2026-08-16'` compares against midnight and silently
+         excludes that whole day's entries. */
+      const to = new Date(filters.to)
+      to.setUTCDate(to.getUTCDate() + 1)
+      where.created_at.lt = to
+    }
+  }
 
-  // LIMIT and OFFSET are interpolated, not bound (the protocol forbids
-  // binding them), so they are re-clamped to integers here regardless of
-  // what the caller passed -- the last line of defence between this query
-  // and an injected LIMIT clause. See utils/pagination.js.
+  /* Still clamped even though Prisma binds take/skip safely: the ceiling
+     is what stops one request asking the database to assemble 100,000
+     rows. See utils/pagination.js. */
   const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
 
-  const [rows] = await pool.execute(
-    `SELECT ${LOG_FIELDS}
-       FROM audit_logs l
-       LEFT JOIN users u ON u.id = l.admin_id
-       ${clause}
-      ORDER BY ${order}
-      LIMIT ${safeLimit} OFFSET ${safeOffset}`,
-    params,
-  )
+  const [rows, total] = await Promise.all([
+    prisma.auditLog.findMany({
+      where,
+      orderBy: SORTS[filters.sort] || SORTS.newest,
+      take: safeLimit,
+      skip: safeOffset,
+      include: { admin: { select: { name: true } } },
+    }),
+    prisma.auditLog.count({ where }),
+  ])
 
-  const [[{ total }]] = await pool.execute(
-    `SELECT COUNT(*) AS total FROM audit_logs l ${clause}`,
-    params,
-  )
-
-  return { rows, total: Number(total), page, limit: safeLimit }
+  return { rows: rows.map(mapRow), total: Number(total), page, limit: safeLimit }
 }
 
 /**
@@ -216,9 +193,11 @@ async function list({ page, limit, offset }, filters = {}) {
  * out of date the moment a new action is added.
  */
 async function distinctActions() {
-  const [rows] = await pool.execute(
-    'SELECT DISTINCT action FROM audit_logs ORDER BY action',
-  )
+  const rows = await prisma.auditLog.findMany({
+    distinct: ['action'],
+    select: { action: true },
+    orderBy: { action: 'asc' },
+  })
   return rows.map((r) => r.action)
 }
 

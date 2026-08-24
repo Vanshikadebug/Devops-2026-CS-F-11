@@ -7,15 +7,24 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "postinstall": "prisma generate",
     "db:setup": "node scripts/setup-db.js",
     "db:seed": "node scripts/seed-db.js",
     "db:reset": "npm run db:setup && npm run db:seed",
     "db:migrate": "node scripts/migrate.js",
+    "prisma:deploy": "node scripts/prisma-cli.js migrate deploy",
+    "prisma:dev": "node scripts/prisma-cli.js migrate dev",
+    "prisma:generate": "node scripts/prisma-cli.js generate",
+    "prisma:studio": "node scripts/prisma-cli.js studio",
+    "prisma:status": "node scripts/prisma-cli.js migrate status",
     "db:admin": "node scripts/create-admin.js",
     "test": "cross-env NODE_ENV=test jest --runInBand",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
     "test:coverage": "cross-env NODE_ENV=test jest --runInBand --coverage",
     "test:ci": "cross-env NODE_ENV=test jest --runInBand --ci --reporters=default --reporters=jest-junit"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
   },
   "keywords": [
     "express",

@@ -12,6 +12,7 @@
 const app = require('./app')
 const config = require('./config/env')
 const { testConnection, closePool } = require('./config/db')
+const { testPrismaConnection, disconnectPrisma } = require('./config/prisma')
 
 /* ---------------------------------------------------------------
    Verify the database BEFORE accepting traffic.
@@ -22,13 +23,19 @@ const { testConnection, closePool } = require('./config/db')
    it produces one clear message, immediately, at the moment you
    start the server.
 
+   Both clients are checked: Prisma is the app's main path, and the
+   mysql2 pool still backs the raw NOW() writes and a few scripts.
+
    We WARN rather than exit: the health endpoint needs no database,
    so a running API that reports "DB down" is more useful for
    debugging than a process that refuses to start at all.
 --------------------------------------------------------------- */
-testConnection().then((ok) => {
-  if (!ok) {
-    console.warn('[server] starting WITHOUT a database connection.')
+Promise.all([
+  testConnection(),
+  testPrismaConnection().then(() => true).catch(() => false),
+]).then(([poolOk, prismaOk]) => {
+  if (!poolOk || !prismaOk) {
+    console.warn('[server] starting WITHOUT a full database connection.')
     console.warn('[server] /api/health will still respond; data routes will fail.')
   }
 })
@@ -80,9 +87,12 @@ function shutdown(signal) {
   console.log(`\n[server] ${signal} received, shutting down gracefully…`)
 
   server.close(async () => {
-    // Close the pool too. Ten open MySQL connections left behind on
-    // every restart would eventually exhaust the server's limit.
-    await closePool().catch(() => {})
+    // Close both clients too. Connections left behind on every restart
+    // would eventually exhaust the server's limit.
+    await Promise.all([
+      closePool().catch(() => {}),
+      disconnectPrisma().catch(() => {}),
+    ])
     console.log('[server] closed remaining connections. Goodbye.')
     process.exit(0)
   })
