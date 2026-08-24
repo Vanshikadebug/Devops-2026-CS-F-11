@@ -124,6 +124,25 @@ const config = {
 
   clientOrigin: optional('CLIENT_ORIGIN', 'http://localhost:5173'),
 
+  /* Prisma needs a single connection URL, but DB_* above stays the one
+     source of truth -- a second copy of the password in DATABASE_URL
+     would drift the day someone changes one and not the other.
+
+     >>> WHY THE COMPONENTS ARE ENCODED <<<
+     A URL treats % : / ? # @ as syntax. A password of "99295%Yash"
+     spliced in raw makes "%Ya" an invalid percent-escape, and the
+     driver either throws or silently connects with a mangled password.
+     encodeURIComponent on the credentials is what makes any password
+     safe to embed. The database NAME is a path segment, so it is
+     encoded too. */
+  get databaseUrl() {
+    const user = encodeURIComponent(this.db.user)
+    const password = encodeURIComponent(this.db.password)
+    const name = encodeURIComponent(this.db.database)
+    const credentials = password ? `${user}:${password}` : user
+    return `mysql://${credentials}@${this.db.host}:${this.db.port}/${name}`
+  },
+
   /* ---------------------------------------------------------------
      THE BOOTSTRAP ADMIN
      ---------------------------------------------------------------
