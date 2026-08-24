@@ -31,12 +31,12 @@ async function currentUser() {
   const res = await request(app)
     .get('/api/auth/me')
     .set('Authorization', `Bearer ${token}`)
-  return res.body.user
+  return res.body.data.user
 }
 
 beforeAll(async () => {
   const login = await request(app).post('/api/auth/login').send(LOGIN)
-  token = login.body.token
+  token = login.body.data.token
 
   const me = await currentUser()
   originalCollegeId = me.college_id
@@ -85,8 +85,8 @@ describe('authorization', () => {
     const victimBefore = await request(app)
       .post('/api/auth/login')
       .send({ email: 'priya@example.com', password: 'password123' })
-    const victimId = victimBefore.body.user.id
-    const victimCollegeBefore = victimBefore.body.user.college_id
+    const victimId = victimBefore.body.data.user.id
+    const victimCollegeBefore = victimBefore.body.data.user.college_id
 
     const res = await request(app)
       .put('/api/users/me/college')
@@ -94,14 +94,14 @@ describe('authorization', () => {
       .send({ collegeId: mnit.id, id: victimId, userId: victimId, user_id: victimId })
 
     expect(res.status).toBe(200)
-    expect(res.body.user.id).not.toBe(victimId)
-    expect(res.body.user.college_id).toBe(mnit.id)
+    expect(res.body.data.user.id).not.toBe(victimId)
+    expect(res.body.data.user.college_id).toBe(mnit.id)
 
     // And the other account is untouched.
     const victimAfter = await request(app)
       .post('/api/auth/login')
       .send({ email: 'priya@example.com', password: 'password123' })
-    expect(victimAfter.body.user.college_id).toBe(victimCollegeBefore)
+    expect(victimAfter.body.data.user.college_id).toBe(victimCollegeBefore)
   })
 })
 
@@ -114,10 +114,10 @@ describe('saving a college', () => {
 
     expect(res.status).toBe(200)
     expect(res.body.success).toBe(true)
-    expect(res.body.user.college_id).toBe(mnit.id)
-    expect(res.body.user.college_name).toBe('MNIT Jaipur')
-    expect(res.body.user.area_name).toBe('Malviya Nagar')
-    expect(res.body.user.city_name).toBe('Jaipur')
+    expect(res.body.data.user.college_id).toBe(mnit.id)
+    expect(res.body.data.user.college_name).toBe('MNIT Jaipur')
+    expect(res.body.data.user.area_name).toBe('Malviya Nagar')
+    expect(res.body.data.user.city_name).toBe('Jaipur')
   })
 
   it('persists, so a later request sees it', async () => {
@@ -140,8 +140,8 @@ describe('saving a college', () => {
       .send({ collegeId: null })
 
     expect(res.status).toBe(200)
-    expect(res.body.user.college_id).toBeNull()
-    expect(res.body.user.college_name).toBeNull()
+    expect(res.body.data.user.college_id).toBeNull()
+    expect(res.body.data.user.college_name).toBeNull()
 
     // The user must still load -- the college JOINs are LEFT JOINs
     // precisely so a user without one does not vanish from
@@ -165,7 +165,7 @@ describe('saving a college', () => {
       .send({ collegeId: mnit.id })
 
     expect(second.status).toBe(first.status)
-    expect(second.body.user.college_id).toBe(first.body.user.college_id)
+    expect(second.body.data.user.college_id).toBe(first.body.data.user.college_id)
   })
 
   it('never returns the password hash', async () => {
@@ -179,7 +179,7 @@ describe('saving a college', () => {
       .send({ collegeId: skit.id })
 
     expect(JSON.stringify(res.body)).not.toMatch(/\$2[aby]\$/)
-    expect(res.body.user).not.toHaveProperty('password')
+    expect(res.body.data.user).not.toHaveProperty('password')
   })
 })
 

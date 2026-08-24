@@ -9,7 +9,7 @@ import Dashboard from './pages/Dashboard'
 import ItemForm from './pages/ItemForm'
 import ItemDetail from './pages/ItemDetail'
 import MyItems from './pages/MyItems'
-import Placeholder from './pages/Placeholder'
+import Requests from './pages/Requests'
 import NotFound from './pages/NotFound'
 import './App.css'
 
@@ -31,10 +31,12 @@ import './App.css'
  * `path="*"` matches anything not caught above, so it must stay
  * last. It renders the 404 page.
  *
- * WHY ARE MOST PAGES PLACEHOLDERS?
- * Routing is wired up completely NOW, in Phase 2. Each later phase
- * swaps one Placeholder for the real page. That way a broken link
- * surfaces the moment it appears, not five phases later.
+ * WHY WAS ROUTING WIRED UP BEFORE THE PAGES EXISTED?
+ * Routing was wired completely in Phase 2, with every not-yet-built
+ * page pointing at a shared Placeholder. Each later phase then swapped
+ * one Placeholder for its real page -- so a broken link surfaced the
+ * moment it appeared, not five phases later. As of Phase 10 there are
+ * no placeholders left: every route below renders its real page.
  *
  * TWO KINDS OF ROUTE, ADDED IN PHASE 6
  *
@@ -102,11 +104,11 @@ function App() {
           />
 
           {/* --- Requires an account ------------------------------
-              Only /requests is still a placeholder; the item pages
-              below became real in Phase 8. The GUARD was wired in
-              Phase 6 with the placeholders still in place, which is
-              why swapping in the real pages needed no change to the
-              redirect behaviour -- it had already been tested. */}
+              Every route here now serves its real page -- /requests
+              was the last placeholder, filled in Phase 10. The GUARD
+              was wired in Phase 6 with the placeholders still in place,
+              which is why swapping in each real page needed no change
+              to the redirect behaviour -- it had already been tested. */}
           <Route
             path="/dashboard"
             element={
@@ -168,11 +170,7 @@ function App() {
             path="/requests"
             element={
               <ProtectedRoute>
-                <Placeholder
-                  title="Requests"
-                  phase={10}
-                  description="Requests you have received on your items, and requests you have sent to others."
-                />
+                <Requests />
               </ProtectedRoute>
             }
           />

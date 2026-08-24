@@ -214,7 +214,7 @@ function Register() {
             onChange={handleChange('name')}
             error={errors.name}
             autoComplete="name"
-            placeholder="Vanshika Meena"
+            placeholder="Enter your full name"
             required
           />
 
@@ -242,7 +242,7 @@ function Register() {
             onChange={handleChange('mobile')}
             error={errors.mobile}
             autoComplete="tel"
-            placeholder="9876543210"
+            placeholder="+91 XXXXXXXXXX"
             hint="Shared with a user only after you accept their request."
             required
           />

@@ -21,6 +21,40 @@
 const { body } = require('express-validator')
 
 /* ---------------------------------------------------------------
+   EMAIL NORMALISATION -- shared by BOTH register and login
+   ---------------------------------------------------------------
+   normalizeEmail() lowercases an address, which is the one thing we
+   actually want: without it Aarav@example.com and aarav@example.com
+   are different strings, so the UNIQUE index would allow BOTH and a
+   user could never work out why their login fails.
+
+   THE OPTIONS ARE NOT OPTIONAL. By DEFAULT normalizeEmail() also
+   rewrites provider-specific forms -- for Gmail it strips dots and
+   +tags, so
+       Vanshika.Meena@Gmail.com  ->  vanshikameena@gmail.com
+   That is true to how Gmail routes mail, but it means we would store
+   an address the user never typed. Case-insensitivity is all we
+   need, so every rewriting flag below is switched off.
+
+   WHY ONE SHARED CONSTANT? Register and login MUST normalise a given
+   address to the exact same string, or an account created under one
+   spelling can never be found under the other. Login once called a
+   bare normalizeEmail() while register passed these flags: a Gmail
+   address registered WITH its dots was then searched for WITHOUT
+   them, so every such login returned 401 -- the account existed but
+   could never sign in. Defining the options once and referencing
+   them in both chains makes "register and login agree" true by
+   construction, not by two lists a maintainer must keep in sync.
+--------------------------------------------------------------- */
+const EMAIL_NORMALISE_OPTIONS = {
+  gmail_remove_dots: false,
+  gmail_remove_subaddress: false,
+  outlookdotcom_remove_subaddress: false,
+  yahoo_remove_subaddress: false,
+  icloud_remove_subaddress: false,
+}
+
+/* ---------------------------------------------------------------
    REGISTRATION
 --------------------------------------------------------------- */
 const registerRules = [
@@ -39,26 +73,10 @@ const registerRules = [
     .trim()
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Enter a valid email address')
-    // Lowercases the address. This matters: without it,
-    // Aarav@example.com and aarav@example.com are different strings,
-    // so the UNIQUE index allows BOTH -- and the user cannot work out
-    // why their login fails. Normalising on the way in makes the
-    // constraint mean what we intended.
-    //
-    // THE OPTIONS ARE NOT OPTIONAL. Checked with the real library
-    // rather than trusted: by DEFAULT normalizeEmail() also strips
-    // dots and +tags from Gmail addresses, so
-    //   Vanshika.Meena@Gmail.com  ->  vanshikameena@gmail.com
-    // That is true to how Gmail routes mail, but it means the profile
-    // shows an address the user never typed. Case-insensitivity is
-    // all we actually need, so the rewriting is switched off.
-    .normalizeEmail({
-      gmail_remove_dots: false,
-      gmail_remove_subaddress: false,
-      outlookdotcom_remove_subaddress: false,
-      yahoo_remove_subaddress: false,
-      icloud_remove_subaddress: false,
-    })
+    // Lowercase for a case-insensitive UNIQUE index, without the
+    // Gmail dot/+tag rewriting. See EMAIL_NORMALISE_OPTIONS above --
+    // login uses the SAME object so the two can never drift apart.
+    .normalizeEmail(EMAIL_NORMALISE_OPTIONS)
     .isLength({ max: 255 }).withMessage('Email is too long'),
 
   body('mobile')
@@ -77,7 +95,7 @@ const registerRules = [
     // differs from the one typed at login. Only trim fields you will
     // compare loosely -- never a password.
     .isLength({ min: 8, max: 72 })
-    .withMessage('Password must be at least 8 characters')
+    .withMessage('Password must be 8 to 72 characters')
     // WHY A 72-CHARACTER MAXIMUM? This is a real bcrypt limitation,
     // not a style choice: bcrypt silently IGNORES everything past 72
     // bytes. A user with a 100-character passphrase would find that
@@ -110,9 +128,11 @@ const loginRules = [
     .trim()
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Enter a valid email address')
-    // Must match registration's normalisation, or someone who
-    // registered as Aarav@... could never log in as aarav@...
-    .normalizeEmail(),
+    // MUST normalise identically to registration -- same object, no
+    // exceptions. A bare normalizeEmail() here was the bug: its Gmail
+    // defaults strip dots/+tags, so a dotted address registered one
+    // way was looked up another and login always 401'd.
+    .normalizeEmail(EMAIL_NORMALISE_OPTIONS),
 
   body('password')
     .notEmpty().withMessage('Password is required'),

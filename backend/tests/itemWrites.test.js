@@ -72,11 +72,11 @@ async function createItem(token, body) {
 
 beforeAll(async () => {
   const a = await request(app).post('/api/auth/login').send(AARAV)
-  aaravToken = a.body.token
-  aaravId = a.body.user.id
+  aaravToken = a.body.data.token
+  aaravId = a.body.data.user.id
 
   const p = await request(app).post('/api/auth/login').send(PRIYA)
-  priyaToken = p.body.token
+  priyaToken = p.body.data.token
 
   const colleges = await request(app).get('/api/locations/colleges')
   skit = colleges.body.data.find((c) => c.slug === 'skit-jaipur')

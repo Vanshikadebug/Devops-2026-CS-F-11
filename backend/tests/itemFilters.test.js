@@ -323,6 +323,83 @@ describe('?sort= and ?limit=', () => {
   })
 })
 
+describe('?page= (offset pagination)', () => {
+  // These lean on the seed having more than a handful of rows so that a
+  // small page really does leave some out. `total` is measured in the
+  // beforeAll above, so the assertions adapt to whatever the seed holds.
+  it('walks the list in pages without dropping or repeating a row', async () => {
+    // >>> THE OFF-BY-ONE TEST <<<
+    // A wrong OFFSET shows up here and almost nowhere else: page 2 that
+    // starts a row too early repeats one, a row too late skips one.
+    // Stitching page 1 and page 2 back together and comparing to the
+    // top of the full list catches both.
+    const all = await request(app).get('/api/items?limit=100')
+    const firstTen = all.body.data.slice(0, 10).map((i) => i.id)
+
+    const p1 = await request(app).get('/api/items?limit=5&page=1')
+    const p2 = await request(app).get('/api/items?limit=5&page=2')
+
+    expect(p1.body.count).toBe(5)
+    const stitched = [...p1.body.data, ...p2.body.data].map((i) => i.id)
+    expect(stitched).toEqual(firstTen)
+  })
+
+  it('reports the true total in `pagination`, separate from `count`', async () => {
+    // >>> THE CONTRACT THE FRONTEND RELIES ON <<<
+    // `count` is the number of rows in THIS response; pagination.total
+    // is how many match across every page. Conflating the two -- making
+    // count mean total -- is the tempting change that would break the
+    // grid, which reads data.length against count.
+    const res = await request(app).get('/api/items?limit=5&page=1')
+
+    expect(res.body.count).toBe(res.body.data.length)
+    expect(res.body.pagination.total).toBe(total)
+    expect(res.body.pagination.page).toBe(1)
+    expect(res.body.pagination.limit).toBe(5)
+    expect(res.body.pagination.totalPages).toBe(Math.ceil(total / 5))
+    expect(res.body.pagination.hasPrev).toBe(false)
+    expect(res.body.pagination.hasNext).toBe(true)
+  })
+
+  it('returns an empty page past the last row, not an error', async () => {
+    // A page number beyond the data is a normal thing for a pager to
+    // ask as the table shrinks under it. The answer is 200 with an
+    // empty list and an honest total, not a 404 and not a wrap-around
+    // back to page 1.
+    const res = await request(app).get('/api/items?limit=5&page=100')
+
+    expect(res.status).toBe(200)
+    expect(res.body.data).toEqual([])
+    expect(res.body.count).toBe(0)
+    expect(res.body.pagination.total).toBe(total)
+  })
+
+  it('clamps a hostile page to an integer, and cannot be injected', async () => {
+    // OFFSET is interpolated for the same reason LIMIT is, so it gets
+    // the same treatment: parseInt reduces the payload to 1 before it
+    // reaches the query, and the table is still standing afterwards.
+    const res = await request(app).get(
+      `/api/items?limit=5&page=${encodeURIComponent('1; DROP TABLE items')}`,
+    )
+
+    expect(res.status).toBe(200)
+    expect(res.body.pagination.page).toBe(1)
+
+    const after = await request(app).get('/api/items')
+    expect(after.body.count).toBe(total)
+  })
+
+  it('still carries pagination on the default, unpaged request', async () => {
+    // The frontend does not send page or limit yet, and must still get a
+    // usable pager envelope -- one page holding everything.
+    const res = await request(app).get('/api/items')
+
+    expect(res.body.pagination.page).toBe(1)
+    expect(res.body.pagination.total).toBe(total)
+    expect(res.body.pagination.hasPrev).toBe(false)
+  })
+})
+
 describe('the filtered response never leaks private columns', () => {
   it('adds college fields without adding owner contact details', async () => {
     // >>> SECURITY TEST <<<

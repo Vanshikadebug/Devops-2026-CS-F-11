@@ -23,10 +23,21 @@ function authResponse(user, message) {
   return {
     success: true,
     message,
-    token: signToken(user.id),
-    // `user` here came from the model's SAFE_FIELDS query, so there
-    // is no password on the object to leak in the first place.
-    user,
+    /* Everything the client needs sits under `data` -- the one envelope
+       key every other endpoint in this API already uses, and the shape
+       the frontend's api.js documents at the top of its file
+       ({ success, message, data }). Auth used to be the exception:
+       token and user hung at the top level, so authService needed a
+       special case that read them differently from every other service.
+       Nesting them here retires that exception -- authService unwraps
+       `data` exactly like itemService and locationService do, and the
+       contract the frontend claims to speak is finally true everywhere. */
+    data: {
+      token: signToken(user.id),
+      // `user` here came from the model's SAFE_FIELDS query, so there
+      // is no password on the object to leak in the first place.
+      user,
+    },
   }
 }
 
@@ -92,12 +103,58 @@ const login = asyncHandler(async (req, res) => {
 
   if (!matches) throw invalid
 
+  /* >>> REFUSE A BLOCKED ACCOUNT AT THE DOOR <<<
+     protect.js already rejects a blocked user on every authenticated
+     request, so a block is enforced with or without this line. But
+     without it, login itself still SUCCEEDS: a blocked person is told
+     "Logged in successfully", handed a fresh 7-day token, and only
+     discovers the block on their NEXT request, when protect answers
+     403. That is a login screen that accepts the password and then
+     behaves like a broken site. Refusing here makes the block honest
+     at the one moment the user is looking straight at it.
+
+     WHY AFTER THE PASSWORD CHECK, NOT BEFORE?
+     The two failures above deliberately share one message so a
+     stranger cannot learn which emails are registered (see `invalid`).
+     Announcing "blocked" before the password is verified would undo
+     that -- anyone who typed the address would learn the account both
+     exists and is blocked. Placed here, the only person who ever sees
+     this message is one who has already proved they hold the
+     credentials: the blocked user themselves. Nothing new leaks to an
+     attacker who is only guessing.
+
+     403, not 401, and the SAME wording as protect.js: the credentials
+     are genuine, so re-authenticating cannot help, and one message
+     means a blocked user reads the same explanation whether they are
+     stopped at login or mid-session. */
+  if (user.status === 'blocked') {
+    throw ApiError.forbidden(
+      'This account has been blocked. Contact support if you believe this is a mistake.',
+    )
+  }
+
   /* Strip the hash before responding. `user` came from the
      with-password query, so unlike everywhere else in this codebase
      the object genuinely holds a hash right now. Deleting it here is
      the one manual step, and it is the reason that query has such a
      deliberately awkward name. */
   delete user.password
+
+  /* >>> RECORD THE LOGIN, BUT NEVER LET IT FAIL THE LOGIN <<<
+     The credentials are good and the account is active, so this is a
+     genuine sign-in -- stamp last_login_at, the column the admin user
+     list sorts dormant accounts by. Placed HERE, after the blocked
+     check, a refused 403 login is never mistaken for a success.
+
+     Deliberately NOT awaited -- touchLastLogin's own docblock explains
+     why at length: it is bookkeeping, not authentication, and awaiting
+     a write nobody asked for would let a database hiccup turn a correct
+     password into "login failed". Fire it and move on. The .catch is
+     there only so a failed write is logged rather than surfacing as an
+     unhandled promise rejection that could take the process down. */
+  userModel.touchLastLogin(user.id).catch((err) => {
+    console.error(`[auth] failed to stamp last_login_at for user ${user.id}: ${err.message}`)
+  })
 
   res.status(200).json(authResponse(user, 'Logged in successfully'))
 })
@@ -119,8 +176,11 @@ const login = asyncHandler(async (req, res) => {
  * GET /api/auth/me?id=3 would let anyone read any account.
  */
 const me = asyncHandler(async (req, res) => {
-  // protect already loaded and verified the user.
-  res.status(200).json({ success: true, user: req.user })
+  // protect already loaded and verified the user. Wrapped in `data`,
+  // with the user under `data.user` exactly as register and login
+  // return it (see authResponse), so the frontend reads one shape for
+  // all three auth routes.
+  res.status(200).json({ success: true, data: { user: req.user } })
 })
 
 /**
