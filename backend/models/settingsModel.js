@@ -2,34 +2,29 @@
  * models/settingsModel.js -- the `platform_settings` table.
  *
  * >>> THE RULE THIS FILE EXISTS TO ENFORCE <<<
- * A setting that no code reads is a switch that lies. The admin
- * toggles it, the UI says "Saved", and nothing changes -- which is
- * worse than not offering the switch at all, because now the operator
- * believes something about the system that is false.
+ * A setting that no code reads is a switch that lies. The admin toggles
+ * it, the UI says "Saved", and nothing changes -- worse than not offering
+ * the switch at all, because now the operator believes something about
+ * the system that is false.
  *
- * So DEFAULT_SETTINGS below is the complete list, and every entry
- * names the file that honours it. If you add a row here, add the
- * reader in the same commit. If you remove a reader, remove the row.
+ * So DEFAULT_SETTINGS below is the complete list, and every entry names
+ * the file that honours it. If you add a row here, add the reader in the
+ * same commit. If you remove a reader, remove the row.
  *
  * WHY THE DEFAULTS LIVE IN JAVASCRIPT AND NOT ONLY IN SQL
- * Two reasons:
- *   1. `get()` falls back to the default when the row is missing, so a
- *      database that has not been migrated yet, or a row someone
- *      deleted by hand, degrades to the documented default instead of
- *      returning undefined into a security check. `maintenance_mode`
- *      resolving to undefined would be falsy and therefore harmless;
- *      `allow_registration` resolving to undefined would silently
- *      close registration. Neither should depend on luck.
- *   2. It gives migrate.js and seed-db.js one shared list to insert,
- *      so the two can never disagree about what a fresh install has.
+ *   1. `get()` falls back to the default when the row is missing, so an
+ *      un-migrated database, or a row deleted by hand, degrades to the
+ *      documented default instead of returning undefined into a security
+ *      check. `maintenance_mode` as undefined would be falsy and
+ *      harmless; `allow_registration` as undefined would silently close
+ *      registration. Neither should depend on luck.
+ *   2. It gives the migration and the seed one shared list to insert, so
+ *      the two can never disagree about what a fresh install has.
  */
 
-const { pool } = require('../config/db')
-const config = require('../config/env')
+const { prisma } = require('../config/prisma')
+const config = require('./../config/env')
 
-/* ---------------------------------------------------------------
-   THE COMPLETE SET OF SETTINGS
-   --------------------------------------------------------------- */
 const DEFAULT_SETTINGS = [
   {
     key: 'site_name',
@@ -107,20 +102,16 @@ const DEFAULT_SETTINGS = [
 
 const BY_KEY = new Map(DEFAULT_SETTINGS.map((s) => [s.key, s]))
 
-/* ---------------------------------------------------------------
-   CASTING
-   --------------------------------------------------------------- */
-
 /**
  * Turns a stored string into the JavaScript value the app expects.
  *
  * >>> WHY THIS FUNCTION IS A SECURITY BOUNDARY, NOT A CONVENIENCE <<<
- * Everything in this table is a string. The string "false" is TRUTHY
- * in JavaScript. So `if (settings.maintenance_mode)` on a raw row
- * enables maintenance mode permanently and no amount of clicking the
- * toggle off will help -- the value flips between "true" and "false",
- * both of which are truthy. Casting here, once, is what makes every
- * caller's `if` mean what it reads like.
+ * Everything in this table is a string. The string "false" is TRUTHY in
+ * JavaScript. So `if (settings.maintenance_mode)` on a raw row enables
+ * maintenance mode permanently and no amount of clicking the toggle off
+ * will help -- the value flips between "true" and "false", both truthy.
+ * Casting here, once, is what makes every caller's `if` mean what it
+ * reads like.
  */
 function cast(raw, type) {
   if (raw === null || raw === undefined) return null
@@ -128,8 +119,8 @@ function cast(raw, type) {
   switch (type) {
     case 'boolean':
       // Only the exact string 'true' is true. Anything else -- '',
-      // 'false', 'no', a typo -- is false, which is the safe direction
-      // for a flag that grants permission.
+      // 'false', 'no', a typo -- is false, the safe direction for a flag
+      // that grants permission.
       return raw === 'true'
     case 'number': {
       const n = Number(raw)
@@ -154,19 +145,17 @@ function serialise(value, type) {
   return String(value)
 }
 
-/* ---------------------------------------------------------------
-   CACHE
-   ---------------------------------------------------------------
-   Some of these are consulted on requests that must stay fast --
-   maintenanceMode runs before every write. Re-reading nine rows per
-   request is wasteful, so values are cached for a few seconds and the
-   cache is dropped whenever a write happens in this process.
+/* Some of these are consulted on requests that must stay fast --
+   maintenanceMode runs before every write -- so values are cached
+   briefly and the cache is dropped whenever a write happens.
 
-   IN TESTS THE CACHE IS DISABLED ENTIRELY. A test that flips a
-   setting with pool.execute (not through the API) would otherwise
-   race a stale cache, and a test suite whose result depends on
-   timing is worse than no test. Correctness first; the cache is an
-   optimisation for a path tests do not measure. */
+   IN TESTS THE CACHE IS DISABLED ENTIRELY. A test that flips a setting
+   directly in the database would otherwise race a stale cache, and a
+   suite whose result depends on timing is worse than no suite.
+
+   Note the scope: this cache is per PROCESS. Two backend containers each
+   keep their own, so an admin's change reaches one and not the other for
+   up to CACHE_TTL_MS. That is the reason Phase 5 moves it to Redis. */
 const CACHE_TTL_MS = config.isTest ? 0 : 5_000
 let cache = null
 let cacheStamp = 0
@@ -178,21 +167,22 @@ function clearCache() {
 }
 
 /**
- * Every setting as a plain { key: castValue } object, defaults filled
- * in for any row the database does not have.
+ * Every setting as a plain { key: castValue } object, defaults filled in
+ * for any row the database does not have.
  */
 async function getMap() {
   if (cache && Date.now() - cacheStamp < CACHE_TTL_MS) return cache
 
-  // Start from the documented defaults, then let the database override
-  // them. A missing row therefore behaves exactly like a fresh install
-  // rather than like `undefined`.
+  // Start from the documented defaults, then let the database override.
+  // A missing row therefore behaves like a fresh install rather than
+  // like `undefined`.
   const map = {}
   for (const s of DEFAULT_SETTINGS) map[s.key] = cast(s.value, s.type)
 
-  const [rows] = await pool.execute(
-    'SELECT setting_key, setting_value, value_type FROM platform_settings',
-  )
+  const rows = await prisma.platformSetting.findMany({
+    select: { setting_key: true, setting_value: true, value_type: true },
+  })
+
   for (const row of rows) {
     // Ignore any key the code does not know about. A stale row left
     // behind by an older version must not appear as a live setting.
@@ -214,9 +204,9 @@ async function get(key) {
 }
 
 /**
- * Every setting with its metadata, for the admin settings page.
- * Ordered by category then by the order declared above, so the page
- * renders in a deliberate order rather than whatever MySQL returns.
+ * Every setting with its metadata, for the admin settings page. Ordered
+ * by the declaration above, so the page renders deliberately rather than
+ * in whatever order the database returns.
  */
 async function getAllForAdmin() {
   const values = await getMap()
@@ -234,18 +224,17 @@ async function getAllForAdmin() {
  * Writes a batch of settings.
  *
  * >>> ONLY KNOWN KEYS ARE WRITABLE <<<
- * The body arrives as { key: value } from the browser. Looping over
- * it and writing whatever it contains would let anyone with admin
- * access invent rows -- harmless on its own, but it also means a
- * typo'd key saves successfully and silently does nothing, which is
- * the "switch that lies" failure this file exists to prevent. An
- * unknown key is rejected by the validator before it reaches here;
- * this check is the second line, because the model should not depend
- * on being called correctly.
+ * The body arrives as { key: value } from the browser. Writing whatever
+ * it contains would let anyone with admin access invent rows -- harmless
+ * on its own, but it also means a typo'd key saves successfully and
+ * silently does nothing, which is the "switch that lies" failure this
+ * file exists to prevent. The validator rejects unknown keys first; this
+ * is the second line, because the model should not depend on being
+ * called correctly.
  *
- * Runs in a TRANSACTION: a settings save is one administrative act,
- * and half-applying it (registration closed, maintenance mode not on)
- * could leave the site in a state the admin never asked for.
+ * Runs in a TRANSACTION: a settings save is one administrative act, and
+ * half-applying it (registration closed, maintenance mode not on) could
+ * leave the site in a state the admin never asked for.
  */
 async function updateMany(entries, adminId) {
   const keys = Object.keys(entries)
@@ -254,36 +243,31 @@ async function updateMany(entries, adminId) {
     throw new Error(`settingsModel.updateMany: unknown settings ${unknown.join(', ')}`)
   }
 
-  const conn = await pool.getConnection()
-  try {
-    await conn.beginTransaction()
-
-    for (const key of keys) {
+  await prisma.$transaction(
+    keys.map((key) => {
       const meta = BY_KEY.get(key)
       const stored = serialise(entries[key], meta.type)
 
-      /* INSERT ... ON DUPLICATE KEY UPDATE, not UPDATE.
-         The row may legitimately not exist yet -- on a database
-         migrated before this setting was added, for instance. A plain
-         UPDATE would affect zero rows and report success. */
-      await conn.execute(
-        `INSERT INTO platform_settings
-           (setting_key, setting_value, value_type, label, description, category, updated_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-           setting_value = VALUES(setting_value),
-           updated_by    = VALUES(updated_by)`,
-        [key, stored, meta.type, meta.label, meta.description, meta.category, adminId ?? null],
-      )
-    }
-
-    await conn.commit()
-  } catch (err) {
-    await conn.rollback()
-    throw err
-  } finally {
-    conn.release()
-  }
+      /* upsert, not update. The row may legitimately not exist yet -- on
+         a database migrated before this setting was added, for instance
+         -- and a plain update would affect zero rows and report success.
+         Only the value and the author change on an existing row; the
+         label and description belong to the code, not the database. */
+      return prisma.platformSetting.upsert({
+        where: { setting_key: key },
+        update: { setting_value: stored, updated_by: adminId ?? null },
+        create: {
+          setting_key: key,
+          setting_value: stored,
+          value_type: meta.type,
+          label: meta.label,
+          description: meta.description,
+          category: meta.category,
+          updated_by: adminId ?? null,
+        },
+      })
+    }),
+  )
 
   clearCache()
   return getAllForAdmin()
@@ -293,25 +277,25 @@ async function updateMany(entries, adminId) {
  * Inserts any missing default rows. Idempotent, so it is safe to call
  * from the migration, from the seed, and repeatedly.
  *
- * INSERT IGNORE, not INSERT: this must never overwrite a value an
- * admin has deliberately changed. Running the migration twice on a
- * site with maintenance mode on must not switch it off.
+ * skipDuplicates, so this never overwrites a value an admin deliberately
+ * changed: running the migration twice on a site with maintenance mode on
+ * must not switch it off.
  */
 async function ensureDefaults() {
-  let inserted = 0
-
-  for (const s of DEFAULT_SETTINGS) {
-    const [result] = await pool.execute(
-      `INSERT IGNORE INTO platform_settings
-         (setting_key, setting_value, value_type, label, description, category)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [s.key, s.value, s.type, s.label, s.description, s.category],
-    )
-    if (result.affectedRows > 0) inserted++
-  }
+  const result = await prisma.platformSetting.createMany({
+    data: DEFAULT_SETTINGS.map((s) => ({
+      setting_key: s.key,
+      setting_value: s.value,
+      value_type: s.type,
+      label: s.label,
+      description: s.description,
+      category: s.category,
+    })),
+    skipDuplicates: true,
+  })
 
   clearCache()
-  return inserted
+  return result.count
 }
 
 module.exports = {
@@ -322,7 +306,7 @@ module.exports = {
   updateMany,
   ensureDefaults,
   clearCache,
-  // Exported for the validator, which needs to know the type of a key
-  // before it can check the incoming value against it.
+  // Exported for the validator, which needs a key's type before it can
+  // check an incoming value against it.
   metaFor: (key) => BY_KEY.get(key) ?? null,
 }
