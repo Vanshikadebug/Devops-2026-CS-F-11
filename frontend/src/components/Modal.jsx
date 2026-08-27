@@ -18,6 +18,9 @@ function Modal({ open, onClose, title, children, footer, size = 'md' }) {
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
+    // Remember whatever opened the dialog so focus can go back there.
+    const previouslyFocused = document.activeElement
+
     // Move keyboard focus into the dialog so Tab stays in context
     // and screen readers announce the dialog immediately.
     panelRef.current?.focus()
@@ -25,6 +28,10 @@ function Modal({ open, onClose, title, children, footer, size = 'md' }) {
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = previousOverflow
+
+      // Hand focus back to the trigger; without this, keyboard users
+      // land on document.body and lose their place on the page.
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus()
     }
   }, [open, onClose])
 
