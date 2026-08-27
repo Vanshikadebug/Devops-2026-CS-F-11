@@ -6,13 +6,18 @@
   display: flex;
   flex-direction: column;
   transition: box-shadow var(--transition), transform var(--transition),
-    border-color var(--transition);
+   border-color var(--transition);
+    
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .item-card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--border-strong);
   transform: translateY(-2px);
+  transform: translateY(-6px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
 }
 
 .item-card__media {
@@ -30,9 +35,15 @@
    The hover zoom applies to whichever layer is showing: the photo
    when there is one, the category glyph when there is not. Zooming
    only the photo would make half the grid feel dead on hover. */
+
+ .item-image__photo,
+.item-image__glyph {
+  transition: transform 0.35s ease;
+}
+
 .item-card:hover .item-image__photo,
 .item-card:hover .item-image__glyph {
-  transform: scale(1.04);
+  transform: scale(1.06);
 }
 
 .item-card__status {
@@ -91,6 +102,9 @@
   border-top: 1px solid var(--border-color);
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+.item-card {
+  border-radius: 18px;
 }
 
 /* --- Status badge --------------------------------------------
