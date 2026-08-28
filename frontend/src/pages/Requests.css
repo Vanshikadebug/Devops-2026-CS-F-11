@@ -1,31 +1,32 @@
-/* Requests.css -- the two-sided request list (received and sent).
+/* ================================================================
+   Requests
+   Dense management list for received/sent requests.
+   Uses the design tokens from index.css.
+   ================================================================ */
 
-   This page borrows MyItems' row layout on purpose: both are dense
-   management lists, not the discovery grid, and a reader who has seen
-   one should find the other already familiar. The differences are the
-   two top tabs, the pending badge, and the message / contact / note
-   lines a request row carries that an item row does not.
-
-   Every value comes from the tokens in index.css. */
+/* --- Header ---------------------------------------------------- */
 
 .requests__header {
   margin-bottom: var(--space-5);
 }
 
 .requests__title {
-  margin-bottom: var(--space-1);
+  margin: 0 0 var(--space-1);
+  line-height: 1.2;
 }
 
 .requests__subtitle {
+  max-width: 60ch;
+  margin: 0;
   color: var(--text-secondary);
   font-size: 0.95rem;
-  max-width: 60ch;
+  line-height: 1.5;
 }
 
 .requests__status {
-  margin-bottom: var(--space-4);
-  font-size: 0.875rem;
+  margin: 0 0 var(--space-4);
   color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
 .requests__alert {
@@ -37,9 +38,11 @@
   background: var(--red-50);
   color: var(--red-700);
   font-size: 0.875rem;
+  line-height: 1.45;
 }
 
-/* --- The two tabs ---------------------------------------------- */
+/* --- Tabs ------------------------------------------------------ */
+
 .requests__tabs {
   display: flex;
   flex-wrap: wrap;
@@ -52,184 +55,266 @@
 .requests__tab {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
+
+  min-height: 2.5rem;
   padding: var(--space-2) var(--space-4);
+
   border: 1px solid var(--border-color);
   border-radius: var(--radius-full);
+
   background: var(--bg-surface);
   color: var(--text-secondary);
+
   font-size: 0.875rem;
   font-weight: 600;
+
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition),
-    color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
 }
 
 .requests__tab:hover {
   border-color: var(--border-strong);
+  background: var(--bg-surface);
   color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.requests__tab:active {
+  transform: translateY(1px);
 }
 
 .requests__tab--active {
   border-color: var(--green-600);
   background: var(--green-600);
   color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
 }
 
 .requests__tab--active:hover {
+  border-color: var(--green-600);
+  background: var(--green-600);
   color: var(--text-inverse);
 }
 
-/* The count of requests still awaiting a decision. A small solid pip
-   rather than more text, because its job is to be seen from across the
-   nav -- "you have things to answer" -- not to be read word by word. */
+/* --- Pending count -------------------------------------------- */
+
 .requests__tab-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   min-width: 1.35rem;
   height: 1.35rem;
   padding: 0 0.4rem;
+
   border-radius: var(--radius-full);
+
   background: var(--amber-700);
   color: #fff;
+
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1;
 }
 
-/* On the active (green) tab the amber pip would clash, so it flips to a
-   white chip with dark text -- still clearly a count, no longer fighting
-   the background it sits on. */
 .requests__tab--active .requests__tab-badge {
   background: #fff;
   color: var(--green-700);
 }
 
-/* --- The list -------------------------------------------------- */
+/* --- Request list --------------------------------------------- */
+
 .requests__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: grid;
   gap: var(--space-3);
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
 }
+
+/* --- Request card --------------------------------------------- */
 
 .request {
   display: grid;
-  /* Fixed thumbnail, flexible middle, actions sized to content. The
-     minmax(0, 1fr) -- not plain 1fr -- is what lets a long message
-     truncate instead of shoving the row wider than the page. */
   grid-template-columns: 96px minmax(0, 1fr) auto;
   gap: var(--space-4);
   align-items: center;
+
   padding: var(--space-3);
+
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
+
   background: var(--bg-surface);
-  transition: border-color var(--transition), box-shadow var(--transition);
+
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
 }
 
 .request:hover {
   border-color: var(--border-strong);
   box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
+
+/* --- Thumbnail ------------------------------------------------ */
 
 .request__media {
   display: block;
+
   width: 96px;
   height: 72px;
-  border-radius: var(--radius-sm);
+
   overflow: hidden;
+
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
 }
 
+.request__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  transition: transform var(--transition);
+}
+
+.request:hover .request__media img {
+  transform: scale(1.03);
+}
+
+/* --- Content -------------------------------------------------- */
+
 .request__body {
-  min-width: 0; /* lets the message and title actually truncate */
+  min-width: 0;
 }
 
 .request__head {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+
+  min-width: 0;
   margin-bottom: var(--space-1);
 }
 
 .request__title {
-  font-size: 1rem;
+  min-width: 0;
   margin: 0;
-  white-space: nowrap;
+
   overflow: hidden;
+
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
-
 .request__title a {
   color: var(--text-primary);
+  text-decoration: none;
+  transition: color var(--transition);
 }
-
 .request__title a:hover {
   color: var(--green-700);
 }
 
 .request__meta {
-  font-size: 0.8125rem;
+  margin: 0 0 var(--space-1);
+
   color: var(--text-muted);
-  margin-bottom: var(--space-1);
+  font-size: 0.8125rem;
+  line-height: 1.4;
 }
 
-/* The requester's note, shown as a quote. Italic and set off so it
-   reads as their words, not the page's. Clamped to two lines: a long
-   message should not push the Accept button off the bottom of the row. */
+/* --- Message -------------------------------------------------- */
+
 .request__message {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  font-style: italic;
-  margin-bottom: var(--space-1);
   display: -webkit-box;
+  overflow: hidden;
+
+  margin: 0 0 var(--space-1);
+
+  color: var(--text-secondary);
+
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.45;
+
+  -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-/* The reward for an accepted request: the contact line. Tinted green so
-   it reads as the good outcome, and the email is a real mailto: so the
-   handover is one click away. */
+/* --- Contact -------------------------------------------------- */
+
 .request__contact {
-  font-size: 0.875rem;
+  margin: var(--space-1) 0 0;
+
   color: var(--green-700);
-  margin-top: var(--space-1);
+  font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 .request__contact a {
   color: var(--green-700);
   font-weight: 600;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-/* The quiet status lines -- "waiting", "you declined", "ask once more".
-   Muted, because they are context rather than action. */
-.request__note {
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  margin-top: var(--space-1);
+.request__contact a:hover {
+  color: var(--green-600);
 }
+
+/* --- Status note --------------------------------------------- */
+
+.request__note {
+  margin: var(--space-1) 0 0;
+
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+/* --- Actions -------------------------------------------------- */
 
 .request__actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-2);
+
+  flex-shrink: 0;
 }
 
 .requests__modal-hint {
   margin-top: var(--space-3);
-  font-size: 0.875rem;
+
   color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.45;
 }
 
-/* --- Narrow screens -------------------------------------------
-   The same two breakpoints MyItems uses, for the same reasons: drop
-   the actions to their own full-width row before the middle column
-   gets squeezed to a few characters, then shrink the thumbnail. */
+/* ================================================================
+   Responsive
+   ================================================================ */
+
+/* Tablet / smaller laptop */
 @media (max-width: 860px) {
   .request {
     grid-template-columns: 96px minmax(0, 1fr);
@@ -238,19 +323,73 @@
 
   .request__actions {
     grid-column: 1 / -1;
+
     justify-content: flex-start;
+
     padding-top: var(--space-3);
     border-top: 1px solid var(--border-color);
   }
 }
 
+/* Mobile */
 @media (max-width: 560px) {
+  .requests__tabs {
+    gap: var(--space-2);
+  }
+
+  .requests__tab {
+    flex: 1;
+    padding-inline: var(--space-3);
+  }
+
   .request {
     grid-template-columns: 64px minmax(0, 1fr);
+    gap: var(--space-3);
+
+    padding: var(--space-3);
   }
 
   .request__media {
     width: 64px;
     height: 64px;
+  }
+
+  .request__actions {
+    gap: var(--space-2);
+  }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .request {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .request__media {
+    width: 56px;
+    height: 56px;
+  }
+
+  .requests__tab {
+    font-size: 0.8125rem;
+  }
+}
+
+/* --- Accessibility ------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .request,
+  .requests__tab,
+  .request__media img,
+  .request__title a {
+    transition: none;
+  }
+
+  .request:hover {
+    transform: none;
+  }
+
+  .request:hover .request__media img {
+    transform: none;
   }
 }
