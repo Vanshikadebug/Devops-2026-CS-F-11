@@ -1,13 +1,20 @@
-/* --- Hero ------------------------------------------------------ */
+/* ===== Home Page Visual Upgrade ===== */
+
 .hero {
-  text-align: center;
-  padding: var(--space-10) 0 var(--space-8);
+  padding: 5rem 1rem 4rem;
+  background: linear-gradient(
+    180deg,
+    var(--green-50) 0%,
+    var(--bg-page) 100%
+  );
+  border-radius: 0 0 28px 28px;
+  margin-bottom: 2rem;
 }
 
 .hero__title {
-  font-size: clamp(1.75rem, 4vw + 0.5rem, 2.75rem);
-  letter-spacing: -0.03em;
-  margin-bottom: var(--space-3);
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
 }
 
 .hero__accent {
@@ -15,114 +22,68 @@
 }
 
 .hero__subtitle {
-  color: var(--text-secondary);
-  max-width: 34rem;
-  margin: 0 auto;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
+  line-height: 1.7;
 }
 
-/* --- The location scope panel -----------------------------------
-   Visually distinct from the toolbar below it, because they answer
-   different questions: this one is WHERE, the toolbar is WHAT. Two
-   identical white boxes would read as one long row of six controls
-   and lose the 1-2-3 sequence entirely. */
+
+/* Location card */
+
 .browse-scope {
-  background: var(--green-50);
-  border: 1px solid var(--green-200);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  margin-bottom: var(--space-5);
-}
-
-.browse-scope__heading {
-  font-size: 0.95rem;
-  font-weight: 650;
-  color: var(--green-800);
-  margin-bottom: var(--space-4);
-}
-
-.browse-scope__resolved {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--green-200);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-/* --- Toolbar (search + filters) -------------------------------- */
-.toolbar {
-  display: flex;
-  gap: var(--space-3);
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: var(--space-6);
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+
+/* Search bar */
+
+.toolbar {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 0.8rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
 }
 
 .toolbar__search {
-  flex: 1;
-  min-width: 0;               /* lets the input shrink inside flex */
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
 }
 
 .toolbar__select {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  cursor: pointer;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
 }
 
-.toolbar__search:disabled,
-.toolbar__select:disabled {
-  background: var(--gray-100);
-  color: var(--text-muted);
-  cursor: not-allowed;
+.toolbar__search:focus,
+.toolbar__select:focus {
+  border-color: var(--green-600);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
 }
 
-/* Appears only when a filter is actually set, so it is never a dead
-   control -- and its appearance is itself the signal that something
-   is narrowing the results. */
-.toolbar__clear {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition), color var(--transition);
+
+/* Item grid */
+
+.item-grid {
+  gap: 1.5rem;
 }
 
-.toolbar__clear:hover {
-  background: var(--gray-100);
-  color: var(--text-primary);
-}
 
-/* --- Result count ---------------------------------------------- */
-.home__count {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: var(--space-4);
-}
-
-/* --- The responsive grid ---------------------------------------
-   `.item-grid` moved to index.css when the Dashboard started using
-   it too -- shared layout belongs there, per the note at the top of
-   that section. */
+/* Mobile */
 
 @media (max-width: 720px) {
+  .hero {
+    padding: 3.5rem 1rem 3rem;
+  }
+
+  .hero__title {
+    font-size: 2.2rem;
+  }
+
   .toolbar {
-    flex-direction: column;
+    padding: 0.7rem;
   }
 }
