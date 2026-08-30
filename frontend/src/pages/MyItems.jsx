@@ -9,71 +9,27 @@ import { itemService } from '../services/itemService'
 import { ITEM_STATUSES, STATUS_VARIANTS } from '../utils/constants'
 import './MyItems.css'
 
-/**
- * MyItems -- everything you have listed, and the controls to manage it.
- *
- * WHAT IS THIS PAGE?
- * The owner's view of their own listings: one row per item, with edit,
- * delete and a status control on each. It is where an item's life
- * actually gets managed, so it is deliberately a dense list rather
- * than the browse grid -- you are scanning your own things to find
- * one, not window-shopping.
- *
- * >>> WHY IT USES /api/items/mine AND NOT /api/items?user=N <<<
- * There is no user parameter to pass. The server reads the owner from
- * the verified token, so this page CANNOT request someone else's
- * listings even by mistake -- there is nowhere in the request to say
- * whose items you want. A ?user= filter would put that decision in
- * the URL, and the day someone forgets to check it, the whole site is
- * readable user by user. See the note on getMyItems in
- * itemController.js.
- *
- * =================================================================
- * OPTIMISTIC vs SERVER-CONFIRMED UPDATES -- and why this page is the
- * second kind
- * =================================================================
- * When the status dropdown changes, this page could update the row
- * immediately and send the request in the background. That feels
- * instant, and it means the screen is asserting something the
- * database has not agreed to yet. If the write fails -- expired
- * token, item deleted in another tab, server down -- the row shows
- * "Reserved" while the database still says "Available", and nothing
- * on screen is wrong enough to notice.
- *
- * So the row is replaced with THE SERVER'S ANSWER, which is the item
- * as re-read after the write. The cost is a few hundred milliseconds
- * of a disabled control. The benefit is that this list can never
- * display a state the database does not hold.
- *
- * That trade is not universal -- a chat app that blocked on every
- * message would be unusable. It is right HERE because these writes
- * are rare, deliberate, and consequential.
- */
 function MyItems() {
   const navigate = useNavigate()
 
   const [items, setItems] = useState([])
-  const [status, setStatus] = useState('loading') // loading | ready | error
+  const [status, setStatus] = useState('loading')
   const [error, setError] = useState(null)
 
   const [attempt, setAttempt] = useState(0)
-  const retry = useCallback(() => setAttempt((n) => n + 1), [])
+  const retry = useCallback(() => {
+    setAttempt((current) => current + 1)
+  }, [])
 
-  /* The id currently being written, or null. A single value rather
-     than a boolean because only ONE row should be disabled while its
-     own request is in flight -- a page-wide `busy` flag would freeze
-     every row on the screen because one of them is saving. */
   const [busyId, setBusyId] = useState(null)
   const [actionError, setActionError] = useState(null)
-
-  /* The item awaiting delete confirmation. Holding the ITEM and not
-     just its id means the dialog can name it -- "Delete Casio
-     FX-991EX?" is a question you can answer; "Delete this item?" over
-     a list of nine is not. */
   const [pendingDelete, setPendingDelete] = useState(null)
-
   const [filter, setFilter] = useState('')
 
+  /*
+   * Load the current user's listings.
+   * Abort the request if the component unmounts.
+   */
   useEffect(() => {
     const controller = new AbortController()
 
@@ -88,6 +44,7 @@ function MyItems() {
       })
       .catch((err) => {
         if (err.name === 'AbortError') return
+
         setError(err)
         setStatus('error')
       })
@@ -95,50 +52,59 @@ function MyItems() {
     return () => controller.abort()
   }, [attempt])
 
-  /* Filtered in the browser, unlike Home's filters which go to SQL.
-     The difference is the size of the set: this endpoint returns only
-     YOUR items, which is tens at most, and they are all already
-     downloaded. Sending a request to re-filter a list the browser is
-     holding would add a round trip and a loading state for no gain.
-     Home cannot do this because it filters a table that will outgrow
-     one page. */
-  const visible = useMemo(
-    () => (filter ? items.filter((item) => item.status === filter) : items),
-    [items, filter],
-  )
+  /*
+   * Filtering happens locally because this endpoint only contains
+   * the current user's listings.
+   */
+  const visibleItems = useMemo(() => {
+    if (!filter) return items
 
+    return items.filter((item) => item.status === filter)
+  }, [items, filter])
+
+  /*
+   * Calculate all status counts in one pass.
+   */
   const counts = useMemo(() => {
-    const result = { Available: 0, Reserved: 0, Unavailable: 0 }
-    for (const item of items) {
-      if (result[item.status] !== undefined) result[item.status] += 1
-    }
+    const result = Object.fromEntries(
+      ITEM_STATUSES.map((status) => [status, 0])
+    )
+
+    items.forEach((item) => {
+      if (result[item.status] !== undefined) {
+        result[item.status] += 1
+      }
+    })
+
     return result
   }, [items])
 
-  async function changeStatus(item, next) {
-    // The select fires onChange even when the value did not change in
-    // some browsers' autofill paths. A no-op write is still a write.
-    if (next === item.status) return
+  async function changeStatus(item, nextStatus) {
+    if (nextStatus === item.status) return
 
     setBusyId(item.id)
     setActionError(null)
 
     try {
-      const updated = await itemService.updateStatus(item.id, next)
+      const updatedItem = await itemService.updateStatus(
+        item.id,
+        nextStatus
+      )
 
-      /* Replace by id rather than by index. The array can be filtered
-         and re-ordered between render and response, and an index
-         captured earlier would then write the answer onto the wrong
-         row -- one of those bugs that only appears when the list is
-         long enough to scroll. */
-      setItems((prev) => prev.map((row) => (row.id === updated.id ? updated : row)))
+      setItems((currentItems) =>
+        currentItems.map((currentItem) =>
+          currentItem.id === updatedItem.id
+            ? updatedItem
+            : currentItem
+        )
+      )
     } catch (err) {
       setActionError(
         err.status === 404
           ? 'That item no longer exists. Refresh to see your current listings.'
           : err.status === 403
             ? 'You can only change items you listed yourself.'
-            : err.message,
+            : err.message
       )
     } finally {
       setBusyId(null)
@@ -147,6 +113,7 @@ function MyItems() {
 
   async function confirmDelete() {
     const item = pendingDelete
+
     if (!item) return
 
     setBusyId(item.id)
@@ -155,20 +122,20 @@ function MyItems() {
     try {
       await itemService.remove(item.id)
 
-      /* Removed from local state rather than refetching the list. The
-         server has confirmed the row is gone, so a second request
-         would only re-download the other nine rows to learn what we
-         already know. */
-      setItems((prev) => prev.filter((row) => row.id !== item.id))
+      setItems((currentItems) =>
+        currentItems.filter((currentItem) => currentItem.id !== item.id)
+      )
+
       setPendingDelete(null)
     } catch (err) {
       setPendingDelete(null)
+
       setActionError(
         err.status === 404
           ? 'That item had already been deleted.'
           : err.status === 403
             ? 'You can only delete items you listed yourself.'
-            : err.message,
+            : err.message
       )
     } finally {
       setBusyId(null)
@@ -177,100 +144,151 @@ function MyItems() {
 
   return (
     <div className="container page my-items">
+      {/* Header */}
       <header className="my-items__header">
-        <div>
-          <h1 className="my-items__title">Your listings</h1>
+        <div className="my-items__heading">
+          <span className="my-items__eyebrow">Manage listings</span>
+
+          <h1 className="my-items__title">
+            Your listings
+          </h1>
+
           <p className="my-items__subtitle">
             Everything you have shared, and the controls to keep it current.
           </p>
         </div>
 
-        <Link to="/items/new">
-          <Button>+ Add an item</Button>
+        <Link to="/items/new" className="my-items__add-link">
+          <Button>
+            + Add an item
+          </Button>
         </Link>
       </header>
 
+      {/* Page status */}
       <div className="my-items__status" aria-live="polite">
         {status === 'loading' && 'Loading your listings…'}
+
         {status === 'error' && 'Could not load your listings'}
+
         {status === 'ready' &&
           `${items.length} item${items.length === 1 ? '' : 's'} listed`}
       </div>
 
+      {/* Action error */}
       {actionError && (
         <div className="my-items__alert" role="alert">
-          {actionError}
+          <span className="my-items__alert-icon">!</span>
+          <span>{actionError}</span>
         </div>
       )}
 
-      {status === 'loading' && <LoadingSpinner size="lg" label="Loading your listings" />}
+      {/* Loading */}
+      {status === 'loading' && (
+        <div className="my-items__loading">
+          <LoadingSpinner
+            size="lg"
+            label="Loading your listings"
+          />
+        </div>
+      )}
 
+      {/* Loading error */}
       {status === 'error' && (
         <EmptyState
           tone="error"
           icon="⚠"
           title="Could not load your listings"
           message={error?.message}
-          action={{ label: 'Try again', onClick: retry }}
+          action={{
+            label: 'Try again',
+            onClick: retry,
+          }}
         />
       )}
 
-      {/* The first-visit screen. Every new account sees this, so it
-          explains what the page is for rather than reporting a void. */}
+      {/* No listings */}
       {status === 'ready' && items.length === 0 && (
         <EmptyState
           icon="🌱"
           title="You have not listed anything yet"
           message="List something you no longer need — a textbook, a chair, an old calculator — and someone nearby can put it to use."
-          action={{ label: 'Add your first item', onClick: () => navigate('/items/new') }}
+          action={{
+            label: 'Add your first item',
+            onClick: () => navigate('/items/new'),
+          }}
         />
       )}
 
+      {/* Listings */}
       {status === 'ready' && items.length > 0 && (
         <>
-          {/* Tabs, not a dropdown: there are exactly four options and
-              the counts are the useful part -- seeing "Reserved 2"
-              without clicking is what tells you whether the tab is
-              worth opening. */}
-          <div className="my-items__tabs" role="tablist" aria-label="Filter by availability">
+          <div
+            className="my-items__tabs"
+            role="tablist"
+            aria-label="Filter by availability"
+          >
             <button
               type="button"
               role="tab"
               aria-selected={filter === ''}
-              className={`my-items__tab ${filter === '' ? 'my-items__tab--active' : ''}`}
+              className={`my-items__tab ${
+                filter === '' ? 'my-items__tab--active' : ''
+              }`}
               onClick={() => setFilter('')}
             >
-              All {items.length}
+              <span>All</span>
+              <span className="my-items__tab-count">
+                {items.length}
+              </span>
             </button>
-            {ITEM_STATUSES.map((s) => (
+
+            {ITEM_STATUSES.map((itemStatus) => (
               <button
-                key={s}
+                key={itemStatus}
                 type="button"
                 role="tab"
-                aria-selected={filter === s}
-                className={`my-items__tab ${filter === s ? 'my-items__tab--active' : ''}`}
-                onClick={() => setFilter(s)}
+                aria-selected={filter === itemStatus}
+                className={`my-items__tab ${
+                  filter === itemStatus
+                    ? 'my-items__tab--active'
+                    : ''
+                }`}
+                onClick={() => setFilter(itemStatus)}
               >
-                {s} {counts[s]}
+                <span>{itemStatus}</span>
+                <span className="my-items__tab-count">
+                  {counts[itemStatus]}
+                </span>
               </button>
             ))}
           </div>
 
-          {visible.length === 0 ? (
+          {visibleItems.length === 0 ? (
             <EmptyState
               icon="🔍"
               title={`Nothing marked ${filter}`}
               message="Your other listings are still here — switch back to All to see them."
-              action={{ label: 'Show all listings', onClick: () => setFilter('') }}
+              action={{
+                label: 'Show all listings',
+                onClick: () => setFilter(''),
+              }}
             />
           ) : (
             <ul className="my-items__list">
-              {visible.map((item) => {
+              {visibleItems.map((item) => {
                 const busy = busyId === item.id
-                const variant = STATUS_VARIANTS[item.status] ?? 'neutral'
+                const variant =
+                  STATUS_VARIANTS[item.status] ?? 'neutral'
 
                 return (
-                  <li key={item.id} className="my-item">
+                  <li
+                    key={item.id}
+                    className={`my-item ${
+                      busy ? 'my-item--busy' : ''
+                    }`}
+                  >
+                    {/* Image */}
                     <Link
                       to={`/items/${item.id}`}
                       className="my-item__media"
@@ -280,43 +298,77 @@ function MyItems() {
                       <ItemImage item={item} />
                     </Link>
 
+                    {/* Information */}
                     <div className="my-item__body">
                       <div className="my-item__head">
                         <h2 className="my-item__title">
-                          <Link to={`/items/${item.id}`}>{item.name}</Link>
+                          <Link to={`/items/${item.id}`}>
+                            {item.name}
+                          </Link>
                         </h2>
-                        <span className={`badge badge--${variant}`}>{item.status}</span>
+
+                        <span
+                          className={`badge badge--${variant}`}
+                        >
+                          {item.status}
+                        </span>
                       </div>
 
                       <p className="my-item__meta">
-                        {item.category} · {item.condition} ·{' '}
-                        {/* The college when there is one, the typed
-                            address when there is not -- the same rule
-                            as ItemCard and ItemDetail. */}
-                        {item.college_name ?? item.location}
+                        <span>{item.category}</span>
+                        <span className="my-item__separator">•</span>
+                        <span>{item.condition}</span>
+                        <span className="my-item__separator">•</span>
+                        <span>
+                          {item.college_name ?? item.location}
+                        </span>
                       </p>
 
-                      <p className="my-item__desc">{item.description}</p>
+                      <p className="my-item__desc">
+                        {item.description}
+                      </p>
                     </div>
 
+                    {/* Actions */}
                     <div className="my-item__actions">
-                      <label className="sr-only" htmlFor={`status-${item.id}`}>
+                      <label
+                        className="sr-only"
+                        htmlFor={`status-${item.id}`}
+                      >
                         Availability of {item.name}
                       </label>
+
                       <select
                         id={`status-${item.id}`}
                         className="my-item__status-select"
                         value={item.status}
                         disabled={busy}
-                        onChange={(e) => changeStatus(item, e.target.value)}
+                        onChange={(event) =>
+                          changeStatus(
+                            item,
+                            event.target.value
+                          )
+                        }
                       >
-                        {ITEM_STATUSES.map((s) => (
-                          <option key={s} value={s}>{s}</option>
+                        {ITEM_STATUSES.map((itemStatus) => (
+                          <option
+                            key={itemStatus}
+                            value={itemStatus}
+                          >
+                            {itemStatus}
+                          </option>
                         ))}
                       </select>
 
-                      <Link to={`/items/${item.id}/edit`}>
-                        <Button variant="secondary" size="sm" disabled={busy}>
+                      <Link
+                        to={`/items/${item.id}/edit`}
+                        className="my-item__edit-link"
+                      >
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={busy}
+                        >
                           Edit
                         </Button>
                       </Link>
@@ -325,7 +377,9 @@ function MyItems() {
                         variant="danger"
                         size="sm"
                         disabled={busy}
-                        onClick={() => setPendingDelete(item)}
+                        onClick={() =>
+                          setPendingDelete(item)
+                        }
                       >
                         Delete
                       </Button>
@@ -338,15 +392,12 @@ function MyItems() {
         </>
       )}
 
-      {/* --- Delete confirmation ---------------------------------
-          A modal rather than window.confirm(), because the native
-          dialog cannot explain what ELSE this removes. Deleting an
-          item cascades to requests.item_id, so other students'
-          pending requests are deleted by a statement that never names
-          their table. That has to be visible before the click. */}
+      {/* Delete confirmation */}
       <Modal
         open={Boolean(pendingDelete)}
-        onClose={() => !busyId && setPendingDelete(null)}
+        onClose={() =>
+          !busyId && setPendingDelete(null)
+        }
         title="Delete this listing?"
         footer={
           <>
@@ -357,6 +408,7 @@ function MyItems() {
             >
               Keep it
             </Button>
+
             <Button
               variant="danger"
               loading={Boolean(busyId)}
@@ -368,14 +420,16 @@ function MyItems() {
         }
       >
         <p>
-          <strong>{pendingDelete?.name}</strong> will be removed from ReuseHub,
-          along with any requests other students have made for it. This cannot be
+          <strong>{pendingDelete?.name}</strong> will be
+          removed from ReuseHub, along with any requests
+          other students have made for it. This cannot be
           undone.
         </p>
+
         <p className="my-items__modal-hint">
           If you have already given it away, marking it{' '}
-          <strong>Unavailable</strong> keeps the listing visible to the people
-          who asked for it.
+          <strong>Unavailable</strong> keeps the listing
+          visible to the people who asked for it.
         </p>
       </Modal>
     </div>
