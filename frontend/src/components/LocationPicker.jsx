@@ -1,48 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { locationService } from '../services/locationService'
+import { locationService } from '../lib/locationService'
 import './LocationPicker.css'
 
-/**
- * LocationPicker -- city, then area, then college.
- *
- * WHAT IS THIS FILE?
- * The three cascading dropdowns that decide which campus's items the
- * page is showing. It is a CONTROLLED component: it owns none of the
- * selection, only the three lists it fetched. The parent holds
- * `{ cityId, areaId, collegeId }` and gets a new object through
- * `onChange`.
- *
- * >>> WHY CONTROLLED, RATHER THAN HOLDING THE SELECTION ITSELF? <<<
- * Because the selection is not only this component's business. Home
- * needs it to build the item query, useLocationSelection needs it to
- * persist it, and a logged-in user's saved college needs to flow INTO
- * it. A picker owning its own state would need an onChange to tell the
- * parent AND a prop to be told by the parent -- two sources of truth
- * for one value, which is how you get a dropdown that visibly
- * disagrees with the grid below it.
- *
- * =================================================================
- * THE RULE THAT MAKES CASCADING SELECTS WORK: CLEAR DOWNSTREAM
- * =================================================================
- * Every handler below returns a selection with everything BELOW it set
- * to null. Change the city, and the area and college are wiped.
- *
- * Skipping that is the classic bug in this pattern, and it is not a
- * cosmetic one. Pick Jaipur, then Jagatpura, then SKIT; now change the
- * city to Kota. Without the reset, `collegeId` is still SKIT's -- so
- * the grid shows SKIT's items under a heading that says Kota, and the
- * college dropdown displays a blank because SKIT is not in Kota's
- * list. Nothing errors. The page just lies.
- *
- * WHY NATIVE <select> AND NOT A TYPEAHEAD?
- * With three cities and nine colleges a native select is faster to
- * use, keyboard-accessible for free, and renders as a proper scroll
- * wheel on a phone. A <datalist> would let people type, but typed text
- * has to be matched back to an id, which introduces a "no such city"
- * error state for no gain at this size. When the directory outgrows a
- * dropdown -- a few hundred colleges -- the honest upgrade is a
- * server-side search endpoint, not a longer list.
- */
 function LocationPicker({ value, onChange, disabled = false }) {
   const { cityId, areaId, collegeId } = value
 
@@ -54,11 +13,6 @@ function LocationPicker({ value, onChange, disabled = false }) {
   const [attempt, setAttempt] = useState(0)
   const retryCities = useCallback(() => setAttempt((n) => n + 1), [])
 
-  /* --- Level 1: cities, once ------------------------------------
-     The AbortController is not optional here. StrictMode mounts every
-     component twice in development, so without it you get two
-     requests per level and the slower response can overwrite the
-     newer one. See the longer note in Home.jsx. */
   useEffect(() => {
     const controller = new AbortController()
     setCitiesStatus('loading')
@@ -91,22 +45,12 @@ function LocationPicker({ value, onChange, disabled = false }) {
       .then(setAreas)
       .catch((err) => {
         if (err.name === 'AbortError') return
-        /* A 404 here means the saved cityId points at a row that no
-           longer exists -- entirely normal after `npm run db:reset`.
-           An empty list is the honest render; the parent hook is what
-           clears the stale selection. */
         setAreas([])
       })
 
     return () => controller.abort()
   }, [cityId])
 
-  /* --- Level 3: colleges -----------------------------------------
-     Narrowed by area when one is chosen, by city when not. The area
-     step is genuinely optional: someone who knows their college but
-     not which locality it is filed under can skip straight past it,
-     which is why this effect depends on both ids rather than
-     requiring areaId. */
   useEffect(() => {
     if (!cityId) {
       setColleges([])
@@ -188,10 +132,6 @@ function LocationPicker({ value, onChange, disabled = false }) {
           id="loc-area"
           className="location-picker__select"
           value={areaId ?? ''}
-          /* Disabled until there is a city, because an area list with
-             no city behind it has nothing to show. A disabled control
-             explains the order of the steps better than an empty one
-             that silently does nothing when clicked. */
           disabled={disabled || !cityId}
           onChange={(e) => pickArea(e.target.value)}
         >

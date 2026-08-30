@@ -1,0 +1,338 @@
+/* --- Pill ---------------------------------------------------------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: var(--r-pill);
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pill--surface { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+.pill--sunk    { background: var(--surface-sunk); color: var(--muted); }
+.pill--accent  { background: var(--accent); color: var(--accent-ink); }
+.pill--ink     { background: var(--surface-ink); color: #fff; }
+.pill--ghost   { background: rgba(255, 255, 255, 0.6); color: var(--ink); }
+
+/* --- IconButton ---------------------------------------------------- */
+
+.iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  flex: none;
+  transition: transform var(--t), background var(--t), opacity var(--t);
+}
+
+.iconbtn--sm { width: 32px; height: 32px; }
+.iconbtn--md { width: 42px; height: 42px; }
+.iconbtn--lg { width: 52px; height: 52px; }
+
+.iconbtn--surface { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+.iconbtn--sunk    { background: var(--surface-sunk); color: var(--ink); }
+.iconbtn--ink     { background: var(--surface-ink); color: #fff; }
+.iconbtn--accent  { background: var(--accent); color: var(--accent-ink); }
+
+.iconbtn:hover:not(:disabled) { transform: translateY(-1px); opacity: 1; }
+.iconbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* --- ArrowButton: the signature CTA -------------------------------- */
+
+.arrowbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s3);
+  border: 0;
+  cursor: pointer;
+  border-radius: var(--r-pill);
+  font-weight: 620;
+  /* Tight right padding so the circle sits just inside the pill edge, as in
+     the reference. */
+  padding: 5px 6px 5px 20px;
+  transition: transform var(--t), box-shadow var(--t), opacity var(--t);
+  text-decoration: none;
+}
+
+.arrowbtn--sm { font-size: 0.85rem; padding: 4px 5px 4px 16px; }
+.arrowbtn--md { font-size: 0.95rem; }
+.arrowbtn--lg { font-size: 1.05rem; padding: 7px 8px 7px 26px; }
+
+.arrowbtn--accent { background: var(--accent); color: var(--accent-ink); }
+.arrowbtn--ink    { background: var(--surface-ink); color: #fff; }
+.arrowbtn--surface { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+
+.arrowbtn__circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface-ink);
+  color: #fff;
+  flex: none;
+  transition: transform var(--t);
+}
+
+.arrowbtn--lg .arrowbtn__circle { width: 40px; height: 40px; }
+.arrowbtn--ink .arrowbtn__circle { background: var(--accent); color: var(--accent-ink); }
+.arrowbtn--surface .arrowbtn__circle { background: var(--surface-ink); color: #fff; }
+
+.arrowbtn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow); }
+.arrowbtn:hover:not(:disabled) .arrowbtn__circle { transform: rotate(45deg); }
+.arrowbtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* --- Button -------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  font-weight: 620;
+  padding: 0.6rem 1.25rem;
+  transition: transform var(--t), opacity var(--t), background var(--t);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn--sm { padding: 0.4rem 0.9rem; font-size: 0.83rem; }
+.btn--lg { padding: 0.8rem 1.6rem; font-size: 1rem; }
+
+.btn--primary { background: var(--surface-ink); color: #fff; }
+.btn--accent  { background: var(--accent); color: var(--accent-ink); }
+.btn--ghost   { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn--quiet   { background: var(--surface-sunk); color: var(--ink); }
+.btn--danger  { background: var(--bad-ink); color: #fff; }
+
+.btn:hover:not(:disabled) { transform: translateY(-1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* --- SearchPill ---------------------------------------------------- */
+
+.searchpill {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  background: var(--surface);
+  border-radius: var(--r-pill);
+  padding: 5px 6px 5px 20px;
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+}
+
+.searchpill--lg { padding: 8px 9px 8px 24px; }
+
+.searchpill__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0.5rem 0;
+  outline: none;
+}
+
+.searchpill__input::-webkit-search-cancel-button { cursor: pointer; }
+
+.searchpill__go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-ink);
+  color: #fff;
+  cursor: pointer;
+  flex: none;
+  transition: transform var(--t);
+}
+
+.searchpill--lg .searchpill__go { width: 44px; height: 44px; }
+.searchpill__go:hover { transform: scale(1.05); }
+
+/* --- Bento grid ---------------------------------------------------- */
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s5);
+}
+
+.bento__cell {
+  grid-column: span var(--span, 1);
+  grid-row: span var(--rows, 1);
+  min-width: 0;
+}
+
+@media (max-width: 980px) {
+  .bento { grid-template-columns: repeat(2, 1fr); }
+  /* Collapse any span wider than the 2-column track so nothing overflows. */
+  .bento__cell { grid-column: span min(var(--span, 1), 2); grid-row: span 1; }
+}
+
+@media (max-width: 600px) {
+  .bento { grid-template-columns: 1fr; }
+  .bento__cell { grid-column: span 1; }
+}
+
+/* --- StatBubble ---------------------------------------------------- */
+
+.statbubble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  flex: none;
+}
+
+.statbubble__value { font-size: 1.5rem; font-weight: 680; line-height: 1; letter-spacing: -0.03em; }
+.statbubble__label { font-size: 0.68rem; margin-top: 4px; opacity: 0.75; font-weight: 600; }
+
+/* --- AvatarCluster ------------------------------------------------- */
+
+.avatars { display: flex; }
+
+.avatars__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface-sunk);
+  color: var(--ink);
+  border: 2px solid var(--surface);
+  font-size: 0.8rem;
+  font-weight: 650;
+  /* Overlap, with later avatars stacked above earlier ones. */
+  margin-left: calc(var(--i) * 0px - 10px);
+  z-index: calc(10 - var(--i));
+}
+
+.avatars__item:first-child { margin-left: 0; }
+.avatars__item--more { background: var(--surface-ink); color: #fff; font-size: 0.72rem; }
+
+/* --- Spinner ------------------------------------------------------- */
+
+.spinner { display: flex; justify-content: center; padding: var(--s10) 0; }
+
+.spinner__ring {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid var(--line);
+  border-top-color: var(--ink);
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- EmptyState ---------------------------------------------------- */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s3);
+  text-align: center;
+  padding: var(--s12) var(--s6);
+  background: var(--surface);
+  border-radius: var(--r-card);
+}
+
+.empty__glyph { font-size: 2.4rem; }
+
+/* --- ImageDrop ------------------------------------------------------ */
+
+.imgdrop__zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s8) var(--s5);
+  text-align: center;
+  background: var(--surface-sunk);
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color var(--t), background var(--t), transform var(--t);
+}
+
+.imgdrop__zone:hover { border-color: var(--ink); }
+
+/* Lifted + accent-filled on drag-over so the drop target is unmistakable. */
+.imgdrop__zone.is-over {
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  transform: scale(1.01);
+}
+
+.imgdrop__glyph { font-size: 1.9rem; line-height: 1; }
+.imgdrop__lead { font-weight: 620; }
+.imgdrop__cta { text-decoration: underline; text-underline-offset: 3px; }
+.imgdrop__sub { color: var(--muted); font-size: 0.8rem; }
+
+.imgdrop__has {
+  position: relative;
+  margin: 0;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface-sunk);
+}
+
+.imgdrop__has img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+}
+
+.imgdrop__has.is-busy img { opacity: 0.55; }
+
+.imgdrop__badge {
+  position: absolute;
+  top: var(--s3);
+  left: var(--s3);
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-size: 0.72rem;
+  font-weight: 660;
+}
+
+.imgdrop__has figcaption {
+  display: flex;
+  gap: var(--s4);
+  padding: var(--s3) var(--s4);
+  background: var(--surface);
+}
+
+.imgdrop__link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 620;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.imgdrop__link:disabled { opacity: 0.5; cursor: default; }

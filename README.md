@@ -1,206 +1,423 @@
 # ReuseHub
 
-> A platform for listing items you no longer need, so someone else can reuse them
-> instead of them becoming waste.
+A campus marketplace for giving things a second life. Members list items they no
+longer need; others request them; contact details are exchanged only after a
+request is accepted.
 
-**Status:** 🚧 Under active development — core phases 1–11 complete, plus Git/GitHub (Phase 12) and a Jenkins CI pipeline (Phase 14). Highlights: search and filtering by campus, the request system wired end to end, the first slices of the admin API — an overview snapshot, item moderation, report review, and account management — the user-facing route that lets members file the reports that queue works from, and a 341-test backend suite that a Jenkins pipeline now runs automatically on every push (against an isolated `reusehub_ci` database on the local MySQL, then building the frontend).
+Everything the site presents — categories, conditions, the campus directory, all
+copy, the colour scheme, limits and feature flags — is stored in the database and
+editable from the admin panel. There are no hardcoded categories or locations.
 
-This README is a placeholder. The full documentation (architecture, database
-design, installation, API reference, Docker, Jenkins, CI/CD) is written in
-**Phase 17**.
+```
+Frontend   React 19 + Vite          apps/web
+Backend    Express 5 + Prisma 6     apps/api
+Database   MySQL 8
+Cache      Redis 7 (optional)
+```
 
 ---
 
-## Quick facts
+## Getting started
+
+Two ways to run it. **Docker** needs nothing installed but Docker itself, and is
+the closest thing to production. **Local** is faster to restart while you are
+editing code.
+
+Don't run both at once — they both want port 5000.
+
+---
+
+### Option A — Docker (recommended)
+
+**Step 1.** Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/)
+and make sure it is running.
+
+**Step 2.** Create your environment file, from the repo root:
+
+```powershell
+copy .env.example .env
+```
+
+**Step 3.** Open `.env` and set a JWT secret. Generate one with:
+
+```powershell
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+Paste the output after `JWT_SECRET=`. The stack refuses to start without it —
+there is no default, because a shipped default secret is trivially forged.
+
+While you are in there, set the admin account so you can reach the admin panel:
+
+```env
+ADMIN_EMAIL=admin@reusehub.test
+ADMIN_PASSWORD=choose-something-real
+ADMIN_NAME=Site Admin
+ADMIN_MOBILE=9876500000
+```
+
+**Step 4.** Build and start everything:
+
+```powershell
+npm run docker:up
+```
+
+First run takes a few minutes (it downloads MySQL, Redis, Node and nginx). It is
+finished when you see `api` become `healthy`. The API container waits for MySQL
+and Redis, applies migrations, seeds demo data, then starts.
+
+**Step 5.** Open **http://localhost:3000**
 
 | | |
 |---|---|
-| Frontend | React + Vite (port `5173`) |
-| Backend | Node.js + Express (port `5000`) |
-| Database | MySQL 8 (port `3306`) |
-| Auth | JWT + bcrypt |
-| Tests | Jest + Supertest |
-| CI/CD | Jenkins |
+| Website | http://localhost:3000 |
+| Admin panel | http://localhost:3000/admin |
+| API | http://localhost:5000/api |
+| Health | http://localhost:5000/api/health |
 
-> ⚠️ The backend uses port **5000**, not 8080, because Jenkins occupies 8080
-> on the development machine.
+Stop it with `npm run docker:down`. To wipe the database and start clean,
+`npm run docker:reset`.
 
-## Port map
+Ports 3000 and 3307 are used rather than 80 and 3306 so the stack does not
+collide with a local MySQL, or with Jenkins on 8080.
 
-| Service | Port | Notes |
-|---|---|---|
-| Frontend (Vite dev) | 5173 | |
-| Backend (Express) | 5000 | |
-| MySQL | 3306 | |
-| Jenkins | 8080 | Pre-existing; do not reuse this port |
+---
 
-## Getting started (so far)
+### Option B — Local (no Docker)
 
-You need **two terminals**, both running at the same time.
+You need **Node 20+** and a **MySQL 8** server you can connect to.
 
-**Terminal 1 — backend** (API + database):
+**Step 1.** Install dependencies, once, from the repo root:
+
+```powershell
+npm install
+```
+
+This is an npm workspace, so one install covers both apps.
+
+**Step 2.** Create the database in MySQL:
+
+```sql
+CREATE DATABASE reusehub CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+`utf8mb4` matters — category icons are emoji, and `utf8mb3` silently replaces
+them with `??`.
+
+**Step 3.** Configure the API:
+
+```powershell
+copy apps/api/.env.example apps/api/.env
+```
+
+Edit `apps/api/.env` and set two values:
+
+```env
+DATABASE_URL="mysql://root:your_mysql_password@localhost:3306/reusehub"
+JWT_SECRET=paste-a-generated-secret-here
+```
+
+If your MySQL password contains `% : / ? # @`, percent-encode it — those are URL
+syntax and will otherwise be misparsed.
+
+Leave `REDIS_ENABLED=false` unless you have Redis running locally. The app works
+either way; caching just becomes a pass-through.
+
+**Step 4.** Create the schema and demo data:
+
+```powershell
+cd apps/api
+npm run db:migrate
+npm run db:seed
+cd ../..
+```
+
+To get an admin account, set the `ADMIN_*` values in `apps/api/.env` before
+running the seed.
+
+**Step 5.** Start both servers with one command, from the repo root:
+
+```powershell
+npm run dev
+```
+
+Output is colour-coded `[api]` and `[web]`. `Ctrl+C` stops both.
+
+**Step 6.** Open **http://localhost:5173**
+
+| | |
+|---|---|
+| Website | http://localhost:5173 |
+| Admin panel | http://localhost:5173/admin |
+| API | http://localhost:5000/api |
+
+Vite proxies `/api` to port 5000, so the frontend uses relative URLs and needs
+no CORS setup in development.
+
+If you would rather have two terminals:
+
+```powershell
+cd apps/api  ; npm run dev     # terminal 1
+cd apps/web  ; npm run dev     # terminal 2
+```
+
+---
+
+### Logging in
+
+The seed creates three demo members, all with the password `password123` —
+`aarav@example.com` is the one referenced in the docs.
+
+The admin account is whatever you put in `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Blank
+values skip admin creation entirely rather than shipping a known password.
+
+The admin panel is **unlisted** — there is no link to it anywhere in the public
+site. Reach it by typing `/admin` on whatever host the site runs on
+(`localhost:3000/admin`, `yourdomain.com/admin`). A signed-in member who is not
+staff gets a permission notice; a signed-out visitor is sent to log in. Hiding
+the link is convenience, not security: every `/api/admin/*` route re-checks the
+caller's rank on the server.
+
+### First things to try in the admin panel
+
+These demonstrate that nothing is hardcoded:
+
+- **Categories** → add "Sports". Open *List an item* — it is already in the
+  dropdown, and `/items?category=Sports` filters by it. No restart, no migration.
+- **Settings → theme** → change *Accent colour*. Every button and CTA retints.
+- **Settings → content** → rewrite the hero headline. The home page follows.
+- **Locations** → add a city, then an area inside it, then a college. It becomes
+  selectable on a new listing immediately.
+- **Settings → items** → set *Maximum active listings per user* to 1. A member's
+  second listing is refused with a 403.
+
+---
+
+## Troubleshooting
+
+**`Port 5173 is already in use` / `FATAL: port 5000 is already in use`**
+
+A previous server is still running — usually a terminal closed without `Ctrl+C`,
+or Docker running at the same time as `npm run dev`. Stop the strays:
+
+```powershell
+Get-Process node | Stop-Process -Force
+```
+
+To see what is holding a port first:
+
+```powershell
+Get-NetTCPConnection -LocalPort 5000 -State Listen | Select-Object OwningProcess
+```
+
+**`Environment variable not found: DATABASE_URL`**
+
+`apps/api/.env` is missing or has no `DATABASE_URL`. See Option B, step 3.
+
+**`JWT_SECRET is required` when running Docker**
+
+The repo-root `.env` has no secret. See Option A, step 3. Note Docker reads the
+**root** `.env`, while local development reads `apps/api/.env` — they are
+separate files.
+
+**Docker and local show different data**
+
+They are different databases. Docker uses its own volume; local uses your
+installed MySQL. An account created in one does not exist in the other.
+
+**Category icons show as `??`**
+
+The database was created without `utf8mb4`. Recreate it with the `CREATE DATABASE`
+statement in Option B, step 2.
+
+**Admin panel says "You do not have permission"**
+
+The signed-in account is not staff. Promote it with `npm run db:studio` (set
+`users.role` to `super_admin`), or set the `ADMIN_*` variables and re-seed.
+
+---
+
+## Layout
+
+```
+reusehub/
+├── docker-compose.yml
+├── docker/nginx/default.conf     # serves the built web app, proxies /api
+├── apps/
+│   ├── api/
+│   │   ├── prisma/               # schema.prisma, migrations, seed.js
+│   │   └── src/
+│   │       ├── config/env.js     # every environment variable, validated
+│   │       ├── lib/              # prisma, redis, cache
+│   │       ├── middleware/       # auth, validation, maintenance, rate limit
+│   │       ├── models/           # all database access
+│   │       ├── controllers/      # HTTP only, no SQL
+│   │       ├── routes/
+│   │       └── validators/
+│   └── web/
+│       └── src/
+│           ├── app/              # router, auth + config providers
+│           ├── admin/            # the admin panel
+│           ├── components/ui/    # design-system primitives
+│           ├── lib/              # api client, display helpers
+│           ├── pages/
+│           └── styles/tokens.css
+└── apps/api/tests-legacy/        # pre-refactor suite, needs porting
+```
+
+`models/` is the only layer that touches the database and `controllers/` is the
+only layer that knows about HTTP. Keeping those separate is what makes a storage
+change touch one file.
+
+---
+
+## How "nothing is hardcoded" works
+
+The frontend fetches `GET /api/config` once at boot. That single response carries
+the public settings, the active categories and conditions, the navigation and
+social links, and the full city → area → college tree. `ConfigProvider` puts it
+in context and writes the theme settings straight onto `:root` as CSS custom
+properties.
+
+So adding a category in the admin panel makes it appear in the listing form, the
+home page and the browse filters, and changing `color_accent` retints every
+call-to-action — with no rebuild and no restart.
+
+The rule the settings layer enforces is that **a setting no code reads is a
+switch that lies**. Every key in `settingsModel.DEFAULT_SETTINGS` names the file
+that honours it; if you add a key, add its reader in the same change.
+
+### What the admin panel controls
+
+| Section | What it changes |
+|---|---|
+| Dashboard | KPIs with week-on-week movement, a 14-day activity chart, category/campus mix, live feeds and service health |
+| Listings | Approve, reject, hide or requeue any listing |
+| Reports | Work the complaint queue |
+| Users | Block, unblock and change roles |
+| Categories | Add, rename, reorder, retire |
+| Conditions | Add, rename, reorder, retire |
+| Locations | Cities, areas and colleges |
+| Navigation | Header/footer links and social profiles |
+| Settings | Branding, theme colours, all copy, contact details, limits, flags, SEO |
+| Audit log | Every administrative write, append-only |
+
+Roles are ranks — `user < moderator < admin < super_admin` — and each route
+names the minimum rank that may enter it. Two further checks live in the
+controllers because a route guard cannot see *who the target is*: you cannot act
+on your own account, and you cannot act on a peer or a superior.
+
+---
+
+## API
+
+`GET /api/` lists every route. Beyond the public browse/auth/request endpoints:
+
+```
+GET    /api/config                          public bootstrap (cached)
+GET    /api/categories, /api/conditions     active taxonomy
+POST   /api/uploads/image                   listing photo (multipart, logged in)
+
+GET    /api/admin/overview                  staff
+GET    /api/admin/items, /reports           staff
+PATCH  /api/admin/items/:id/moderation      staff
+GET    /api/admin/users                     admin
+PATCH  /api/admin/users/:id/role            super admin
+GET    /api/admin/settings                  admin
+PUT    /api/admin/settings                  admin
+CRUD   /api/admin/categories, /conditions   admin
+CRUD   /api/admin/locations/{cities,areas,colleges}   admin
+CRUD   /api/admin/nav-links, /social-links  admin
+GET    /api/admin/audit                     admin
+```
+
+Every response uses one envelope — `{ success, message?, data }` — so the
+frontend has a single rule: read `success`, then read `data` or `message`.
+
+Deleting a location answers **409 with the exact dependant counts** unless the
+request repeats with `?confirm=1`. Areas and colleges cascade, and items and
+users are detached with `SET NULL`, so one careless delete would strand every
+listing at a campus with nothing to undo it. The database will not stop that,
+which is why the application does.
+
+---
+
+## Listing photos
+
+The photo field on the item form is a drop zone, not a URL box. It accepts a
+file **dropped** onto it, **pasted** with Ctrl+V (a screenshot, or Copy Image
+from another page), or picked with a **file browser**. Pasting a link still
+works — a pasted `https://` URL is taken as-is — so photos bundled with the seed
+and any external image continue to function.
+
+Uploads go to `POST /api/uploads/image`, are written under `apps/api/uploads/`,
+and are served back at `/uploads/<name>`. In Docker that directory is the
+`api-uploads` named volume, so photos survive a rebuild.
+
+**The file type is decided by the bytes, not by the browser.** `Content-Type`
+and the filename both come from the client and can claim anything — an HTML file
+renamed `photo.png` would pass a mimetype check and then be served from our own
+origin, which is how an upload form becomes stored XSS. So the magic-byte
+signature is read from the buffer and is the only thing that picks the
+extension, the stored name is generated rather than taken from the upload, and
+responses carry `nosniff` plus a restrictive CSP. SVG is deliberately not
+accepted: it is XML, it can carry `<script>`, and no signature separates a safe
+one from a hostile one.
+
+Two admin settings control it, under **Settings → items**:
+
+| Setting | Effect |
+|---|---|
+| `allow_image_uploads` | Off: file upload is refused, pasting a link still works |
+| `max_image_mb` | Largest uploadable photo (default 5MB; 16MB hard cap) |
+
+## Redis
+
+Caching and rate limiting are Redis-backed but **optional**. If Redis is
+unreachable the client stops trying, `cache.wrap()` becomes a pass-through, and
+rate limiting is skipped — a cache outage must not take the site down. Set
+`REDIS_ENABLED=false` to opt out entirely. `GET /api/health` reports the current
+state.
+
+## Database changes
+
+Prisma is the single source of truth for the schema.
 
 ```bash
-cd backend
-cp .env.example .env   # first time only, then fill in your MySQL password
-npm install            # first time only
-npm run db:reset       # first time only — creates the schema and demo data
-npm run dev            # http://localhost:5000/api/health
+cd apps/api
+npm run db:migrate:dev -- --name what_changed   # development
+npm run db:migrate                             # production / CI
+npm run db:studio                           # browse the data
 ```
 
-**Terminal 2 — frontend**:
-
-```bash
-cd frontend
-npm install     # first time only
-npm run dev     # http://localhost:5173
-```
-
-Then open **http://localhost:5173** — the item grid is served from MySQL.
-
-You can register a new account, or use a demo login:
-`aarav@example.com` / `password123`
-
-Logging in lands you on **/dashboard** — your own items, your own request
-counts, nobody else's. From there, **List an item** opens the form and
-**My items** manages what you have already posted. **Requests** shows what
-others have asked for on your items — accept or decline each one — alongside
-the requests you have sent; contact details are exchanged only after a request
-is accepted.
-
-**Tests:**
-
-```bash
-cd backend && npm test    # 341 tests
-```
-
-## API endpoints
-
-| Method | Path | Auth | Phase |
-|---|---|---|---|
-| `GET` | `/api/health` | — | 3 |
-| `POST` | `/api/auth/register` | — | 6 |
-| `POST` | `/api/auth/login` | — | 6 |
-| `GET` | `/api/auth/me` | Bearer token | 6 |
-| `GET` | `/api/items` | — | 5 |
-| `GET` | `/api/items/:id` | — | 5 |
-| `GET` | `/api/items/mine` | Bearer token | 7 |
-| `POST` | `/api/items` | Bearer token | 8 |
-| `PUT` | `/api/items/:id` | Bearer token + **owner** | 8 |
-| `PATCH` | `/api/items/:id/status` | Bearer token + **owner** | 8 |
-| `DELETE` | `/api/items/:id` | Bearer token + **owner** | 8 |
-| `GET` | `/api/dashboard` | Bearer token | 7 |
-| `GET` | `/api/locations/cities` | — | 9 |
-| `GET` | `/api/locations/cities/:id/areas` | — | 9 |
-| `GET` | `/api/locations/colleges` | — | 9 |
-| `GET` | `/api/locations/colleges/:id` | — | 9 |
-| `PUT` | `/api/users/me/college` | Bearer token | 9 |
-| `POST` | `/api/requests` | Bearer token | 10 |
-| `GET` | `/api/requests/sent` | Bearer token | 10 |
-| `GET` | `/api/requests/received` | Bearer token | 10 |
-| `PATCH` | `/api/requests/:id` | Bearer token + **item owner** | 10 |
-| `POST` | `/api/reports` | Bearer token | admin |
-| `GET` | `/api/admin/overview` | Bearer token + **staff** | admin |
-| `GET` | `/api/admin/items` | Bearer token + **staff** | admin |
-| `GET` | `/api/admin/items/:id` | Bearer token + **staff** | admin |
-| `PATCH` | `/api/admin/items/:id/moderation` | Bearer token + **staff** | admin |
-| `GET` | `/api/admin/reports` | Bearer token + **staff** | admin |
-| `GET` | `/api/admin/reports/:id` | Bearer token + **staff** | admin |
-| `PATCH` | `/api/admin/reports/:id/review` | Bearer token + **staff** | admin |
-| `GET` | `/api/admin/users` | Bearer token + **admin** | admin |
-| `GET` | `/api/admin/users/:id` | Bearer token + **admin** | admin |
-| `PATCH` | `/api/admin/users/:id/status` | Bearer token + **admin** | admin |
-| `PATCH` | `/api/admin/users/:id/role` | Bearer token + **super-admin** | admin |
-
-Protected endpoints expect the token in a header:
-
-```
-Authorization: Bearer <token>
-```
-
-**Owner** means the `checkItemOwnership` middleware runs after `protect`: a
-missing item answers `404`, and someone else's item answers `403` — before the
-controller runs at all.
-
-**Item owner** on `PATCH /api/requests/:id` is the same idea enforced a step
-later: only the owner of the *requested item* may accept or decline it, so the
-request controller loads the row and compares its `owner_id` against
-`req.user.id` before touching anything. A stranger's `PATCH` answers `403`; a
-request id that does not exist answers `404`.
-
-**Staff / admin / super-admin** on the `/api/admin` routes are ranks, not
-separate flags: a single `role` column orders `user < moderator < admin <
-super_admin`, and each route names the *minimum* rank that may enter it. The
-overview, item moderation and report review are staff-level (a moderator may
-read the aggregate counts, approve/reject/hide/requeue a listing, and work
-the complaint queue); managing accounts is admin-level; changing a role — the
-power that grants powers — is super-admin-only. A logged-in user below the bar
-answers `403`, and no token at
-all answers `401`. Two further checks live in the controller, because a
-route-level "is at least an admin" guard cannot see *who the target is*: you
-cannot act on your own account from the panel (`422`), and you cannot act on a
-peer or a superior or grant a role above your own (`403`). Every block, unblock
-and role change writes an `audit_logs` row after it commits — as does every
-moderation decision and every report review, so "who hid this listing, who
-closed this complaint, and why" always has an answer.
-
-**Filing a report** is the one report route that is *not* staff-only:
-`POST /api/reports` is open to any logged-in member, because the complaint
-queue staff work has to be fed from somewhere. A report names exactly one
-target — a listing **or** an account, never both and never neither — and you
-cannot report your own listing or yourself. The reporter is always taken from
-the token, never the request body, and a per-reporter uniqueness rule means the
-same person cannot report the same target twice; a second attempt answers
-`409`. Reading and resolving those reports stays on the staff-only
-`/api/admin/reports` routes above.
+`items.category` and `items.item_condition` are `VARCHAR`, not `ENUM`, and are
+validated at write time against the active rows in `categories` / `conditions`.
+That is what allows a new category to be added without a migration. They store
+the label rather than a foreign key so the `category: "Books"` JSON shape the
+frontend reads stays unchanged.
 
 ## Security notes
 
-- Passwords are hashed with **bcrypt** (per-password salt) and are never stored,
-  logged, or returned by the API.
-- The JWT payload carries **only the user id** — it is base64, not encryption,
-  so anyone holding a token can read it.
-- Route guards in React control what a user **sees**; the `protect` middleware
-  on the server controls what a user **can do**. The second one is the security
-  boundary — the first can be bypassed from the browser.
-- Personal data is scoped by `req.user.id`, taken from the **verified token
-  signature** — never from a URL, query string, body field or header. This is
-  why the dashboard is `GET /api/dashboard` and not `/api/dashboard/:userId`:
-  there is no id to tamper with. `tests/dashboard.test.js` sends five separate
-  attempts to name another account and asserts all five return the caller's own
-  data.
+- Passwords are bcrypt-hashed and never stored, logged or returned.
+- The JWT payload carries only the user id. It is base64, not encryption —
+  anyone holding a token can read it, so nothing secret goes in it.
+- Personal data is scoped by `req.user.id` taken from the verified token
+  signature, never from a URL, body or header. This is why the dashboard is
+  `GET /api/dashboard` and not `/api/dashboard/:userId` — there is no id to
+  tamper with.
+- Route guards in React control what a user *sees*; middleware controls what a
+  user *can do*. Only the second is a security boundary.
 - Login returns an identical response for an unknown email and a wrong password,
   so the API cannot be used to discover which addresses are registered.
-- **You can only edit, re-status or delete your own items**, and that is decided
-  on the server. The React pages hide the controls on items you do not own, but
-  hiding a button is presentation, not protection — `checkItemOwnership` compares
-  the row's `user_id` against `req.user.id` from the verified token, so the same
-  three requests sent by hand (curl, DevTools, a script) still answer `403`.
-- An item's `location` is **derived server-side** from the chosen college, not
-  taken from the request. A body may claim `{ collegeId: 4, location: "Kota" }`,
-  which is individually valid and permanently self-contradictory; the server
-  looks the college up and stores its real area and city instead.
-- All SQL uses prepared statements.
-- `.env` is gitignored and never committed.
+- An item's `location` is derived server-side from the chosen college, so
+  `{ collegeId: 4, location: "Kota" }` cannot store a filter and a label that
+  contradict each other.
+- `.env` is gitignored. `config/env.js` prints whether a secret is set, never
+  its value.
 
-## Build phases
+## Tests
 
-- [x] **Phase 1** — Project setup and architecture
-- [x] **Phase 2** — Frontend setup
-- [x] **Phase 3** — Backend setup
-- [x] **Phase 4** — MySQL database
-- [x] **Phase 5** — Frontend–backend connection
-- [x] **Phase 6** — Registration and authentication
-- [x] **Phase 7** — Dashboard
-- [x] **Phase 8** — Item management
-- [x] **Phase 9** — Search and filtering
-- [x] **Phase 10** — Request system
-- [x] **Phase 11** — Testing
-- [x] **Phase 12** — Git and GitHub
-- [ ] Phase 13 — Docker
-- [x] **Phase 14** — Jenkins — declarative pipeline in [`Jenkinsfile`](./Jenkinsfile); see [JENKINS_SETUP.md](./JENKINS_SETUP.md)
-- [ ] Phase 15 — CI/CD
-- [ ] Phase 16 — Deployment preparation
-- [ ] Phase 17 — README and documentation
-- [ ] Phase 18 — Final testing and presentation preparation
-test
+The previous 341-test suite is in `apps/api/tests-legacy/` and does not
+currently run — it was written against the mysql2 pool and the enum-based
+taxonomy, both of which are gone. `tests-legacy/README.md` describes what each
+file needs in order to be ported back.

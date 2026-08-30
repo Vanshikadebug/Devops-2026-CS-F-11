@@ -1,0 +1,19 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app__main { flex: 1; }
+
+/* The admin panel supplies its own chrome, so it gets the full viewport. */
+.app__main--bare { display: flex; }
+
+.app__banner {
+  padding: var(--s3) var(--s6);
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  text-align: center;
+  font-size: 0.86rem;
+  font-weight: 600;
+}

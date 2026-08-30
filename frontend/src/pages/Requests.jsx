@@ -5,55 +5,10 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 import Button from '../components/Button'
 import Modal from '../components/Modal'
-import { requestService } from '../services/requestService'
-import { STATUS_VARIANTS } from '../utils/constants'
+import { requestService } from '../lib/requestService'
+import { STATUS_VARIANTS } from '../lib/display'
 import './Requests.css'
 
-/**
- * Requests -- the two-sided view of every claim in the app.
- *
- * WHAT IS THIS PAGE?
- * A request has two people. This page is the same rows read from both
- * ends:
- *
- *   RECEIVED -- requests other students made on YOUR items. This is
- *   the only place the owner can actually act: accept one, decline
- *   another. It is the working half of the page.
- *
- *   SENT -- requests YOU made on other people's items. Read-only from
- *   here; the decision belongs to the owner. You come to this tab to
- *   see where you stand, and -- once someone accepts -- to read the
- *   contact details for arranging the handover.
- *
- * >>> WHY TWO ENDPOINTS AND NOT ONE "MY REQUESTS" LIST <<<
- * /sent and /received are the same table filtered by which column
- * holds your id: requester_id for sent, the item's user_id for
- * received. Merging them client-side would mean downloading rows you
- * are on both ends of and de-duplicating, for a page that reads more
- * clearly as two tabs anyway. The server already draws the line; the
- * page keeps it.
- *
- * =================================================================
- * WHY A DECISION RE-READS THE WHOLE RECEIVED LIST
- * =================================================================
- * Accepting is not a one-row edit. The transaction behind it (see
- * requestModel.accept) marks THIS request Accepted, flips every OTHER
- * pending request for the same item to Rejected, and reserves the
- * item. One click, several rows changed -- and the PATCH response can
- * only hand back the single row it was asked about.
- *
- * So rather than patch that one row and let the siblings sit on screen
- * still saying "Pending" -- a state the database no longer holds -- the
- * page re-reads /received after any decision. It is the same rule
- * MyItems follows for a status change (show the server's answer, not
- * the value we hoped for); it just matters more here, because here one
- * write moves rows the response never mentions.
- *
- * Rejecting touches only its own row, so it does not strictly need the
- * re-read -- but routing both decisions through the same refresh keeps
- * the code honest about which one has side effects, instead of relying
- * on the reader to remember that accept is the special one.
- */
 function Requests() {
   const navigate = useNavigate()
 
@@ -67,18 +22,9 @@ function Requests() {
 
   const [tab, setTab] = useState('received')
 
-  /* The id of the request whose decision is in flight, or null. A
-     single value, not a boolean, so accepting one row disables only
-     that row's buttons -- a page-wide flag would freeze every other
-     Accept/Decline while one request saves. */
   const [busyId, setBusyId] = useState(null)
   const [actionError, setActionError] = useState(null)
 
-  /* The pending accept/reject awaiting confirmation, held as
-     { req, action }. Accepting reserves your item and declines everyone
-     else who asked; declining turns a real person down. Both are worth
-     a sentence of explanation before the click, the same way MyItems
-     confirms a delete rather than firing it on the first press. */
   const [pendingDecision, setPendingDecision] = useState(null)
 
   useEffect(() => {
@@ -87,11 +33,6 @@ function Requests() {
     setStatus('loading')
     setError(null)
 
-    /* Both lists in parallel: they are independent reads and the page
-       shows both tabs, so waiting for one before starting the other
-       would only make the slower of the two the whole page's wait. If
-       either fails the page is in an error state anyway -- the usual
-       cause is an expired token, which fails both. */
     Promise.all([
       requestService.getReceived({ signal: controller.signal }),
       requestService.getSent({}, { signal: controller.signal }),
@@ -110,10 +51,6 @@ function Requests() {
     return () => controller.abort()
   }, [attempt])
 
-  /* Pending first, so the rows that actually need a decision float to
-     the top instead of scrolling away under a pile of settled ones.
-     Array.prototype.sort is stable, so within each group the server's
-     newest-first order survives untouched. */
   const receivedSorted = useMemo(() => {
     const rank = { Pending: 0, Accepted: 1, Rejected: 2 }
     return [...received].sort(
@@ -155,10 +92,6 @@ function Requests() {
     }
   }
 
-  /* Request rows carry item_name / item_image_url / item_category as
-     flat columns, but ItemImage wants an item-shaped object. Rather
-     than teach the component a second shape, we hand it the three
-     fields it reads under the names it expects. */
   function itemFor(req) {
     return {
       name: req.item_name,

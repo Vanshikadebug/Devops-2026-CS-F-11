@@ -1,298 +1,233 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useConfig } from '../app/ConfigProvider'
+import { api } from '../lib/api'
 import ItemCard from '../components/ItemCard'
-import LocationPicker from '../components/LocationPicker'
-import LoadingSpinner from '../components/LoadingSpinner'
-import EmptyState from '../components/EmptyState'
-import { useLocationSelection } from '../hooks/useLocationSelection'
-import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { itemService } from '../services/itemService'
-import { CATEGORIES, CONDITIONS } from '../utils/constants'
+import ItemImage from '../components/ItemImage'
+import {
+  ArrowButton, Pill, IconButton, SearchPill, BentoGrid, BentoCard,
+  StatBubble, AvatarCluster, Spinner, EmptyState,
+} from '../components/ui'
 import './Home.css'
 
-/**
- * Home -- browse by campus, then search within it.
- *
- * WHAT THIS PAGE DOES NOW
- * The flow the feature was asked for, in order:
- *
- *   city -> area -> college -> that college's items -> search -> filter
- *
- * Each step narrows the one below it. The selection lives in
- * useLocationSelection (which also persists it and seeds it from the
- * signed-in user's profile); the search text and the dropdown filters
- * live here, because nothing outside this page needs them.
- *
- * =================================================================
- * ONE REQUEST PER STATE, NOT ONE PER CONTROL
- * =================================================================
- * There is a single effect below that fetches items, and it depends
- * on every filter at once. The alternative -- an onChange handler per
- * control, each firing its own fetch -- looks more direct and is
- * where this kind of page usually goes wrong: two controls changed in
- * quick succession produce two in-flight requests, and whichever
- * answers LAST wins, regardless of which was asked last. The grid
- * then shows the result of a query the user has already moved on
- * from.
- *
- * Deriving the request from state instead means there is exactly one
- * description of "what should be on screen", and React re-runs it
- * whenever that description changes. The AbortController in the
- * cleanup cancels the superseded request rather than racing it.
- *
- * =================================================================
- * WHY THE FILTERS GO TO THE SERVER RATHER THAN FILTERING IN JS
- * =================================================================
- * Everything on this page could be done with .filter() on an array
- * the browser already has -- and with thirteen seeded items it would
- * be indistinguishable. It stops working the moment the site holds
- * more items than one page should download, which is the point of
- * having a database at all. Sending the filter to SQL keeps the
- * payload proportional to what is displayed, and the composite index
- * on (college_id, status, created_at) exists precisely to serve this
- * query shape.
- *
- * >>> THE ONE THING THAT IS HARD-CODED, AND WHY IT IS ALLOWED <<<
- * Nothing here names a city, an area or a college. The only literals
- * are CATEGORIES and CONDITIONS, imported from constants.js, and
- * those are not data -- they are the ENUM values in schema.sql, which
- * the database itself will reject if they drift. Every place name on
- * this page arrives from /api/locations.
- */
-function Home() {
-  const { selection, setSelection, college } = useLocationSelection()
-
-  /* Two variables for one search box. `search` is what is in the
-     input and must update on every keystroke or the field feels
-     broken; `debouncedSearch` is what gets sent, 300ms after typing
-     stops. See useDebouncedValue for why sending every keystroke is
-     both wasteful and racy. */
-  const [search, setSearch] = useState('')
-  const debouncedSearch = useDebouncedValue(search, 300)
-
-  const [category, setCategory] = useState('')
-  const [condition, setCondition] = useState('')
+export default function Home() {
+  const { setting, categories, cities, social } = useConfig()
+  const [params, setParams] = useSearchParams()
 
   const [items, setItems] = useState([])
-  const [status, setStatus] = useState('loading') // loading | ready | error
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [term, setTerm] = useState(params.get('search') || '')
 
-  const [attempt, setAttempt] = useState(0)
-  const retry = useCallback(() => setAttempt((n) => n + 1), [])
-
-  /* Memoised so its identity only changes when a value inside it
-     does. Without this, a brand-new object every render would make
-     the effect below re-run on every render -- fetching in a loop. */
-  const filters = useMemo(
-    () => ({
-      college: selection.collegeId,
-      /* Sent only when no college is chosen. The backend applies the
-         narrowest filter it is given, so sending all three is
-         harmless -- but sending only what is meant keeps the URL in
-         the network tab honest about what the page is asking for. */
-      area: selection.collegeId ? null : selection.areaId,
-      city: selection.collegeId || selection.areaId ? null : selection.cityId,
-      search: debouncedSearch,
-      category,
-      condition,
-    }),
-    [selection, debouncedSearch, category, condition],
-  )
+  const activeCategory = params.get('category') || ''
+  const activeCity = params.get('city') || ''
+  const limit = Number(setting('featured_limit', 8)) || 8
 
   useEffect(() => {
-    /* Cancels the in-flight request when the filters change again, or
-       when the user navigates away. Without it, an unmounted
-       component would still call setItems, and a superseded response
-       could overwrite a newer one. StrictMode's deliberate
-       double-mount in development makes both immediately visible. */
+    // AbortController so a fast sequence of filter clicks cannot have an
+    // earlier, slower response overwrite a later one.
     const controller = new AbortController()
+    setLoading(true)
 
-    setStatus('loading')
-    setError(null)
+    const query = new URLSearchParams({ limit: String(limit), status: 'Available' })
+    if (activeCategory) query.set('category', activeCategory)
+    if (activeCity) query.set('city', activeCity)
+    if (params.get('search')) query.set('search', params.get('search'))
 
-    itemService
-      .getAll(filters, { signal: controller.signal })
-      .then((data) => {
-        setItems(data)
-        setStatus('ready')
+    api
+      .get(`/items?${query}`, { signal: controller.signal })
+      .then((res) => {
+        setItems(res.data)
+        setTotal(res.pagination?.total ?? res.count)
+        setError(null)
       })
       .catch((err) => {
-        // An abort is us cancelling on purpose, not a failure.
-        if (err.name === 'AbortError') return
-        setError(err)
-        setStatus('error')
+        if (err.name !== 'AbortError') setError(err.message)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false)
       })
 
     return () => controller.abort()
-  }, [filters, attempt])
+  }, [activeCategory, activeCity, params, limit])
 
-  const hasFilters = Boolean(debouncedSearch || category || condition)
-
-  const clearFilters = () => {
-    setSearch('')
-    setCategory('')
-    setCondition('')
+  function setParam(key, value) {
+    const next = new URLSearchParams(params)
+    if (value) next.set(key, value)
+    else next.delete(key)
+    setParams(next, { replace: true })
   }
 
-  /* What the page calls the place it is showing. Every branch comes
-     from the server: `college` was resolved by id, so a shared link
-     prints "SKIT Jaipur" rather than "college 1". */
-  const scopeLabel = college
-    ? college.short_name
-    : selection.cityId
-      ? 'nearby'
-      : 'everywhere'
+  const heroImage = setting('hero_image_url')
+  const featured = items[0]
 
   return (
-    <div className="container page">
-      <section className="hero">
-        <h1 className="hero__title">
-          Give your things a <span className="hero__accent">second life</span>
-        </h1>
-        <p className="hero__subtitle">
-          Find what students near you are passing on. Pick your college to see
-          what is available on your campus.
-        </p>
-      </section>
+    <div className="home">
+      <div className="shell">
+        <BentoGrid className="home__hero">
+          {/* --- The hero cell ------------------------------------- */}
+          <BentoCard span={3} rows={2} className="hero">
+            {setting('hero_badge') && (
+              <Pill tone="sunk" className="hero__badge">
+                <span aria-hidden="true">{setting('logo_glyph', '♻')}</span>
+                {setting('hero_badge')}
+              </Pill>
+            )}
 
-      {/* --- Step 1-3: where -------------------------------------- */}
-      <section className="browse-scope" aria-labelledby="scope-heading">
-        <h2 id="scope-heading" className="browse-scope__heading">
-          Where are you looking?
-        </h2>
+            <h1 className="hero__title">{setting('hero_title')}</h1>
 
-        <LocationPicker value={selection} onChange={setSelection} />
+            <div className="hero__lead">
+              <span className="hero__step" aria-hidden="true">01</span>
+              <span className="hero__rule" aria-hidden="true" />
+              <p className="hero__sub muted">{setting('hero_subtitle')}</p>
+            </div>
 
-        {college && (
-          <p className="browse-scope__resolved">
-            Showing items at <strong>{college.short_name}</strong> —{' '}
-            {college.area_name}, {college.city_name}, {college.state}
-          </p>
-        )}
-      </section>
+            <div className="hero__cta">
+              <ArrowButton to={setting('hero_cta_href', '/items')} size="lg">
+                {setting('hero_cta_label', 'Browse items')}
+              </ArrowButton>
+            </div>
 
-      {/* --- Steps 6-7: search and filter within that scope --------
-          Placed BELOW the picker deliberately: it reads as "narrow
-          what you just chose", which is the order the flow asks for.
-          A search box above the location would invite searching the
-          whole site and then wondering why the campus dropdown did
-          nothing. */}
-      <div className="toolbar" aria-label="Search and filters">
-        <input
-          type="search"
-          className="toolbar__search"
-          placeholder={`Search items at ${scopeLabel}…`}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search items"
-        />
+            <div className="hero__art">
+              {heroImage ? (
+                <img src={heroImage} alt="" className="hero__img" />
+              ) : featured ? (
+                <Link to={`/items/${featured.id}`} className="hero__feature">
+                  <ItemImage item={featured} ratio="1 / 1" />
+                </Link>
+              ) : null}
+            </div>
 
-        <select
-          className="toolbar__select"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          aria-label="Filter by category"
-        >
-          <option value="">All categories</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+            {social.length > 0 && (
+              <div className="hero__social">
+                <span className="muted">Follow us on:</span>
+                {social.map((s) => (
+                  <a key={s.id} href={s.url} target="_blank" rel="noreferrer noopener"
+                    aria-label={s.platform} title={s.platform} className="hero__socialdot">
+                    {s.platform.charAt(0)}
+                  </a>
+                ))}
+              </div>
+            )}
+          </BentoCard>
 
-        <select
-          className="toolbar__select"
-          value={condition}
-          onChange={(e) => setCondition(e.target.value)}
-          aria-label="Filter by condition"
-        >
-          <option value="">Any condition</option>
-          {CONDITIONS.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          {/* --- Categories, straight from the categories table ---- */}
+          <BentoCard span={1}>
+            <div className="row row--between">
+              <h3>Categories</h3>
+              {activeCategory && (
+                <button type="button" className="home__clear" onClick={() => setParam('category', '')}>
+                  Clear
+                </button>
+              )}
+            </div>
 
-        {hasFilters && (
-          <button type="button" className="toolbar__clear" onClick={clearFilters}>
-            Clear
-          </button>
-        )}
+            <div className="home__cats">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`home__cat ${activeCategory === cat.label ? 'is-active' : ''}`}
+                  onClick={() => setParam('category', activeCategory === cat.label ? '' : cat.label)}
+                  title={cat.label}
+                >
+                  <span className={`home__catglyph itemimg--${cat.tint}`} aria-hidden="true">
+                    {cat.glyph || '📦'}
+                  </span>
+                  <span className="home__catlabel">{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          </BentoCard>
+
+          {/* --- Campus picker, from the cities table --------------- */}
+          <BentoCard span={1}>
+            <h3>Near you</h3>
+            <p className="muted home__nearsub">Pick a city to see what is close.</p>
+
+            <div className="home__cities">
+              {cities.map((city) => (
+                <button
+                  key={city.id}
+                  type="button"
+                  className={`home__city ${String(activeCity) === String(city.id) ? 'is-active' : ''}`}
+                  onClick={() => setParam('city', String(activeCity) === String(city.id) ? '' : String(city.id))}
+                >
+                  <span>{city.name}</span>
+                  <span className="muted">{city.college_count}</span>
+                </button>
+              ))}
+            </div>
+          </BentoCard>
+        </BentoGrid>
+
+        {/* --- Stat strip ---------------------------------------- */}
+        <BentoGrid className="home__strip">
+          <BentoCard span={1} className="strip__stat">
+            <StatBubble value={total} label="items listed" />
+            <div>
+              <strong>Live right now</strong>
+              <p className="muted">Available to claim on campus.</p>
+            </div>
+          </BentoCard>
+
+          <BentoCard span={1} className="strip__people">
+            <AvatarCluster names={items.map((i) => i.owner_name).filter(Boolean)} />
+            <div>
+              <strong>Students sharing</strong>
+              <p className="muted">Real people on your campus.</p>
+            </div>
+          </BentoCard>
+
+          <BentoCard span={2} className="strip__search">
+            <div>
+              <strong>Looking for something specific?</strong>
+              <p className="muted">Search every listing by name or description.</p>
+            </div>
+            <SearchPill
+              value={term}
+              onChange={setTerm}
+              onSubmit={(v) => setParam('search', v.trim())}
+              placeholder="Try 'calculator'…"
+            />
+          </BentoCard>
+        </BentoGrid>
+
+        {/* --- Listings ------------------------------------------- */}
+        <section className="home__list">
+          <div className="row row--between home__listhead">
+            <div>
+              <h2>{activeCategory || 'Latest listings'}</h2>
+              <p className="muted">
+                {loading ? 'Loading…' : `${total} item${total === 1 ? '' : 's'} available`}
+              </p>
+            </div>
+            <IconButton to="/items" tone="ink" label="See all listings" size="lg">
+              <svg viewBox="0 0 16 16" width="15" height="15" fill="none" aria-hidden="true">
+                <path d="M4 12L12 4M12 4H6M12 4v6" stroke="currentColor" strokeWidth="1.8"
+                  strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </IconButton>
+          </div>
+
+          {error && <div className="alert alert--error">{error}</div>}
+
+          {loading ? (
+            <Spinner />
+          ) : items.length === 0 ? (
+            <EmptyState title="Nothing to show" glyph="🔍">
+              {setting('empty_state_text')}
+            </EmptyState>
+          ) : (
+            <div className="item-grid">
+              {items.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-
-      {/* aria-live tells a screen reader to announce this line when it
-          changes, so a blind user hears "Showing 6 items" once the
-          data arrives rather than being left in silence. */}
-      <div className="home__count" aria-live="polite">
-        {status === 'loading' && 'Loading items…'}
-        {status === 'ready' &&
-          `Showing ${items.length} item${items.length === 1 ? '' : 's'}` +
-            (college ? ` at ${college.short_name}` : '')}
-        {status === 'error' && 'Could not load items'}
-      </div>
-
-      {status === 'loading' && <LoadingSpinner size="lg" label="Loading items" />}
-
-      {status === 'error' && (
-        <EmptyState
-          tone="error"
-          icon="⚠"
-          title="Could not load items"
-          /* error.message is safe to display: errorHandler.js on the
-             backend guarantees that unexpected errors are reduced to
-             a generic string, so a database password can never reach
-             this line. */
-          message={error?.message}
-          action={{ label: 'Try again', onClick: retry }}
-        />
-      )}
-
-      {/* Three different empty states, because they need three
-          different things from the user. Collapsing them into one
-          "No items found" would leave someone staring at a campus
-          with nothing listed, wondering whether their search was
-          wrong. */}
-      {status === 'ready' && items.length === 0 && hasFilters && (
-        <EmptyState
-          icon="🔍"
-          title="Nothing matched"
-          message={
-            college
-              ? `No items at ${college.short_name} match what you are looking for. Try clearing the filters, or pick a different college.`
-              : 'No items match what you are looking for. Try clearing the filters.'
-          }
-          action={{ label: 'Clear filters', onClick: clearFilters }}
-        />
-      )}
-
-      {status === 'ready' && items.length === 0 && !hasFilters && college && (
-        <EmptyState
-          icon="🌱"
-          title={`Nothing listed at ${college.short_name} yet`}
-          message="This campus is in the directory but nobody has posted here so far. If you have something to pass on, you would be the first."
-        />
-      )}
-
-      {status === 'ready' && items.length === 0 && !hasFilters && !college && (
-        <EmptyState
-          icon="📦"
-          title="No items listed yet"
-          message="Nothing has been shared so far. Once someone lists an item it will appear here."
-        />
-      )}
-
-      {status === 'ready' && items.length > 0 && (
-        /* `key` lets React match each card to its data across
-           re-renders. Always a stable id, never the array index --
-           with an index, changing the filter would make React reuse
-           the wrong DOM node for every card, and ItemImage's memory
-           of which URL failed would follow the position instead of
-           the item. */
-        <div className="item-grid">
-          {items.map((item) => (
-            <ItemCard key={item.id} item={item} />
-          ))}
-        </div>
-      )}
     </div>
   )
 }
-
-export default Home

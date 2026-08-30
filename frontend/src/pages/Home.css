@@ -1,128 +1,213 @@
-/* --- Hero ------------------------------------------------------ */
+.home { padding: var(--s2) 0 var(--s8); }
+
+.home__hero { margin-bottom: var(--s5); }
+
+/* --- Hero ---------------------------------------------------------- */
+
 .hero {
-  text-align: center;
-  padding: var(--space-10) 0 var(--space-8);
+  position: relative;
+  display: grid;
+  /* Copy on the left, artwork on the right; the artwork column collapses
+     first on narrow screens. */
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-areas:
+    'badge art'
+    'title art'
+    'lead  art'
+    'cta   art'
+    'social art';
+  align-content: start;
+  gap: var(--s4) var(--s6);
+  padding: var(--s8);
+  overflow: hidden;
 }
+
+.hero__badge { grid-area: badge; justify-self: start; }
 
 .hero__title {
-  font-size: clamp(1.75rem, 4vw + 0.5rem, 2.75rem);
-  letter-spacing: -0.03em;
-  margin-bottom: var(--space-3);
+  grid-area: title;
+  max-width: 15ch;
+  margin: var(--s2) 0;
 }
 
-.hero__accent {
-  color: var(--green-600);
+.hero__lead { grid-area: lead; display: flex; align-items: center; gap: var(--s4); }
+
+.hero__step {
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--muted);
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+  flex: none;
 }
 
-.hero__subtitle {
-  color: var(--text-secondary);
-  max-width: 34rem;
-  margin: 0 auto;
-  font-size: 1.05rem;
+.hero__rule {
+  width: 54px;
+  height: 1px;
+  background: var(--line-strong);
+  flex: none;
 }
 
-/* --- The location scope panel -----------------------------------
-   Visually distinct from the toolbar below it, because they answer
-   different questions: this one is WHERE, the toolbar is WHAT. Two
-   identical white boxes would read as one long row of six controls
-   and lose the 1-2-3 sequence entirely. */
-.browse-scope {
-  background: var(--green-50);
-  border: 1px solid var(--green-200);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  margin-bottom: var(--space-5);
+.hero__sub { font-size: 0.92rem; max-width: 34ch; }
+
+.hero__cta { grid-area: cta; justify-self: start; margin-top: var(--s3); }
+
+.hero__art {
+  grid-area: art;
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+  max-width: 340px;
 }
 
-.browse-scope__heading {
-  font-size: 0.95rem;
-  font-weight: 650;
-  color: var(--green-800);
-  margin-bottom: var(--space-4);
-}
+.hero__img { width: 100%; border-radius: var(--r-card); }
+.hero__feature { display: block; border-radius: var(--r-card); overflow: hidden; }
+.hero__feature .itemimg { border-radius: var(--r-card); }
 
-.browse-scope__resolved {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--green-200);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-/* --- Toolbar (search + filters) -------------------------------- */
-.toolbar {
-  display: flex;
-  gap: var(--space-3);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: var(--space-6);
-}
-
-.toolbar__search {
-  flex: 1;
-  min-width: 0;               /* lets the input shrink inside flex */
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-}
-
-.toolbar__select {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  cursor: pointer;
-}
-
-.toolbar__search:disabled,
-.toolbar__select:disabled {
-  background: var(--gray-100);
-  color: var(--text-muted);
-  cursor: not-allowed;
-}
-
-/* Appears only when a filter is actually set, so it is never a dead
-   control -- and its appearance is itself the signal that something
-   is narrowing the results. */
-.toolbar__clear {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition), color var(--transition);
-}
-
-.toolbar__clear:hover {
-  background: var(--gray-100);
-  color: var(--text-primary);
-}
-
-/* --- Result count ---------------------------------------------- */
-.home__count {
+.hero__social {
+  grid-area: social;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: var(--space-4);
+  gap: var(--s2);
+  margin-top: var(--s5);
+  font-size: 0.82rem;
 }
 
-/* --- The responsive grid ---------------------------------------
-   `.item-grid` moved to index.css when the Dashboard started using
-   it too -- shared layout belongs there, per the note at the top of
-   that section. */
+.hero__socialdot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--surface-sunk);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
 
-@media (max-width: 720px) {
-  .toolbar {
-    flex-direction: column;
+@media (max-width: 760px) {
+  .hero {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'badge' 'title' 'art' 'lead' 'cta' 'social';
+    padding: var(--s6);
   }
+  .hero__title { max-width: none; }
+  .hero__art { max-width: 100%; }
 }
+
+/* --- Category tiles ------------------------------------------------ */
+
+.home__cats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s2);
+  margin-top: var(--s4);
+}
+
+.home__cat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: var(--s2) 4px;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  background: none;
+  cursor: pointer;
+  transition: background var(--t), border-color var(--t);
+}
+
+.home__cat:hover { background: var(--surface-sunk); }
+.home__cat.is-active { border-color: var(--ink); background: var(--surface-sunk); }
+
+.home__catglyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+}
+
+.home__catlabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+  /* Category labels are admin-authored and can be long; keep the grid even. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.home__clear {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 0.76rem;
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+/* --- Cities -------------------------------------------------------- */
+
+.home__nearsub { font-size: 0.82rem; margin-top: var(--s1); }
+
+.home__cities { display: flex; flex-direction: column; gap: 4px; margin-top: var(--s4); }
+
+.home__city {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: 9px 13px;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunk);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 580;
+  text-align: left;
+}
+
+.home__city:hover { background: var(--surface); box-shadow: var(--shadow-sm); }
+.home__city.is-active { border-color: var(--ink); background: var(--accent); }
+.home__city.is-active .muted { color: var(--accent-ink); opacity: 0.7; }
+
+/* --- Stat strip ---------------------------------------------------- */
+
+.home__strip { margin-bottom: var(--s12); }
+
+.strip__stat,
+.strip__people { display: flex; align-items: center; gap: var(--s4); }
+
+.strip__stat strong,
+.strip__people strong,
+.strip__search strong { display: block; font-size: 0.95rem; }
+
+.strip__stat p,
+.strip__people p,
+.strip__search p { font-size: 0.82rem; margin-top: 2px; }
+
+.strip__search {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s5);
+}
+
+.strip__search > div { flex: none; }
+.strip__search .searchpill { max-width: 340px; }
+
+@media (max-width: 700px) {
+  .strip__search { flex-direction: column; align-items: stretch; }
+  .strip__search .searchpill { max-width: none; }
+}
+
+/* --- Listings ------------------------------------------------------ */
+
+.home__listhead { margin-bottom: var(--s5); align-items: flex-end; }
+.home__listhead p { font-size: 0.85rem; margin-top: var(--s1); }
+.home__list .alert { margin-bottom: var(--s5); }

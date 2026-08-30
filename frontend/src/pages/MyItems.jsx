@@ -5,50 +5,10 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 import Button from '../components/Button'
 import Modal from '../components/Modal'
-import { itemService } from '../services/itemService'
-import { ITEM_STATUSES, STATUS_VARIANTS } from '../utils/constants'
+import { itemService } from '../lib/itemService'
+import { ITEM_STATUSES, STATUS_VARIANTS } from '../lib/display'
 import './MyItems.css'
 
-/**
- * MyItems -- everything you have listed, and the controls to manage it.
- *
- * WHAT IS THIS PAGE?
- * The owner's view of their own listings: one row per item, with edit,
- * delete and a status control on each. It is where an item's life
- * actually gets managed, so it is deliberately a dense list rather
- * than the browse grid -- you are scanning your own things to find
- * one, not window-shopping.
- *
- * >>> WHY IT USES /api/items/mine AND NOT /api/items?user=N <<<
- * There is no user parameter to pass. The server reads the owner from
- * the verified token, so this page CANNOT request someone else's
- * listings even by mistake -- there is nowhere in the request to say
- * whose items you want. A ?user= filter would put that decision in
- * the URL, and the day someone forgets to check it, the whole site is
- * readable user by user. See the note on getMyItems in
- * itemController.js.
- *
- * =================================================================
- * OPTIMISTIC vs SERVER-CONFIRMED UPDATES -- and why this page is the
- * second kind
- * =================================================================
- * When the status dropdown changes, this page could update the row
- * immediately and send the request in the background. That feels
- * instant, and it means the screen is asserting something the
- * database has not agreed to yet. If the write fails -- expired
- * token, item deleted in another tab, server down -- the row shows
- * "Reserved" while the database still says "Available", and nothing
- * on screen is wrong enough to notice.
- *
- * So the row is replaced with THE SERVER'S ANSWER, which is the item
- * as re-read after the write. The cost is a few hundred milliseconds
- * of a disabled control. The benefit is that this list can never
- * display a state the database does not hold.
- *
- * That trade is not universal -- a chat app that blocked on every
- * message would be unusable. It is right HERE because these writes
- * are rare, deliberate, and consequential.
- */
 function MyItems() {
   const navigate = useNavigate()
 
@@ -59,17 +19,9 @@ function MyItems() {
   const [attempt, setAttempt] = useState(0)
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
 
-  /* The id currently being written, or null. A single value rather
-     than a boolean because only ONE row should be disabled while its
-     own request is in flight -- a page-wide `busy` flag would freeze
-     every row on the screen because one of them is saving. */
   const [busyId, setBusyId] = useState(null)
   const [actionError, setActionError] = useState(null)
 
-  /* The item awaiting delete confirmation. Holding the ITEM and not
-     just its id means the dialog can name it -- "Delete Casio
-     FX-991EX?" is a question you can answer; "Delete this item?" over
-     a list of nine is not. */
   const [pendingDelete, setPendingDelete] = useState(null)
 
   const [filter, setFilter] = useState('')
@@ -95,13 +47,6 @@ function MyItems() {
     return () => controller.abort()
   }, [attempt])
 
-  /* Filtered in the browser, unlike Home's filters which go to SQL.
-     The difference is the size of the set: this endpoint returns only
-     YOUR items, which is tens at most, and they are all already
-     downloaded. Sending a request to re-filter a list the browser is
-     holding would add a round trip and a loading state for no gain.
-     Home cannot do this because it filters a table that will outgrow
-     one page. */
   const visible = useMemo(
     () => (filter ? items.filter((item) => item.status === filter) : items),
     [items, filter],
@@ -126,11 +71,6 @@ function MyItems() {
     try {
       const updated = await itemService.updateStatus(item.id, next)
 
-      /* Replace by id rather than by index. The array can be filtered
-         and re-ordered between render and response, and an index
-         captured earlier would then write the answer onto the wrong
-         row -- one of those bugs that only appears when the list is
-         long enough to scroll. */
       setItems((prev) => prev.map((row) => (row.id === updated.id ? updated : row)))
     } catch (err) {
       setActionError(
@@ -155,10 +95,6 @@ function MyItems() {
     try {
       await itemService.remove(item.id)
 
-      /* Removed from local state rather than refetching the list. The
-         server has confirmed the row is gone, so a second request
-         would only re-download the other nine rows to learn what we
-         already know. */
       setItems((prev) => prev.filter((row) => row.id !== item.id))
       setPendingDelete(null)
     } catch (err) {

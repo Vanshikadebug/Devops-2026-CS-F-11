@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/.git
+**/.env
+**/.env.*
+!**/.env.example
+**/coverage
+**/reports
+**/*.log
+**/.vscode
+**/.idea
+Jenkinsfile
+JENKINS_SETUP.md
