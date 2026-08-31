@@ -9,11 +9,16 @@ copy, the colour scheme, limits and feature flags — is stored in the database 
 editable from the admin panel. There are no hardcoded categories or locations.
 
 ```
-Frontend   React 19 + Vite          apps/web
-Backend    Express 5 + Prisma 6     apps/api
+Frontend   React 19 + Vite          frontend
+Backend    Express 5 + Prisma 6     backend
 Database   MySQL 8
 Cache      Redis 7 (optional)
 ```
+
+> **Working in a team?** Read **[TEAMWORK.md](./TEAMWORK.md)** first. One person
+> can run the backend and share a URL so everyone else works on the frontend with
+> no database at all — and it explains the git workflow that stops people's work
+> overwriting each other.
 
 ---
 
@@ -107,10 +112,10 @@ them with `??`.
 **Step 3.** Configure the API:
 
 ```powershell
-copy apps/api/.env.example apps/api/.env
+copy backend/.env.example backend/.env
 ```
 
-Edit `apps/api/.env` and set two values:
+Edit `backend/.env` and set two values:
 
 ```env
 DATABASE_URL="mysql://root:your_mysql_password@localhost:3306/reusehub"
@@ -126,13 +131,13 @@ either way; caching just becomes a pass-through.
 **Step 4.** Create the schema and demo data:
 
 ```powershell
-cd apps/api
+cd backend
 npm run db:migrate
 npm run db:seed
-cd ../..
+cd ..
 ```
 
-To get an admin account, set the `ADMIN_*` values in `apps/api/.env` before
+To get an admin account, set the `ADMIN_*` values in `backend/.env` before
 running the seed.
 
 **Step 5.** Start both servers with one command, from the repo root:
@@ -157,8 +162,8 @@ no CORS setup in development.
 If you would rather have two terminals:
 
 ```powershell
-cd apps/api  ; npm run dev     # terminal 1
-cd apps/web  ; npm run dev     # terminal 2
+cd backend  ; npm run dev     # terminal 1
+cd frontend  ; npm run dev     # terminal 2
 ```
 
 ---
@@ -212,12 +217,12 @@ Get-NetTCPConnection -LocalPort 5000 -State Listen | Select-Object OwningProcess
 
 **`Environment variable not found: DATABASE_URL`**
 
-`apps/api/.env` is missing or has no `DATABASE_URL`. See Option B, step 3.
+`backend/.env` is missing or has no `DATABASE_URL`. See Option B, step 3.
 
 **`JWT_SECRET is required` when running Docker**
 
 The repo-root `.env` has no secret. See Option A, step 3. Note Docker reads the
-**root** `.env`, while local development reads `apps/api/.env` — they are
+**root** `.env`, while local development reads `backend/.env` — they are
 separate files.
 
 **Docker and local show different data**
@@ -262,7 +267,7 @@ reusehub/
 │           ├── lib/              # api client, display helpers
 │           ├── pages/
 │           └── styles/tokens.css
-└── apps/api/tests-legacy/        # pre-refactor suite, needs porting
+└── backend/tests-legacy/        # pre-refactor suite, needs porting
 ```
 
 `models/` is the only layer that touches the database and `controllers/` is the
@@ -350,7 +355,7 @@ from another page), or picked with a **file browser**. Pasting a link still
 works — a pasted `https://` URL is taken as-is — so photos bundled with the seed
 and any external image continue to function.
 
-Uploads go to `POST /api/uploads/image`, are written under `apps/api/uploads/`,
+Uploads go to `POST /api/uploads/image`, are written under `backend/uploads/`,
 and are served back at `/uploads/<name>`. In Docker that directory is the
 `api-uploads` named volume, so photos survive a rebuild.
 
@@ -384,7 +389,7 @@ state.
 Prisma is the single source of truth for the schema.
 
 ```bash
-cd apps/api
+cd backend
 npm run db:migrate:dev -- --name what_changed   # development
 npm run db:migrate                             # production / CI
 npm run db:studio                           # browse the data
@@ -417,7 +422,7 @@ frontend reads stays unchanged.
 
 ## Tests
 
-The previous 341-test suite is in `apps/api/tests-legacy/` and does not
+The previous 341-test suite is in `backend/tests-legacy/` and does not
 currently run — it was written against the mysql2 pool and the enum-based
 taxonomy, both of which are gone. `tests-legacy/README.md` describes what each
 file needs in order to be ported back.

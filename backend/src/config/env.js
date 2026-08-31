@@ -108,6 +108,8 @@ const config = {
     .map((o) => o.trim().replace(/\/+$/, ''))
     .filter(Boolean),
 
+  allowTunnelOrigins: bool('ALLOW_TUNNEL_ORIGINS', !isProduction),
+
   rateLimit: {
     enabled: bool('RATE_LIMIT_ENABLED', !isTest),
     // Auth is a password oracle, so it gets a much tighter budget than
