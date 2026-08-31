@@ -1,78 +1,209 @@
+/**
+ * ==============================================================================
+ * ITEM CARD STYLESHEET (MANIA E-COMMERCE RETAIL THEME)
+ * ==============================================================================
+ * 
+ * @file icard.css
+ * @description Establishes the high-contrast, boxy retail component layout for 
+ * individual item listing cards displayed across grids and catalog searches.
+ * 
+ * ARCHITECTURAL NOTES:
+ * - Implements tactile hover micro-interactions, translating cards upward on the 
+ *   Y-axis and revealing contextual action arrows with GPU-accelerated opacity.
+ * - Utilizes CSS line clamping (`-webkit-line-clamp`) to enforce strict two-line 
+ *   title wrapping for grid rhythm and visual uniformity.
+ * - Adheres strictly to global spacing tokens (`--s2`, `--s3`, `--s4`), shadow variables, 
+ *   and surface contrast tokens.
+ * ==============================================================================
+ */
+
+/* --------------------------------------------------------------------------
+   1. CORE CARD CONTAINER & HOVER STATES
+   -------------------------------------------------------------------------- */
+
+/**
+ * .icard
+ * The fundamental card shell wrapping product media, metadata, and footer actions.
+ * Enforces a flex column layout spanning full height (`height: 100%`) to guarantee 
+ * balanced alignment across multi-item CSS grids.
+ */
 .icard {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border-radius: var(--r-card);
-  padding: var(--s3);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--t), box-shadow var(--t);
+  background-color: var(--surface, #ffffff);
+  border-radius: var(--r-card, 8px);
+  padding: var(--s3, 12px);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+  transition: transform var(--t, 200ms ease), box-shadow var(--t, 200ms ease);
   height: 100%;
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid var(--gray-200, #e2e8f0);
 }
 
-.icard:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.icard:hover .itemimg__photo { transform: scale(1.04); }
+/**
+ * Interactive Hover Feedback
+ * Lifts the card subtly off the background plane and deepens the drop shadow 
+ * to create a tactile retail elevation effect.
+ */
+.icard:hover { 
+  transform: translateY(-3px); 
+  box-shadow: var(--shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.1)); 
+  border-color: var(--gray-300, #cbd5e1);
+}
 
-.icard__media { position: relative; display: block; }
+/**
+ * Smooth photo scaling triggered when hovering over the parent item card.
+ */
+.icard:hover .itemimg__photo { 
+  transform: scale(1.04); 
+}
 
-.icard__status { position: absolute; top: var(--s3); left: var(--s3); }
+/* --------------------------------------------------------------------------
+   2. MEDIA CONTAINER & ABSOLUTE OVERLAYS
+   -------------------------------------------------------------------------- */
 
+/**
+ * .icard__media
+ * Structural container for product imagery, holding positioning context for 
+ * badges, status tags, and floating action affordances.
+ */
+.icard__media { 
+  position: relative; 
+  display: block; 
+  width: 100%;
+  overflow: hidden;
+  border-radius: calc(var(--r-card, 8px) - 4px);
+}
+
+/**
+ * .icard__status
+ * Absolute positioning anchor for status indicators (e.g., "Available", "Reserved") 
+ * pinned to the top-left corner of the item media area.
+ */
+.icard__status { 
+  position: absolute; 
+  top: var(--s3, 12px); 
+  left: var(--s3, 12px); 
+  z-index: 2;
+}
+
+/**
+ * .icard__arrow
+ * Floating circular navigation action button pinned to the bottom-right corner 
+ * of the media frame. Hidden by default (`opacity: 0`) and revealed via smooth 
+ * translation when the user hovers over the card.
+ */
 .icard__arrow {
   position: absolute;
-  right: var(--s3);
-  bottom: var(--s3);
+  right: var(--s3, 12px);
+  bottom: var(--s3, 12px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-full, 9999px);
+  background: var(--surface, #ffffff);
+  color: var(--ink, #0f172a);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
   opacity: 0;
   transform: translateY(6px);
-  transition: opacity var(--t), transform var(--t);
+  transition: opacity var(--t, 200ms ease), transform var(--t, 200ms ease);
+  z-index: 2;
 }
 
-.icard:hover .icard__arrow { opacity: 1; transform: translateY(0); }
+/**
+ * Reveal micro-interaction for the arrow action on card hover.
+ */
+.icard:hover .icard__arrow { 
+  opacity: 1; 
+  transform: translateY(0); 
+}
 
+/* --------------------------------------------------------------------------
+   3. CARD BODY CONTENT & TYPOGRAPHY
+   -------------------------------------------------------------------------- */
+
+/**
+ * .icard__body
+ * Flexible inner content container holding category details, item titles, 
+ * and location metadata.
+ */
 .icard__body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: var(--s4) var(--s3) var(--s2);
+  padding: var(--s4, 16px) var(--s3, 12px) var(--s2, 8px);
   flex: 1;
 }
 
+/**
+ * .icard__meta
+ * Metadata row displaying secondary categorization traits or timestamps 
+ * in a muted text tone.
+ */
 .icard__meta {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 0.74rem;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.icard__cat { color: var(--ink); }
+/**
+ * .icard__cat
+ * High-contrast category label accent within the metadata sequence.
+ */
+.icard__cat { 
+  color: var(--ink, #0f172a); 
+}
 
+/**
+ * .icard__title
+ * Primary product heading text. Constrained strictly to a maximum of two lines 
+ * to prevent ragged grid structures caused by varying title lengths.
+ */
 .icard__title {
   font-size: 1rem;
   font-weight: 640;
   line-height: 1.3;
-  /* Two lines maximum: titles vary a lot in length and a ragged grid reads as
-     accidental. */
+  color: var(--ink, #0f172a);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.icard__where { font-size: 0.8rem; }
+/**
+ * .icard__where
+ * Geographic or campus location indicator subtext.
+ */
+.icard__where { 
+  font-size: 0.8rem; 
+  color: var(--muted, #64748b);
+}
 
+/* --------------------------------------------------------------------------
+   4. CARD FOOTER & ACTION WRAPPERS
+   -------------------------------------------------------------------------- */
+
+/**
+ * .icard__footer
+ * Pinned bottom container for pricing elements, user badges, or quick action buttons. 
+ * `margin-top: auto` guarantees vertical alignment across cards of differing text lengths.
+ */
 .icard__footer {
   margin-top: auto;
-  padding-top: var(--s3);
+  padding-top: var(--s3, 12px);
+  border-top: 1px solid var(--gray-100, #f1f5f9);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s2);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2, 8px);
 }
