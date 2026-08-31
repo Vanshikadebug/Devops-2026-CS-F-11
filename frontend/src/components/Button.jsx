@@ -1,25 +1,5 @@
 import './Button.css'
 
-/**
- * Button -- the one clickable control used everywhere in ReuseHub.
- *
- * WHY A COMPONENT INSTEAD OF PLAIN <button>?
- * Consistency and accessibility, in one place. Every button in the
- * app gets the same padding, focus ring, disabled behaviour and
- * loading state. When we later decide the corners should be rounder,
- * we change one file rather than hunting through twelve pages.
- *
- * PROPS
- *   variant  'primary' | 'secondary' | 'danger' | 'ghost'
- *   size     'sm' | 'md'
- *   loading  when true, shows a spinner and blocks clicks
- *   fullWidth stretches to the container width
- *   ...rest  every other prop (onClick, type, aria-label, disabled)
- *            is forwarded straight to the real <button>
- *
- * The `...rest` spread is what keeps this component from becoming a
- * cage: we never have to edit it just to pass a new HTML attribute.
- */
 function Button({
   children,
   variant = 'primary',

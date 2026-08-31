@@ -2,26 +2,25 @@
   "name": "reusehub",
   "version": "1.0.0",
   "private": true,
-  "description": "ReuseHub monorepo root -- runs the backend API and frontend dev server together",
+  "description": "Campus item reuse marketplace. backend/ and frontend/ are independent packages.",
   "scripts": {
-    "dev": "concurrently -n backend,frontend -c blue.bold,magenta.bold --handle-input \"npm:dev:backend\" \"npm:dev:frontend\"",
-    "dev:backend": "npm run dev --prefix backend",
-    "dev:frontend": "npm run dev --prefix frontend",
-
-    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
-
-    "db:setup": "npm run db:setup --prefix backend",
-    "db:seed": "npm run db:seed --prefix backend",
-    "db:reset": "npm run db:reset --prefix backend",
-
-    "build": "npm run build --prefix frontend",
-    "lint": "npm run lint --prefix frontend",
-    "test": "npm test --prefix backend"
+    "setup": "npm install && npm --prefix backend install && npm --prefix frontend install",
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "lint": "npm --prefix frontend run lint",
+    "db:migrate": "npm --prefix backend run db:migrate",
+    "db:seed": "npm --prefix backend run db:seed",
+    "db:studio": "npm --prefix backend run db:studio",
+    "share": "npm --prefix backend run share",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v && docker compose up --build",
+    "share:stop": "docker compose --profile share stop tunnel",
+    "share:logs": "docker compose --profile share logs -f tunnel"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
-  },
-  "engines": {
-    "node": ">=18"
+    "concurrently": "^9.1.2"
   }
 }

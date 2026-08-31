@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // ---------------------------------------------------------------
@@ -25,7 +25,14 @@ import react from '@vitejs/plugin-react'
 //     same forwarding. So the SAME relative URLs work in dev, in
 //     Docker, and in production, with zero code changes.
 // ---------------------------------------------------------------
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  /* With VITE_API_URL set, api.js calls that origin directly and the proxy is
+     never used -- so it is only configured for the same-origin default. */
+  const target = env.VITE_API_URL || 'http://localhost:5000'
+
+  return {
   plugins: [react()],
 
   server: {
@@ -36,12 +43,11 @@ export default defineConfig({
     strictPort: true,
 
     proxy: {
-      '/api': {
-        // Where the Express backend listens. NOT 8080: Jenkins owns
-        // 8080 on this machine.
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-      },
+      // NOT 8080 for the backend: Jenkins owns 8080 on this machine.
+      '/api': { target, changeOrigin: true },
+      // Uploaded listing photos are written and served by the API, so they
+      // need forwarding too -- otherwise every upload 404s in development.
+      '/uploads': { target, changeOrigin: true },
     },
   },
 
@@ -51,4 +57,5 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
+  }
 })

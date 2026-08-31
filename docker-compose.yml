@@ -1,0 +1,106 @@
+name: reusehub
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-reusehub}
+      MYSQL_DATABASE: ${DB_NAME:-reusehub}
+    # 3307 on the host: a local MySQL usually already holds 3306.
+    ports:
+      - '${DB_PORT_HOST:-3307}:3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-p${DB_PASSWORD:-reusehub}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - '${REDIS_PORT_HOST:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: mysql://root:${DB_PASSWORD:-reusehub}@mysql:3306/${DB_NAME:-reusehub}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-10}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:3000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-}
+      ADMIN_MOBILE: ${ADMIN_MOBILE:-}
+    ports:
+      - '${API_PORT:-5000}:5000'
+    volumes:
+      # Uploaded photos must outlive the container -- without this, every
+      # rebuild silently drops every listing photo.
+      - api-uploads:/app/uploads
+    command: sh -c "npx prisma migrate deploy && node prisma/seed.js --if-empty && node src/server.js"
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://127.0.0.1:5000/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    # 3000, not 8080: Jenkins commonly holds 8080 on dev machines.
+    ports:
+      - '${WEB_PORT:-3000}:80'
+
+  # Public HTTPS URL for the API, so teammates can point their frontend at this
+  # machine without running a backend, MySQL or Redis themselves.
+  #
+  # Opt-in via a profile: `docker compose up` alone does NOT expose anything.
+  #   npm run share      -> starts it and prints the URL
+  #
+  # Runs in a container so nobody has to install cloudflared. The URL is
+  # ephemeral and changes on every restart, which is why the API trusts tunnel
+  # hostnames through ALLOW_TUNNEL_ORIGINS instead of pinning each one.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: ['share']
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    # api:5000 -- the service name on the compose network, not localhost.
+    command: tunnel --no-autoupdate --url http://api:5000
+
+volumes:
+  mysql-data:
+  redis-data:
+  api-uploads:

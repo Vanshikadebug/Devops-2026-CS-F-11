@@ -1,0 +1,125 @@
+/* Legacy token aliases.
+
+   The page stylesheets written before the bento redesign (Dashboard,
+   ItemDetail, ItemForm, MyItems, Requests, AuthForm) reference the old
+   palette. Rather than leave them unstyled, every old name is mapped onto a
+   current token here.
+
+   The important consequence: those pages now follow the admin-editable theme
+   too, because the aliases resolve to --accent / --surface / --ink rather than
+   to frozen hex values. This is a single shim, not a second palette -- there
+   are no literal colours below except the greys that carry no brand meaning. */
+
+:root {
+  /* Brand green -> the themed accent. */
+  --green-50: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  --green-100: color-mix(in srgb, var(--accent) 34%, var(--surface));
+  --green-200: color-mix(in srgb, var(--accent) 55%, var(--surface));
+  --green-500: var(--accent);
+  --green-600: var(--accent);
+  --green-700: var(--ink);
+  --green-800: var(--ink);
+
+  /* Neutrals -> the sage surface ramp. */
+  --gray-50: var(--surface-sunk);
+  --gray-100: var(--surface-sunk);
+  --gray-200: var(--line);
+  --gray-300: var(--line-strong);
+  --gray-400: var(--muted);
+  --gray-500: var(--muted);
+  --gray-600: var(--muted);
+  --gray-700: var(--ink);
+  --gray-800: var(--ink);
+  --gray-900: var(--ink);
+
+  /* Status colours -> the semantic pairs. */
+  --amber-100: var(--warn-bg);
+  --amber-700: var(--warn-ink);
+  --red-50: var(--bad-bg);
+  --red-100: var(--bad-bg);
+  --red-500: var(--bad-ink);
+  --red-600: var(--bad-ink);
+  --red-700: var(--bad-ink);
+  --blue-100: var(--info-bg);
+  --blue-700: var(--info-ink);
+
+  /* Semantic aliases. */
+  --bg-page: var(--bg);
+  --bg-surface: var(--surface);
+  --bg-muted: var(--surface-sunk);
+  --text-primary: var(--ink);
+  --text-secondary: var(--muted);
+  --text-muted: var(--muted);
+  --text-inverse: #fff;
+  --border-color: var(--line);
+  --border-strong: var(--line-strong);
+  --focus-ring: var(--ring);
+
+  /* Spacing -> the same 4px rhythm, new names. */
+  --space-1: var(--s1);
+  --space-2: var(--s2);
+  --space-3: var(--s3);
+  --space-4: var(--s4);
+  --space-5: var(--s5);
+  --space-6: var(--s6);
+  --space-8: var(--s8);
+  --space-10: var(--s10);
+  --space-12: var(--s12);
+  --space-16: var(--s16);
+
+  /* Radii -> the admin-editable card/pill values, so old cards round like new
+     ones instead of staying at the old 6-14px. */
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-card);
+  --radius-full: var(--r-pill);
+
+  --shadow-md: var(--shadow);
+  --navbar-height: var(--nav-h);
+  --transition: var(--t);
+  --container-max: var(--shell-max);
+  --font-sans: var(--font-sans);
+}
+
+/* The old stylesheets also target .container, .page-header and .field__input,
+   which the new base.css renamed. Aliased rather than renamed in seven files. */
+
+.container {
+  width: 100%;
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 0 var(--s6);
+}
+
+@media (max-width: 640px) {
+  .container { padding: 0 var(--s4); }
+}
+
+.page-header { margin-bottom: var(--s6); }
+.page-header__title { margin-bottom: var(--s1); }
+.page-header__subtitle { color: var(--muted); font-size: 0.95rem; }
+
+.field__input,
+.field__textarea,
+.field__select {
+  width: 100%;
+  padding: 0.7rem 0.95rem;
+  background: var(--surface-sunk);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  transition: border-color var(--t), background var(--t);
+}
+
+.field__input:focus,
+.field__textarea:focus,
+.field__select:focus {
+  outline: none;
+  background: var(--surface);
+  border-color: var(--ink);
+}
+
+.field__input--error,
+.field__textarea--error,
+.field__select--error { border-color: var(--bad-ink); }
+
+.field__required { color: var(--bad-ink); }

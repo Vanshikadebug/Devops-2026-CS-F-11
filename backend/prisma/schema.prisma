@@ -1,23 +1,10 @@
-// ReuseHub -- Prisma schema.
+// ReuseHub -- Prisma schema (single source of truth for the database).
 //
-// Introspected from the live database that database/schema.sql built,
-// then refined: models and enums renamed to PascalCase with @@map back
-// to the real table names, and relation fields given readable names.
-//
-// >>> WHY SCALAR FIELDS KEEP THEIR snake_case NAMES <<<
-// Idiomatic Prisma would camelCase them. They are deliberately left
-// alone, because the API already returns snake_case keys -- an item
-// response carries image_url, college_name, created_at, and the React
-// app and all 341 tests read exactly those. Renaming the scalars would
-// force every repository to translate back on the way out: over a
-// hundred hand-written mappings, each one a chance to silently reshape
-// a response and break a test. Matching the database keeps the whole
-// chain -- column, model, JSON key -- spelled one way.
-//
-// Pinned to Prisma 6: v7 removed `url` from the datasource block and
-// requires a TypeScript prisma.config.ts plus an experimental driver
-// adapter. This project is plain CommonJS with no TS toolchain, and an
-// experimental flag does not belong under the data layer.
+// Scalar fields keep their snake_case names on purpose: the API returns
+// snake_case keys (image_url, college_name, created_at) and the whole
+// frontend reads them, so @@map keeps column, model and JSON key spelled
+// one way. Enums that store a value with a space (e.g. "Like New") @map it,
+// because a space is not a legal Prisma identifier.
 
 generator client {
   provider = "prisma-client-js"
@@ -25,8 +12,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  // Supplied by scripts/prisma-cli.js, derived from DB_* in .env so the
-  // password is never duplicated. See config/env.js databaseUrl.
   url      = env("DATABASE_URL")
 }
 
@@ -43,12 +28,12 @@ model City {
 }
 
 model Area {
-  id         Int        @id @default(autoincrement()) @db.UnsignedInt
-  city_id    Int        @db.UnsignedInt
-  name       String     @db.VarChar(100)
-  slug       String     @db.VarChar(120)
-  created_at DateTime   @default(now()) @db.Timestamp(0)
-  city       City       @relation(fields: [city_id], references: [id], onDelete: Cascade, map: "fk_areas_city")
+  id         Int       @id @default(autoincrement()) @db.UnsignedInt
+  city_id    Int       @db.UnsignedInt
+  name       String    @db.VarChar(100)
+  slug       String    @db.VarChar(120)
+  created_at DateTime  @default(now()) @db.Timestamp(0)
+  city       City      @relation(fields: [city_id], references: [id], onDelete: Cascade, map: "fk_areas_city")
   colleges   College[]
 
   @@unique([city_id, name], map: "uq_areas_city_name")
@@ -85,7 +70,7 @@ model User {
   status        UserStatus @default(active)
   last_login_at DateTime?  @db.Timestamp(0)
   created_at    DateTime   @default(now()) @db.Timestamp(0)
-  updated_at    DateTime   @default(now()) @db.Timestamp(0)
+  updated_at    DateTime   @default(now()) @updatedAt @db.Timestamp(0)
 
   college         College?          @relation(fields: [college_id], references: [id], map: "fk_users_college")
   items           Item[]            @relation("ItemOwner")
@@ -103,13 +88,18 @@ model User {
   @@map("users")
 }
 
+// category and item_condition are VARCHAR, not enums: categories and
+// conditions are admin-editable rows (see Category / Condition). The column
+// stores the label string so the API's { category: "Books" } shape is
+// unchanged and no response mapper needs rewriting. Runtime validation
+// checks the value against the active rows.
 model Item {
   id                Int                  @id @default(autoincrement()) @db.UnsignedInt
   user_id           Int                  @db.UnsignedInt
   name              String               @db.VarChar(150)
   description       String               @db.Text
-  category          ItemCategory
-  item_condition    ItemCondition
+  category          String               @db.VarChar(60)
+  item_condition    String               @db.VarChar(60)
   location          String               @db.VarChar(150)
   college_id        Int?                 @db.UnsignedInt
   image_url         String?              @db.VarChar(500)
@@ -119,7 +109,7 @@ model Item {
   moderated_at      DateTime?            @db.Timestamp(0)
   moderation_reason String?              @db.VarChar(500)
   created_at        DateTime             @default(now()) @db.Timestamp(0)
-  updated_at        DateTime             @default(now()) @db.Timestamp(0)
+  updated_at        DateTime             @default(now()) @updatedAt @db.Timestamp(0)
 
   owner     User      @relation("ItemOwner", fields: [user_id], references: [id], onDelete: Cascade, map: "fk_items_user")
   moderator User?     @relation("ItemModerator", fields: [moderated_by], references: [id], map: "fk_items_moderator")
@@ -145,7 +135,7 @@ model Request {
   message      String?       @db.VarChar(500)
   status       RequestStatus @default(Pending)
   created_at   DateTime      @default(now()) @db.Timestamp(0)
-  updated_at   DateTime      @default(now()) @db.Timestamp(0)
+  updated_at   DateTime      @default(now()) @updatedAt @db.Timestamp(0)
 
   item      Item @relation(fields: [item_id], references: [id], onDelete: Cascade, map: "fk_requests_item")
   requester User @relation(fields: [requester_id], references: [id], onDelete: Cascade, map: "fk_requests_requester")
@@ -169,7 +159,7 @@ model Report {
   reviewed_at      DateTime?    @db.Timestamp(0)
   resolution_note  String?      @db.VarChar(500)
   created_at       DateTime     @default(now()) @db.Timestamp(0)
-  updated_at       DateTime     @default(now()) @db.Timestamp(0)
+  updated_at       DateTime     @default(now()) @updatedAt @db.Timestamp(0)
 
   item         Item? @relation(fields: [reported_item_id], references: [id], onDelete: Cascade, map: "fk_reports_item")
   reporter     User  @relation("ReportReporter", fields: [reporter_id], references: [id], onDelete: Cascade, map: "fk_reports_reporter")
@@ -207,15 +197,15 @@ model AuditLog {
 }
 
 model PlatformSetting {
-  setting_key   String                 @id @db.VarChar(60)
-  setting_value String?                @db.Text
-  value_type    PlatformSettingType    @default(string)
-  label         String                 @db.VarChar(120)
-  description   String?                @db.VarChar(300)
+  setting_key   String                  @id @db.VarChar(60)
+  setting_value String?                 @db.Text
+  value_type    PlatformSettingType     @default(string)
+  label         String                  @db.VarChar(120)
+  description   String?                 @db.VarChar(300)
   category      PlatformSettingCategory @default(general)
-  is_editable   Boolean                @default(true)
-  updated_by    Int?                   @db.UnsignedInt
-  updated_at    DateTime               @default(now()) @db.Timestamp(0)
+  is_editable   Boolean                 @default(true)
+  updated_by    Int?                    @db.UnsignedInt
+  updated_at    DateTime                @default(now()) @updatedAt @db.Timestamp(0)
 
   updatedByUser User? @relation(fields: [updated_by], references: [id], map: "fk_settings_updated_by")
 
@@ -224,12 +214,66 @@ model PlatformSetting {
   @@map("platform_settings")
 }
 
-// --- Enums -------------------------------------------------------
-// In MySQL an enum is an inline column type, not a named database
-// object, so these names exist only in the Prisma client. The @map on
-// individual values IS load-bearing though: the database stores
-// "Like New" and "Wrong Category" with a space, which is not a legal
-// identifier in Prisma.
+// Admin-editable taxonomy. items.category stores `label`; renaming a label
+// here does not rewrite existing item rows, so the UI treats slug as the
+// stable key and label as display text.
+model Category {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  slug       String   @unique(map: "uq_categories_slug") @db.VarChar(60)
+  label      String   @db.VarChar(60)
+  // Default lives in application code, not DDL: an emoji in a SQL DEFAULT
+  // round-trips badly across charsets and shows as permanent schema drift.
+  glyph      String   @default("") @db.VarChar(16)
+  tint       String   @default("other") @db.VarChar(30)
+  sort_order Int      @default(0)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  @@index([is_active, sort_order], map: "idx_categories_active_order")
+  @@map("categories")
+}
+
+model Condition {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  slug       String   @unique(map: "uq_conditions_slug") @db.VarChar(60)
+  label      String   @db.VarChar(60)
+  sort_order Int      @default(0)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  @@index([is_active, sort_order], map: "idx_conditions_active_order")
+  @@map("conditions")
+}
+
+model NavLink {
+  id         Int         @id @default(autoincrement()) @db.UnsignedInt
+  label      String      @db.VarChar(60)
+  href       String      @db.VarChar(200)
+  placement  NavPlacement @default(header)
+  sort_order Int         @default(0)
+  is_active  Boolean     @default(true)
+  created_at DateTime    @default(now()) @db.Timestamp(0)
+  updated_at DateTime    @default(now()) @updatedAt @db.Timestamp(0)
+
+  @@index([placement, is_active, sort_order], map: "idx_nav_placement_order")
+  @@map("nav_links")
+}
+
+model SocialLink {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  platform   String   @db.VarChar(40)
+  url        String   @db.VarChar(200)
+  icon       String   @default("link") @db.VarChar(30)
+  sort_order Int      @default(0)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  @@index([is_active, sort_order], map: "idx_social_active_order")
+  @@map("social_links")
+}
 
 enum UserRole {
   user
@@ -241,23 +285,6 @@ enum UserRole {
 enum UserStatus {
   active
   blocked
-}
-
-enum ItemCategory {
-  Books
-  Electronics
-  Clothing
-  Furniture
-  Stationery
-  Other
-}
-
-enum ItemCondition {
-  New
-  Like_New @map("Like New")
-  Good
-  Fair
-  Poor
 }
 
 enum ItemStatus {
@@ -304,6 +331,8 @@ enum AuditLogTargetType {
   report
   setting
   category
+  condition
+  content
 }
 
 enum PlatformSettingType {
@@ -311,11 +340,22 @@ enum PlatformSettingType {
   number
   boolean
   json
+  color
 }
 
 enum PlatformSettingCategory {
   general
+  branding
+  theme
+  content
+  contact
   users
   items
   moderation
+  seo
+}
+
+enum NavPlacement {
+  header
+  footer
 }

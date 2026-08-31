@@ -1,116 +1,78 @@
-.item-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+.icard {
   display: flex;
   flex-direction: column;
-  transition: box-shadow var(--transition), transform var(--transition),
-   border-color var(--transition);
-    
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  padding: var(--s3);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--t), box-shadow var(--t);
+  height: 100%;
 }
 
-.item-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-strong);
-  transform: translateY(-2px);
-  transform: translateY(-6px);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
-}
+.icard:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.icard:hover .itemimg__photo { transform: scale(1.04); }
 
-.item-card__media {
-  position: relative;
-  display: block;
-  aspect-ratio: 4 / 3;
-  background: var(--gray-100);
-  overflow: hidden;
-}
+.icard__media { position: relative; display: block; }
 
-/* The picture itself is ItemImage, which fills this box and
-   guarantees it is never empty -- see ItemImage.jsx for the three
-   ways an item picture goes wrong and how each is handled.
+.icard__status { position: absolute; top: var(--s3); left: var(--s3); }
 
-   The hover zoom applies to whichever layer is showing: the photo
-   when there is one, the category glyph when there is not. Zooming
-   only the photo would make half the grid feel dead on hover. */
-
- .item-image__photo,
-.item-image__glyph {
-  transition: transform 0.35s ease;
-}
-
-.item-card:hover .item-image__photo,
-.item-card:hover .item-image__glyph {
-  transform: scale(1.06);
-}
-
-.item-card__status {
+.icard__arrow {
   position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
+  right: var(--s3);
+  bottom: var(--s3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--t), transform var(--t);
 }
 
-.item-card__body {
-  padding: var(--space-4);
+.icard:hover .icard__arrow { opacity: 1; transform: translateY(0); }
+
+.icard__body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 6px;
+  padding: var(--s4) var(--s3) var(--s2);
   flex: 1;
 }
 
-.item-card__category {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--green-700);
+.icard__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
-.item-card__title {
-  font-size: 1.02rem;
-  line-height: 1.35;
-}
+.icard__cat { color: var(--ink); }
 
-.item-card__title a {
-  color: var(--text-primary);
-}
-.item-card__title a:hover {
-  color: var(--green-700);
-  text-decoration: none;
-}
-
-.item-card__desc {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  /* Clamp to 2 lines so cards in a row stay the same height no
-     matter how long the description is. */
+.icard__title {
+  font-size: 1rem;
+  font-weight: 640;
+  line-height: 1.3;
+  /* Two lines maximum: titles vary a lot in length and a ragged grid reads as
+     accidental. */
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.item-card__meta {
+.icard__where { font-size: 0.8rem; }
+
+.icard__footer {
+  margin-top: auto;
+  padding-top: var(--s3);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
-  margin-top: auto;          /* pin to the bottom of the card */
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border-color);
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  gap: var(--s2);
 }
-.item-card {
-  border-radius: 18px;
-}
-
-/* --- Status badge --------------------------------------------
-   The .badge classes themselves now live in index.css, alongside
-   .item-grid and for exactly the same reason: ItemDetail and
-   MyItems both render a status badge WITHOUT rendering an
-   ItemCard, so defining it here made those pages silently depend
-   on this stylesheet happening to be in the bundle. Only the
-   card's POSITIONING of the badge belongs to this file. */

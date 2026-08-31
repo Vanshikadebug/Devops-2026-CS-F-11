@@ -5,54 +5,12 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 import Button from '../components/Button'
 import Modal from '../components/Modal'
-import { useAuth } from '../context/authContext'
-import { itemService } from '../services/itemService'
-import { requestService } from '../services/requestService'
-import { STATUS_VARIANTS } from '../utils/constants'
+import { useAuth } from '../app/authContext'
+import { itemService } from '../lib/itemService'
+import { requestService } from '../lib/requestService'
+import { STATUS_VARIANTS } from '../lib/display'
 import './ItemDetail.css'
 
-/**
- * ItemDetail -- everything about one item.
- *
- * WHAT IS THIS PAGE?
- * The destination of every card in the app. It shows the full
- * description, the exact collection point, who listed it, and -- if
- * you are the person who listed it -- the controls to change it.
- *
- * >>> WHY THIS ROUTE IS PUBLIC WHEN THE OTHER ITEM PAGES ARE NOT <<<
- * A logged-out visitor can read this page. That is deliberate: the
- * whole point of a browsable catalogue is that someone can see what is
- * on offer BEFORE deciding to sign up. Requesting an item needs an
- * account (Phase 10); looking at one does not.
- *
- * =================================================================
- * THE OWNERSHIP CHECK ON THIS PAGE IS COSMETIC. ON PURPOSE.
- * =================================================================
- * `isOwner` below decides whether Edit and Delete are rendered. It is
- * a comparison of two numbers in a program running on the reader's own
- * computer, and anyone can change the answer with devtools in about
- * four seconds. It protects NOTHING.
- *
- * What protects the item is checkItemOwnership.js on the server, which
- * runs on a machine the reader does not control and answers 403 to
- * exactly the same request. This page hides the buttons because
- * showing someone a Delete button that always fails is bad design --
- * not because hiding them is a security measure.
- *
- * The rule worth carrying: the frontend decides what is WORTH
- * OFFERING; the backend decides what is ALLOWED. If the two ever
- * disagree, the backend is right.
- *
- * =================================================================
- * WHY `item.user_id` AND NOT A `mine` FLAG FROM THE SERVER
- * =================================================================
- * The API could return `isMine: true` and save this page a
- * comparison. It does not, because GET /api/items/:id is public and
- * has no user to compare against -- the answer would be null for every
- * anonymous reader and would have to be recomputed anyway. Comparing
- * here means the same public response serves everyone, and the page
- * layers its own session on top.
- */
 function ItemDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -125,10 +83,6 @@ function ItemDetail() {
     return () => controller.abort()
   }, [isAuthenticated, item, user])
 
-  /* Both sides are numbers -- mysql2 returns INT UNSIGNED as a JS
-     number, and the session user came from the same database. `===`
-     rather than `==` so a future change that makes one a string fails
-     visibly instead of quietly matching. */
   const isOwner = Boolean(user && item && user.id === item.user_id)
 
   async function changeStatus(next) {
@@ -136,10 +90,6 @@ function ItemDetail() {
     setActionError(null)
 
     try {
-      /* The response is the row as STORED, re-read by the server after
-         the write. Using it rather than patching local state with the
-         value we just sent means the screen cannot claim a change the
-         database did not make. */
       const updated = await itemService.updateStatus(item.id, next)
       setItem(updated)
     } catch (err) {
@@ -159,11 +109,6 @@ function ItemDetail() {
 
     try {
       await itemService.remove(item.id)
-      /* `replace: true` matters here specifically. Without it, the
-         browser's Back button returns to the detail page of an item
-         that no longer exists -- a 404 the user caused by deleting it,
-         which reads as a bug. Replacing the history entry means Back
-         goes to wherever they were before. */
       navigate('/my-items', { replace: true })
     } catch (err) {
       setConfirmOpen(false)
@@ -176,10 +121,6 @@ function ItemDetail() {
       )
       setWorking(false)
     }
-    /* No `finally` for setWorking: the success path navigates away and
-       unmounts this component, so clearing it there would be a state
-       update on nothing. The catch clears it because that is the only
-       branch where the page survives. */
   }
 
   async function submitRequest() {
@@ -238,11 +179,6 @@ function ItemDetail() {
 
   const statusVariant = STATUS_VARIANTS[item.status] ?? 'neutral'
 
-  /* The college when there is one, the free text when there is not --
-     the same rule as ItemCard, and for the same reason: `location`
-     reads "Jagatpura, Jaipur" for four different campuses in that
-     locality, which looks right and is not specific enough to
-     actually go and collect something. */
   const place = item.college_name ?? item.location
 
   return (

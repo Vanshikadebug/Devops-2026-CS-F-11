@@ -6,53 +6,15 @@ import CampusCard from '../components/CampusCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 import Button from '../components/Button'
-import { useAuth } from '../context/authContext'
-import { dashboardService } from '../services/dashboardService'
+import { useAuth } from '../app/authContext'
+import { dashboardService } from '../lib/dashboardService'
 import './Dashboard.css'
 
-/**
- * Dashboard -- the logged-in user's home base.
- *
- * WHAT THIS PAGE IS
- * The first screen after logging in: who you are, what you have
- * listed, who is waiting on you, and the fastest route to the next
- * thing you probably want to do.
- *
- * ONE REQUEST, NOT THREE.
- * Everything here comes from GET /api/dashboard. The page could
- * instead call /api/auth/me, a stats endpoint, and /api/items/mine --
- * but then three separate failures are possible, and a page that is
- * two-thirds loaded is a state nobody can describe to the user. One
- * request either succeeds or fails, so there is exactly one loading
- * state and one error state to design.
- *
- * >>> WHY THE PAGE STILL FETCHES, EVEN THOUGH useAuth() HAS user <<<
- * AuthProvider already holds the user object, so the greeting could
- * be rendered without any request at all. The stats cannot -- they
- * change whenever someone requests one of your items, and the token
- * knows nothing about that. So the page fetches, and uses the
- * context's `user` only as an instant placeholder for the name while
- * the numbers are still in flight. That is the difference between
- * IDENTITY (in the token, cheap) and STATE (in the database, must be
- * asked for).
- *
- * THE FOUR STATES, AGAIN
- * Same discipline as Home.jsx: loading, error, empty, ready. The
- * empty case matters more here than anywhere else in the app,
- * because every single user sees it on their first visit. A brand-new
- * account that lands on a screen of zeroes with no explanation is a
- * bad first impression; it should say what to do next.
- */
 function Dashboard() {
   // The context user: available immediately, used for the greeting so
   // the page is not anonymous while the request is in flight.
   const { user: sessionUser } = useAuth()
 
-  /* Used by the empty state's button. The obvious shortcut --
-     window.location.href = '/items/new' -- LOOKS identical and is
-     wrong: it makes the browser reload the entire application,
-     throwing away React state and the whole point of a single-page
-     app. navigate() swaps the route in place. */
   const navigate = useNavigate()
 
   const [data, setData] = useState(null)
@@ -63,9 +25,6 @@ function Dashboard() {
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
 
   useEffect(() => {
-    // Cancels the request if the user navigates away mid-flight, and
-    // silences StrictMode's deliberate double-mount in development.
-    // See the longer note in Home.jsx.
     const controller = new AbortController()
 
     setStatus('loading')
@@ -86,10 +45,6 @@ function Dashboard() {
     return () => controller.abort()
   }, [attempt])
 
-  /* The server is the source of truth for the name; the context is
-     the fallback until it answers. Both are the same person -- the
-     server derived it from the same token the context was built
-     from. */
   const displayName = data?.user?.name ?? sessionUser?.name ?? ''
   const firstName = displayName.split(' ')[0]
 

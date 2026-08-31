@@ -1,0 +1,72 @@
+/* ReuseHub design tokens.
+
+   Colours, radii and the display font are DEFAULTS only. ConfigProvider
+   overwrites the matching custom properties on :root at runtime from the
+   theme settings, so an admin colour change applies without a rebuild.
+   Anything not overridable (spacing, shadows, motion) is fixed here. */
+
+:root {
+  /* --- Palette (admin-editable) --------------------------------- */
+  --bg: #e9eee4;
+  --surface: #ffffff;
+  --ink: #12150f;
+  --muted: #6b7264;
+  --accent: #d4f34a;
+  --accent-ink: #12150f;
+  --ring: #12150f;
+
+  /* --- Derived surfaces ------------------------------------------ */
+  --surface-sunk: #f4f6f1;
+  --surface-ink: #12150f;
+  --line: rgba(18, 21, 15, 0.08);
+  --line-strong: rgba(18, 21, 15, 0.16);
+
+  /* --- Status ----------------------------------------------------- */
+  --ok-bg: #dcf5e3;
+  --ok-ink: #14663a;
+  --warn-bg: #fdf0cd;
+  --warn-ink: #8a5a06;
+  --bad-bg: #fce4e4;
+  --bad-ink: #a12626;
+  --info-bg: #e0e9fb;
+  --info-ink: #1f4bab;
+
+  /* --- Radii (admin-editable) ------------------------------------- */
+  --r-card: 28px;
+  --r-pill: 999px;
+  --r-sm: 12px;
+  --r-md: 18px;
+
+  /* --- Spacing: a 4px rhythm -------------------------------------- */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.25rem;
+  --s6: 1.5rem;
+  --s8: 2rem;
+  --s10: 2.5rem;
+  --s12: 3rem;
+  --s16: 4rem;
+
+  /* --- Shadows: soft and low-contrast, so cards float on the sage
+         canvas rather than being outlined. ---------------------------- */
+  --shadow-sm: 0 1px 2px rgba(18, 21, 15, 0.04);
+  --shadow: 0 6px 20px rgba(18, 21, 15, 0.06);
+  --shadow-lg: 0 18px 44px rgba(18, 21, 15, 0.1);
+
+  /* --- Type -------------------------------------------------------- */
+  --font-display: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --shell-max: 1240px;
+  --nav-h: 72px;
+  --t: 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

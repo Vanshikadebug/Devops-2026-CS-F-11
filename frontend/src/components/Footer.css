@@ -1,0 +1,50 @@
+.foot {
+  margin-top: var(--s16);
+  padding: var(--s10) 0 var(--s8);
+}
+
+.foot__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s8);
+  padding-bottom: var(--s6);
+  border-bottom: 1px solid var(--line);
+}
+
+.foot__brand { display: flex; align-items: center; gap: var(--s3); flex: 1; min-width: 220px; }
+
+.foot__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  flex: none;
+}
+
+.foot__brand p { font-size: 0.85rem; }
+
+.foot__links,
+.foot__contact { display: flex; flex-direction: column; gap: var(--s2); font-size: 0.88rem; }
+
+.foot__social { display: flex; gap: var(--s2); }
+
+.foot__socialbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  font-weight: 650;
+  font-size: 0.85rem;
+}
+
+.foot__note { padding-top: var(--s5); }
+.foot__note p { font-size: 0.82rem; }

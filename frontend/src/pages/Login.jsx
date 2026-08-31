@@ -1,32 +1,10 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/authContext'
+import { useAuth } from '../app/authContext'
 import FormField from '../components/FormField'
 import Button from '../components/Button'
 import './AuthForm.css'
 
-/**
- * Login -- email and password, exchanged for a token.
- *
- * WHAT HAPPENS WHEN THE USER PRESSES "Log in":
- *
- *   1. this component  -> auth.login(email, password)
- *   2. AuthProvider    -> authService.login(...)
- *   3. authService     -> api.post('/auth/login', ...)
- *   4. api.js          -> fetch('/api/auth/login')
- *   5. Vite proxy      -> http://localhost:5000/api/auth/login
- *   6. authRoutes      -> loginRules, validate, login controller
- *   7. controller      -> findByEmailWithPassword, bcrypt.compare
- *   8. back up the chain with { token, user }
- *   9. AuthProvider saves the token and sets `user`
- *  10. every component reading useAuth() re-renders -- the Navbar
- *      swaps "Login / Register" for the user's name
- *  11. this component navigates away
- *
- * Eleven steps, and each layer only knows about the one next to it.
- * That is the whole argument for the layering: this file contains no
- * URL, no fetch, no token, no localStorage.
- */
 function Login() {
   const auth = useAuth()
   const navigate = useNavigate()
@@ -36,18 +14,6 @@ function Login() {
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
-  /* WHERE SHOULD WE SEND THEM AFTERWARDS?
-     If ProtectedRoute bounced them here, it recorded the page they
-     were trying to reach in location.state. Returning them there is
-     the difference between "log in and carry on" and "log in and
-     start again from the home page".
-     `replace: true` removes /login from the history stack, so the
-     back button does not return to a login form they have already
-     used.
-
-     The fallback became /dashboard in Phase 7: someone who typed
-     /login directly wants their own account, not the public browse
-     page they could already see while logged out. */
   const from = location.state?.from ?? '/dashboard'
 
   const handleChange = (field) => (event) => {
@@ -59,12 +25,6 @@ function Login() {
   }
 
   async function handleSubmit(event) {
-    /* WHY preventDefault()?
-       A <form> submit is an old-fashioned full page navigation: the
-       browser serialises the fields, requests the URL, and throws
-       away the entire React app. Without this line the page reloads,
-       the password appears in the URL bar on a GET form, and nothing
-       works. */
     event.preventDefault()
 
     setSubmitting(true)
@@ -74,11 +34,6 @@ function Login() {
       await auth.login(form.email.trim(), form.password)
       navigate(from, { replace: true })
     } catch (err) {
-      /* The backend deliberately returns ONE message for both an
-         unknown email and a wrong password, so we display exactly
-         what it sent rather than trying to be more helpful. Being
-         more helpful here would mean telling an attacker which
-         addresses are registered. */
       setError(err.message)
       /* Note what we do NOT clear: the email field. Making someone
          retype it after a typo in the password is a small cruelty

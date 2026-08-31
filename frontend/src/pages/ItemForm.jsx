@@ -5,79 +5,14 @@ import LocationPicker from '../components/LocationPicker'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 import Button from '../components/Button'
-import { useAuth } from '../context/authContext'
-import { itemService } from '../services/itemService'
-import { locationService } from '../services/locationService'
-import { CATEGORIES, CONDITIONS, ITEM_STATUSES } from '../utils/constants'
+import { useAuth } from '../app/authContext'
+import { itemService } from '../lib/itemService'
+import { locationService } from '../lib/locationService'
+import { ITEM_STATUSES } from '../lib/display'
+import { ImageDrop } from '../components/ui'
+import { useConfig } from '../app/ConfigProvider'
 import './ItemForm.css'
 
-/**
- * ItemForm -- list a new item, or edit one you already listed.
- *
- * WHAT IS THIS FILE?
- * ONE component serving two routes:
- *
- *     /items/new        create   -> POST   /api/items
- *     /items/:id/edit   edit     -> PUT    /api/items/:id
- *
- * >>> WHY ONE COMPONENT AND NOT TWO PAGES? <<<
- * Because the two forms are the same eight fields with the same rules,
- * and the only differences are where the initial values come from and
- * which service function runs on submit. Two files would mean every
- * later change to the field list has to be made twice -- and the
- * failure mode of "made twice" is that it eventually gets made once.
- * That is the same reasoning that makes updateRules === createRules on
- * the backend: one description of a valid item, used by both writes.
- *
- * The cost is one `isEdit` branch in three places, all of them named
- * below. That is a price worth paying.
- *
- * =================================================================
- * THE LOCATION HALF IS THE INTERESTING PART OF THIS FORM
- * =================================================================
- * items.college_id is NULLABLE but items.location is NOT NULL, so
- * every item must end up with a human sentence about where it is,
- * whether or not it has a campus. This form offers both routes:
- *
- *   pick a college     -> the server DERIVES "Jagatpura, Jaipur"
- *   type an address    -> the text is stored as given, college is null
- *
- * The text box is disabled while a college is chosen, and the reason
- * is worth stating plainly: if both were sent and both stored, an item
- * could be filed at SKIT while PRINTING "Kota" -- two individually
- * valid fields that permanently contradict each other, with no error
- * anywhere. The server refuses to trust the pair (see resolvePlace in
- * itemController.js); this form refuses to OFFER the pair, so the
- * conflict never even reaches it.
- *
- * >>> WHY THE FORM DOES NOT BUILD THE LOCATION TEXT ITSELF <<<
- * It has the college's name and city right there in the picker's
- * dropdown, so it could send "Jagatpura, Jaipur" and save the server a
- * lookup. It must not. The client's copy of a name is whatever was
- * fetched some seconds ago; the server's is what the database holds
- * now. A value that can be derived from stored data is derived from
- * stored data, by the thing that owns the data.
- *
- * =================================================================
- * WHY VALIDATE HERE WHEN THE BACKEND ALREADY DOES
- * =================================================================
- * Same answer as Register.jsx, and it is worth repeating because it is
- * the single most misunderstood thing in a stack like this: the checks
- * below are a COURTESY, not a control. They answer instantly and point
- * at the field. They can be bypassed by anyone with devtools, so they
- * protect nothing at all.
- *
- * itemValidators.js is the rule, because it runs on a machine the user
- * does not control. These rules deliberately MIRROR it rather than
- * exceed it -- anything stricter here would reject input the server
- * would have accepted, and the user could never work out why.
- */
-
-/**
- * Same limits as backend/validators/itemValidators.js, which took them
- * from the column widths in database/schema.sql.
- * Returns { field: message }; empty means nothing is wrong.
- */
 function validate(form, place) {
   const errors = {}
 
@@ -94,12 +29,6 @@ function validate(form, place) {
   if (!form.category) errors.category = 'Choose a category'
   if (!form.condition) errors.condition = 'Choose a condition'
 
-  /* --- The one cross-field rule ---------------------------------
-     Neither field is required ON ITS OWN, which is why the backend
-     validator cannot express this: express-validator sees one field
-     at a time, so "location is required unless collegeId is present"
-     has to live where both are visible. Here, and in resolvePlace on
-     the server. */
   const location = form.location.trim()
   if (!place.collegeId && !location) {
     errors.location = 'Choose a college, or type where the item can be collected'
@@ -107,17 +36,13 @@ function validate(form, place) {
     errors.location = 'Location must be 3 to 150 characters'
   }
 
-  /* Mirrors isSafeImageUrl on the backend: an https:// address, or a
-     path inside our own /images/ folder. Empty is fine -- most items
-     have no photo, and that is a normal listing rather than an
-     incomplete one. */
   const imageUrl = form.imageUrl.trim()
   if (imageUrl) {
     if (imageUrl.length > 500) errors.imageUrl = 'Image URL is too long'
-    else if (!/^https:\/\/.+/i.test(imageUrl) && !/^\/images\/[A-Za-z0-9._/-]+$/.test(imageUrl))
-      errors.imageUrl = 'Use an https:// address, or a /images/ path'
+    else if (!/^https:\/\/.+/i.test(imageUrl) && !/^\/(images|uploads)\/[A-Za-z0-9._/-]+$/.test(imageUrl))
+      errors.imageUrl = 'Upload a photo, or paste an https:// image link'
     else if (imageUrl.includes('..'))
-      errors.imageUrl = 'Use an https:// address, or a /images/ path'
+      errors.imageUrl = 'Upload a photo, or paste an https:// image link'
   }
 
   return errors
@@ -136,15 +61,14 @@ const EMPTY_FORM = {
 const EMPTY_PLACE = { cityId: null, areaId: null, collegeId: null }
 
 function ItemForm() {
-  /* `id` is present only on /items/:id/edit. Its absence is what puts
-     this component in create mode -- there is no `mode` prop, because
-     a prop could disagree with the URL and the URL is the thing the
-     user can see. */
   const { id } = useParams()
   const isEdit = Boolean(id)
 
   const navigate = useNavigate()
   const { user } = useAuth()
+  // Categories and conditions are admin-editable rows, so the selects are
+  // populated from /api/config rather than a constant.
+  const { categories, conditions, setting } = useConfig()
 
   const [form, setForm] = useState(EMPTY_FORM)
   const [place, setPlace] = useState(EMPTY_PLACE)
@@ -162,23 +86,6 @@ function ItemForm() {
   const [attempt, setAttempt] = useState(0)
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
 
-  /* ---------------------------------------------------------------
-     RESOLVING A collegeId INTO A FULL PICKER SELECTION
-     ---------------------------------------------------------------
-     LocationPicker is three cascading dropdowns and it needs all
-     three ids to render: with only a collegeId, its city and area
-     selects are blank and its college list is EMPTY, because that
-     list is fetched per-city. So a bare id -- from the item being
-     edited, or from the user's profile -- has to be expanded before
-     the picker can display it.
-
-     Only the server can expand it. The id alone does not say which
-     city it belongs to, and guessing from a list the browser happens
-     to hold is how a page ends up displaying a college under the
-     wrong city heading. A 404 here means the id is stale (a
-     re-seeded database), so the selection is dropped rather than
-     half-applied.
-  --------------------------------------------------------------- */
   const resolveCollege = useCallback((collegeId, signal) => {
     if (!collegeId) return
 
@@ -192,28 +99,9 @@ function ItemForm() {
         })
       })
       .catch(() => {
-        /* Deliberately silent. On create this is a convenience seed
-           the user never asked for, and on edit the item's own
-           `location` text is still shown in the field -- so failing
-           to expand the id costs a pre-filled dropdown, not data.
-           An error banner here would report a problem the user
-           cannot act on. */
       })
   }, [])
 
-  /* --- CREATE: seed the campus from the user's profile ------------
-     Most people list items at their own college, so pre-selecting it
-     removes three dropdowns from the common path. It is only a
-     DEFAULT: changing it is one click, and it is never saved back to
-     the profile.
-
-     Deliberately NOT wired to useLocationSelection, even though that
-     hook holds a college and would seem to fit. That hook owns "where
-     am I BROWSING", and it persists to localStorage -- so listing an
-     item at your friend's campus would silently move your browse
-     scope there too. Two different questions that happen to have the
-     same answer most of the time; conflating them is how a page
-     acquires spooky action at a distance. */
   useEffect(() => {
     if (isEdit) return
     if (!user?.college_id) return
@@ -223,12 +111,6 @@ function ItemForm() {
     return () => controller.abort()
   }, [isEdit, user, resolveCollege])
 
-  /* --- EDIT: load the item being edited ---------------------------
-     The form is populated from the SERVER's copy, never from state
-     passed through the router link. A `<Link state={item}>` would
-     avoid this request and would hand the form whatever the list page
-     was showing -- possibly minutes stale, and absent entirely if the
-     user opened the edit URL directly or refreshed. */
   useEffect(() => {
     if (!isEdit) return
 
@@ -248,9 +130,6 @@ function ItemForm() {
              either way, so clearing the college reveals the text the
              item had before rather than an empty box. */
           location: item.location ?? '',
-          // NULL becomes '' because an <input value={null}> makes
-          // React switch the field from controlled to uncontrolled
-          // and warn about it in the console.
           imageUrl: item.image_url ?? '',
           status: item.status ?? 'Available',
         })
@@ -276,10 +155,6 @@ function ItemForm() {
     const { value } = event.target
     setForm((prev) => ({ ...prev, [field]: value }))
 
-    /* Errors appear on submit and clear on typing -- the same rule as
-       the auth forms. Validating each keystroke means telling someone
-       their description is too short while they are still on the
-       first word. */
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev }
@@ -336,39 +211,11 @@ function ItemForm() {
         ? await itemService.update(id, payload)
         : await itemService.create(payload)
 
-      /* Navigate using the id the SERVER returned, not the one in
-         state. On create there is no local id to use; on edit they
-         agree. Using the response in both cases means one code path.
-
-         `replace` on edit keeps the form out of the back-button
-         history: pressing Back from the item you just saved should
-         return to where you came from, not to a form full of values
-         that have already been written. */
       navigate(`/items/${saved.id}`, { replace: isEdit })
     } catch (err) {
-      /* -----------------------------------------------------------
-         TRANSLATING THE SERVER'S REFUSALS
-         -----------------------------------------------------------
-         Four shapes, and they deserve four different answers:
-
-         400 + details[]  one message per field -- map them back onto
-                          the fields so the error appears where the
-                          problem is.
-         403              the item is not yours. Only reachable by
-                          editing the URL, so it is not a message any
-                          honest user should see -- but it must say
-                          something true rather than "request failed".
-         404              the item was deleted while the form was
-                          open, in another tab or by the same user.
-         anything else    one message above the form.
-      ----------------------------------------------------------- */
       if (err.status === 400 && Array.isArray(err.details)) {
         const mapped = {}
         for (const detail of err.details) {
-          /* First message per field, not the last: a field failing
-             several rules at once lists them most-fundamental-first,
-             and telling someone their 2-character name also needs to
-             be under 150 is true and useless. */
           if (detail.field && !mapped[detail.field]) {
             mapped[detail.field] = detail.message
           }
@@ -389,11 +236,6 @@ function ItemForm() {
         setFormError(err.message)
       }
     } finally {
-      /* In `finally`, so the button re-enables even on the success
-         path where navigation is about to unmount this component.
-         React 18+ ignores the update on an unmounted component
-         silently, and leaving it out would mean a failed navigation
-         left a permanently spinning button. */
       setSubmitting(false)
     }
   }
@@ -507,11 +349,8 @@ function ItemForm() {
               aria-invalid={errors.category ? 'true' : undefined}
             >
               <option value="">Choose a category</option>
-              {/* From constants.js, which mirrors the ENUM in
-                  schema.sql. Typing these out here would be a third
-                  copy, and the third copy is the one that drifts. */}
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.label}>{c.glyph ? `${c.glyph} ` : ''}{c.label}</option>
               ))}
             </select>
             {errors.category && (
@@ -532,8 +371,8 @@ function ItemForm() {
               aria-invalid={errors.condition ? 'true' : undefined}
             >
               <option value="">Choose a condition</option>
-              {CONDITIONS.map((c) => (
-                <option key={c} value={c}>{c}</option>
+              {conditions.map((c) => (
+                <option key={c.id} value={c.label}>{c.label}</option>
               ))}
             </select>
             {errors.condition && (
@@ -552,11 +391,6 @@ function ItemForm() {
           <LocationPicker value={place} onChange={handlePlaceChange} />
 
           {place.collegeId ? (
-            /* The derived text is NOT shown as a value here, because
-               this page does not know it -- the server builds it from
-               the college's own area and city at write time. Saying
-               so is more honest than printing the picker's label and
-               implying it is what gets stored. */
             <p className="item-form__derived">
               ✓ The collection point will be recorded from the college you picked.{' '}
               <button
@@ -586,20 +420,26 @@ function ItemForm() {
           )}
         </fieldset>
 
-        <FormField
-          label="Photo URL"
-          type="url"
-          value={form.imageUrl}
-          onChange={handleChange('imageUrl')}
-          error={errors.imageUrl}
-          placeholder="https://example.com/photo.jpg"
-          maxLength={500}
-          /* Says WHY http is refused. Without the reason this reads as
-             an arbitrary rule; with it, the user understands that a
-             plain-http image would be blocked by their own browser and
-             simply never appear. */
-          hint="Optional. Must start with https:// — browsers block plain http images on a secure page."
-        />
+        {setting('allow_image_url', true) && (
+          <div className="field">
+            <span className="field__label">Photo</span>
+            <ImageDrop
+              value={form.imageUrl}
+              onChange={(url) => {
+                setForm((prev) => ({ ...prev, imageUrl: url }))
+                setErrors((prev) => {
+                  const next = { ...prev }
+                  delete next.imageUrl
+                  return next
+                })
+              }}
+              disabled={submitting}
+            />
+            {errors.imageUrl && (
+              <p className="field__error" role="alert">{errors.imageUrl}</p>
+            )}
+          </div>
+        )}
 
         {/* Status is offered on create because listing something
             already promised to a friend is a real case, and on edit

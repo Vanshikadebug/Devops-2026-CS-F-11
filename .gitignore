@@ -57,5 +57,5 @@ tmp/
 temp/
 *.local
 
-# Uploaded files (if we ever move off image URLs to real uploads)
+# Uploaded listing photos -- runtime data written by uploadController.
 uploads/
