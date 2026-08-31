@@ -97,9 +97,8 @@ const config = {
 
   /* Allowed browser origins, comma-separated.
 
-     A list rather than one value because a shared dev backend is called from
-     several places at once: whoever is running it, plus each teammate pointing
-     VITE_API_URL here from their own dev server or tunnel.
+     A list rather than one value because the app is reached from more than one
+     dev origin -- :5173 for the Vite server, :3000 for the Docker build.
 
      CLIENT_ORIGIN is still read as a fallback so existing .env files keep
      working. Never '*' -- credentials are allowed and browsers reject the
@@ -108,8 +107,6 @@ const config = {
     .split(',')
     .map((o) => o.trim().replace(/\/+$/, ''))
     .filter(Boolean),
-
-  allowTunnelOrigins: bool('ALLOW_TUNNEL_ORIGINS', !isProduction),
 
   rateLimit: {
     enabled: bool('RATE_LIMIT_ENABLED', !isTest),

@@ -22,11 +22,8 @@ app.set('trust proxy', 1)
    them. The callback form lets one backend serve several dev origins at once,
    which is what makes a shared/tunnelled backend usable by a team.
 
-   ALLOW_TUNNEL_ORIGINS additionally trusts the ephemeral hostnames the tunnel
-   services hand out, because those change on every restart and pinning them in
-   .env would mean editing it several times a day. It is a development
-   convenience -- leave it off in production, where origins are known. */
-const TUNNEL_HOSTS = /\.(trycloudflare\.com|ngrok-free\.app|ngrok\.io|loca\.lt)$/i
+   A list rather than one value because the app is reached from more than one
+   dev origin: :5173 for the Vite server and :3000 for the Docker build. */
 
 app.use(
   cors({
@@ -37,12 +34,6 @@ app.use(
 
       const clean = origin.replace(/\/+$/, '')
       if (config.corsOrigins.includes(clean)) return callback(null, true)
-
-      if (config.allowTunnelOrigins) {
-        try {
-          if (TUNNEL_HOSTS.test(new URL(origin).hostname)) return callback(null, true)
-        } catch { /* unparseable Origin is not an allowed one */ }
-      }
 
       // A rejected origin is the caller's misconfiguration, not a server
       // fault, so it must not surface as a 500. The message names the fix.
