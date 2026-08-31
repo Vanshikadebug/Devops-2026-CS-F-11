@@ -23,7 +23,15 @@ app.set('trust proxy', 1)
    which is what makes a shared/tunnelled backend usable by a team.
 
    A list rather than one value because the app is reached from more than one
-   dev origin: :5173 for the Vite server and :3000 for the Docker build. */
+   dev origin: :5173 for the Vite server and :3000 for the Docker build.
+
+   ALLOW_TUNNEL_ORIGINS additionally trusts the throwaway hostnames the port-
+   sharing tools hand out -- VS Code's forwarded ports, Cloudflare quick
+   tunnels, ngrok. Those change every restart, so pinning each one in .env would
+   mean editing it several times a day. Development convenience only: leave it
+   off in production, where the origins are known and fixed. */
+const TUNNEL_HOSTS =
+  /\.(devtunnels\.ms|trycloudflare\.com|ngrok-free\.app|ngrok\.io|loca\.lt)$/i
 
 app.use(
   cors({
@@ -34,6 +42,12 @@ app.use(
 
       const clean = origin.replace(/\/+$/, '')
       if (config.corsOrigins.includes(clean)) return callback(null, true)
+
+      if (config.allowTunnelOrigins) {
+        try {
+          if (TUNNEL_HOSTS.test(new URL(origin).hostname)) return callback(null, true)
+        } catch { /* an unparseable Origin is not an allowed one */ }
+      }
 
       // A rejected origin is the caller's misconfiguration, not a server
       // fault, so it must not surface as a 500. The message names the fix.

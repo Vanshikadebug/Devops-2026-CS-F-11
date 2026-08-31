@@ -81,15 +81,9 @@ services:
     ports:
       - '${WEB_PORT:-3000}:80'
 
-  # Public HTTPS URL for the API, so teammates can point their frontend at this
-  # machine without running a backend, MySQL or Redis themselves.
-  #
-  # Opt-in via a profile: `docker compose up` alone does NOT expose anything.
-  #   npm run share      -> starts it and prints the URL
-  #
-  # Runs in a container so nobody has to install cloudflared. The URL is
-  # ephemeral and changes on every restart, which is why the API trusts tunnel
-  # hostnames through ALLOW_TUNNEL_ORIGINS instead of pinning each one.
+  # Optional public HTTPS URL for the API, so teammates point their frontend at
+  # this machine and share one database. Opt-in -- `docker compose up` alone
+  # exposes nothing.  npm run share
   tunnel:
     image: cloudflare/cloudflared:latest
     profiles: ['share']
@@ -97,7 +91,6 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    # api:5000 -- the service name on the compose network, not localhost.
     command: tunnel --no-autoupdate --url http://api:5000
 
 volumes:
