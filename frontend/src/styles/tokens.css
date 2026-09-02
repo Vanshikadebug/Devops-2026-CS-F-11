@@ -1,68 +1,174 @@
-/* ReuseHub design tokens.
+/**
+ * ==============================================================================
+ * REUSEHUB DESIGN TOKENS - MANIA E-COMMERCE THEME
+ * ==============================================================================
+ * 
+ * This file serves as the single source of truth for the application's foundational
+ * design system. It utilizes CSS Custom Properties (variables) applied to the 
+ * :root pseudo-class, making them globally available across the entire frontend.
+ * 
+ * ARCHITECTURAL NOTE:
+ * Colours, radii, and the display font defined here act as DEFAULTS. 
+ * If your application utilizes a dynamic `ConfigProvider`, it may overwrite 
+ * the matching custom properties on the :root element at runtime by fetching 
+ * theme settings from the backend API. This allows administrators to change 
+ * the application's colour scheme without requiring a frontend rebuild.
+ * 
+ * Elements that are typically NOT overridable (such as the spacing rhythm, 
+ * shadow depths, and animation timings) remain fixed within this file to 
+ * maintain structural integrity across all views.
+ * 
+ * Theme Profile: 'Mania Retail'
+ * - High contrast (crisp grays and stark whites)
+ * - Sharp borders (drastically reduced radii)
+ * - High-energy accents (vibrant orange)
+ * ==============================================================================
+ */
 
-   Colours, radii and the display font are DEFAULTS only. ConfigProvider
-   overwrites the matching custom properties on :root at runtime from the
-   theme settings, so an admin colour change applies without a rebuild.
-   Anything not overridable (spacing, shadows, motion) is fixed here. */
-
-:root {
-  /* --- Palette (admin-editable) --------------------------------- */
-  --bg: #e9eee4;
+ :root {
+  /* ==========================================================================
+     CORE PALETTE (Admin-Editable via ConfigProvider)
+     These colours form the primary visual hierarchy of the application.
+     ========================================================================== */
+  
+  /* --bg: The absolute background colour of the application body. 
+     Set to a crisp, cool gray to allow pure white cards to pop. */
+  --bg: #F4F5F8;
+  
+  /* --surface: The background colour for elevated elements like ItemCards, 
+     Modals, and the Navbar. Set to pure white for a clean retail look. */
   --surface: #ffffff;
-  --ink: #12150f;
-  --muted: #6b7264;
-  --accent: #d4f34a;
-  --accent-ink: #12150f;
-  --ring: #12150f;
+  
+  /* --ink: The primary text colour. 
+     Set to deep charcoal instead of pure black to reduce eye strain. */
+  --ink: #222222;
+  
+  /* --muted: The secondary text colour used for metadata, timestamps, 
+     and placeholder text in forms. */
+  --muted: #777777;
+  
+  /* --accent: The primary brand colour. Used for main calls to action, 
+     prices, and active states. Set to high-energy Mania Orange. */
+  --accent: #FF6600;
+  
+  /* --accent-ink: The text colour that sits on top of the accent colour. 
+     Must maintain a high contrast ratio for accessibility (WCAG). */
+  --accent-ink: #ffffff;
+  
+  /* --ring: The colour of the focus ring applied to interactive elements 
+     (inputs, buttons) when navigating via keyboard. */
+  --ring: #FF6600;
 
-  /* --- Derived surfaces ------------------------------------------ */
-  --surface-sunk: #f4f6f1;
-  --surface-ink: #12150f;
-  --line: rgba(18, 21, 15, 0.08);
-  --line-strong: rgba(18, 21, 15, 0.16);
+  /* ==========================================================================
+     DERIVED SURFACES
+     These colours are calculated or hand-picked to complement the core palette.
+     Used for structural separators, borders, and alternate backgrounds.
+     ========================================================================== */
+  
+  /* --surface-sunk: A slightly darker surface used for image placeholders 
+     and secondary container backgrounds. */
+  --surface-sunk: #F9FAFB;
+  
+  /* --surface-ink: An ultra-dark surface used for inverted elements like 
+     tooltips or primary buttons in the dark theme. */
+  --surface-ink: #111111;
+  
+  /* --line: The default border colour used for subtle dividers and card outlines. */
+  --line: #EAEAEA;
+  
+  /* --line-strong: A higher-contrast border colour used for hover states 
+     and active input fields. */
+  --line-strong: #D1D5DB;
 
-  /* --- Status ----------------------------------------------------- */
+  /* ==========================================================================
+     STATUS PALETTE
+     Standardized semantic colours for alerts, toasts, and form validation.
+     These typically remain consistent regardless of the overarching theme.
+     ========================================================================== */
+  
+  /* Success states (e.g., successful item listing) */
   --ok-bg: #dcf5e3;
   --ok-ink: #14663a;
+  
+  /* Warning states (e.g., destructive action confirmations) */
   --warn-bg: #fdf0cd;
   --warn-ink: #8a5a06;
+  
+  /* Error states (e.g., form validation failures) */
   --bad-bg: #fce4e4;
   --bad-ink: #a12626;
+  
+  /* Informational states (e.g., neutral notifications) */
   --info-bg: #e0e9fb;
   --info-ink: #1f4bab;
 
-  /* --- Radii (admin-editable) ------------------------------------- */
-  --r-card: 28px;
-  --r-pill: 999px;
-  --r-sm: 12px;
-  --r-md: 18px;
+  /* ==========================================================================
+     BORDER RADII (Admin-Editable via ConfigProvider)
+     Controls the roundness of UI elements. Values have been drastically 
+     reduced in this theme to create a sharp, boxy, traditional retail aesthetic.
+     ========================================================================== */
+  
+  /* --r-card: Applied to large containers like ItemCards and Modals. */
+  --r-card: 8px;
+  
+  /* --r-pill: Applied to heavily rounded elements like badges or primary buttons. */
+  --r-pill: 4px;
+  
+  /* --r-sm: Applied to small inputs, dropdowns, and interior images. */
+  --r-sm: 4px;
+  
+  /* --r-md: Applied to standard buttons and form fields. */
+  --r-md: 8px;
 
-  /* --- Spacing: a 4px rhythm -------------------------------------- */
-  --s1: 0.25rem;
-  --s2: 0.5rem;
-  --s3: 0.75rem;
-  --s4: 1rem;
-  --s5: 1.25rem;
-  --s6: 1.5rem;
-  --s8: 2rem;
-  --s10: 2.5rem;
-  --s12: 3rem;
-  --s16: 4rem;
+  /* ==========================================================================
+     SPACING RHYTHM
+     A fixed 4px baseline grid system. These tokens ensure consistent padding, 
+     margins, and layout gaps across the entire application.
+     Do not override these values at runtime.
+     ========================================================================== */
+  
+  --s1: 0.25rem;   /* 4px  */
+  --s2: 0.5rem;    /* 8px  */
+  --s3: 0.75rem;   /* 12px */
+  --s4: 1rem;      /* 16px */
+  --s5: 1.25rem;   /* 20px */
+  --s6: 1.5rem;    /* 24px */
+  --s8: 2rem;      /* 32px */
+  --s10: 2.5rem;   /* 40px */
+  --s12: 3rem;     /* 48px */
+  --s16: 4rem;     /* 64px */
 
-  /* --- Shadows: soft and low-contrast, so cards float on the sage
-         canvas rather than being outlined. ---------------------------- */
-  --shadow-sm: 0 1px 2px rgba(18, 21, 15, 0.04);
-  --shadow: 0 6px 20px rgba(18, 21, 15, 0.06);
-  --shadow-lg: 0 18px 44px rgba(18, 21, 15, 0.1);
+  /* ==========================================================================
+     ELEVATION & SHADOWS
+     Controls the Z-axis depth of elements. Adjusted to be slightly sharper 
+     to lift the crisp white cards off the gray canvas effectively.
+     ========================================================================== */
+  
+  /* --shadow-sm: Used for subtle elevation on inputs and resting buttons. */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  /* --shadow: Used for resting ItemCards and dropdown menus. */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  
+  /* --shadow-lg: Used for Modals and active hover states on cards. */
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.12);
 
-  /* --- Type -------------------------------------------------------- */
-  --font-display: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* ==========================================================================
+     TYPOGRAPHY & GLOBAL VARIABLES
+     ========================================================================== */
+  
+  /* Font Stacks */
+  --font-display: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
 
+  /* Layout Constraints */
   --shell-max: 1240px;
-  --nav-h: 72px;
-  --t: 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  --nav-h: 80px; /* Taller height to accommodate the new centralized search bar */
+  
+  /* Motion & Animation */
+  --t: 200ms ease-in-out; /* Standard transition timing for hover states */
 
+  /* --- Global Document Resets --- */
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.55;

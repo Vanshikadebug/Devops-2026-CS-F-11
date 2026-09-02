@@ -1,81 +1,171 @@
-.browse__head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--s6);
-  margin-bottom: var(--s8);
-}
+/**
+ * ==============================================================================
+ * BROWSE / SEARCH STYLESHEET (MANIA THEME)
+ * ==============================================================================
+ * 
+ * @file Browse.css
+ * @description Controls the two-column layout of the catalog page.
+ * Implements a responsive CSS Grid that collapses the sidebar on mobile devices.
+ */
 
-.browse__head p { margin-top: var(--s2); }
-.browse__head .searchpill { max-width: 400px; }
+/* --------------------------------------------------------------------------
+   1. MAIN LAYOUT GRID
+   -------------------------------------------------------------------------- */
 
-.browse__body {
+/**
+ * .browse-layout
+ * Establishes the 2-column structure (Sidebar + Main Content).
+ */
+.browse-layout {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
-  gap: var(--s6);
+  grid-template-columns: 260px 1fr;
+  gap: var(--s8);
+  padding: var(--s8) var(--s6);
   align-items: start;
 }
 
-.browse__filters {
+/* --------------------------------------------------------------------------
+   2. SIDEBAR FILTERS
+   -------------------------------------------------------------------------- */
+
+.browse-sidebar {
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s6);
   position: sticky;
-  top: calc(var(--nav-h) + var(--s4));
+  top: calc(var(--nav-h) + var(--s6));
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: var(--s5);
+  padding-bottom: var(--s3);
+  border-bottom: 2px solid var(--line);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.filter-group {
+  margin-bottom: var(--s6);
+}
+
+.filter-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--s3);
+}
+
+/* Sidebar Search Input */
+.sidebar-search-form {
+  display: flex;
+}
+
+.sidebar-input {
+  flex-grow: 1;
+  width: 100%;
+  padding: var(--s2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.sidebar-input:focus {
+  border-color: var(--accent);
+}
+
+.sidebar-btn {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+  padding: 0 var(--s3);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* List Filters (Categories / Cities) */
+.filter-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--s5);
+  gap: var(--s1);
 }
 
-.browse__clear {
-  border: 0;
+.filter-option {
+  width: 100%;
+  text-align: left;
   background: none;
-  cursor: pointer;
-  font-size: 0.76rem;
+  border: none;
+  padding: var(--s2) var(--s3);
+  font-size: 0.9rem;
   color: var(--muted);
-  text-decoration: underline;
-}
-
-.browse__group { display: flex; flex-direction: column; gap: var(--s2); }
-
-.browse__grouplabel {
-  font-size: 0.7rem;
-  font-weight: 680;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.browse__chips { display: flex; flex-wrap: wrap; gap: 6px; }
-
-.browse__chip {
-  padding: 6px 12px;
-  border: 1px solid transparent;
-  border-radius: var(--r-pill);
-  background: var(--surface-sunk);
   cursor: pointer;
-  font-size: 0.79rem;
-  font-weight: 570;
-  transition: background var(--t), border-color var(--t);
+  border-radius: var(--r-sm);
+  transition: all var(--t);
 }
 
-.browse__chip:hover { border-color: var(--line-strong); }
-.browse__chip.is-active { background: var(--accent); color: var(--accent-ink); border-color: var(--ink); }
+.filter-option:hover {
+  background-color: var(--surface-sunk);
+  color: var(--ink);
+}
 
-.browse__results { min-width: 0; }
-.browse__results .alert { margin-bottom: var(--s5); }
+.filter-option.is-active {
+  background-color: var(--surface-sunk);
+  color: var(--accent);
+  font-weight: 700;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
 
-.browse__pager {
+/* --------------------------------------------------------------------------
+   3. MAIN CATALOG AREA
+   -------------------------------------------------------------------------- */
+
+.browse-main {
+  min-width: 0; /* Prevents CSS grid blowout */
+}
+
+.browse-header {
+  margin-bottom: var(--s6);
+}
+
+.browse-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--s1);
+}
+
+.browse-count {
+  font-weight: 600;
+}
+
+.browse-loading {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: var(--s3);
-  margin-top: var(--s8);
+  padding: var(--s12) 0;
 }
+
+/* --------------------------------------------------------------------------
+   4. RESPONSIVE BREAKPOINTS
+   -------------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
-  .browse__body { grid-template-columns: 1fr; }
-  .browse__filters { position: static; }
-}
-
-@media (max-width: 700px) {
-  .browse__head { flex-direction: column; align-items: stretch; }
-  .browse__head .searchpill { max-width: none; }
+  /* Stack the sidebar on top of the grid on tablets/mobile */
+  .browse-layout {
+    grid-template-columns: 1fr;
+    gap: var(--s6);
+  }
+  
+  .browse-sidebar {
+    position: relative;
+    top: 0;
+  }
 }

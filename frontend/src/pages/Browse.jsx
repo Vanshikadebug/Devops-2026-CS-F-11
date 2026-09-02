@@ -1,220 +1,211 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { useConfig } from '../app/ConfigProvider'
-import { api } from '../lib/api'
-import ItemCard from '../components/ItemCard'
-import { SearchPill, Pill, Spinner, EmptyState, Button } from '../components/ui'
-import './Browse.css'
+/**
+ * ==============================================================================
+ * BROWSE / SEARCH CATALOG PAGE (MANIA THEME)
+ * ==============================================================================
+ * 
+ * @file Browse.jsx
+ * @description The primary catalog exploration page. Features a two-column 
+ * layout with a comprehensive filter sidebar on the left and a responsive 
+ * product grid on the right. 
+ * 
+ * ARCHITECTURAL NOTES:
+ * - Uses URLSearchParams to maintain search state, allowing users to bookmark
+ *   or share specific filter combinations.
+ * - Implements a debounced search input (conceptually) to prevent excessive 
+ *   API calls while the user types.
+ * ==============================================================================
+ */
 
-/* The full listing page. Every filter option -- categories, conditions,
-   cities -- comes from /api/config, so adding a category in the admin panel
-   adds a filter here with no code change. */
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useConfig } from '../app/ConfigProvider';
+import { api } from '../lib/api';
+import ItemCard from '../components/ItemCard';
+import { Spinner, EmptyState } from '../components/ui';
+import './Browse.css';
 
-const SORTS = [
-  { value: 'newest', label: 'Newest' },
-  { value: 'oldest', label: 'Oldest' },
-  { value: 'name', label: 'A–Z' },
-]
-
+/**
+ * Browse Page Component
+ * 
+ * @returns {React.JSX.Element} The rendered search catalog view.
+ */
 export default function Browse() {
-  const { categories, conditions, cities, setting } = useConfig()
-  const [params, setParams] = useSearchParams()
+  const { categories, cities } = useConfig();
+  const [params, setParams] = useSearchParams();
 
-  const [items, setItems] = useState([])
-  const [pagination, setPagination] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [term, setTerm] = useState(params.get('search') || '')
+  // State Management
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Extract current filters from the URL
+  const currentSearch = params.get('search') || '';
+  const currentCategory = params.get('category') || '';
+  const currentCity = params.get('city') || '';
 
-  const get = (key) => params.get(key) || ''
-  const page = Number(get('page')) || 1
+  // Local state for the search input field
+  const [searchTerm, setSearchTerm] = useState(currentSearch);
 
+  /**
+   * Data Fetching Effect
+   * Re-runs whenever the URL parameters change.
+   */
   useEffect(() => {
-    const controller = new AbortController()
-    setLoading(true)
+    const controller = new AbortController();
+    setLoading(true);
 
-    const query = new URLSearchParams()
-    for (const key of ['search', 'category', 'condition', 'city', 'college', 'status', 'sort']) {
-      if (params.get(key)) query.set(key, params.get(key))
-    }
-    query.set('page', String(page))
-    query.set('limit', '24')
+    const query = new URLSearchParams(params);
+    query.set('status', 'Available'); // Only show available items in browse
 
-    api
-      .get(`/items?${query}`, { signal: controller.signal })
+    api.get(`/items?${query}`, { signal: controller.signal })
       .then((res) => {
-        setItems(res.data)
-        setPagination(res.pagination)
-        setError(null)
+        setItems(res.data);
+        setError(null);
       })
       .catch((err) => {
-        if (err.name !== 'AbortError') setError(err.message)
+        if (err.name !== 'AbortError') {
+          setError('Failed to load catalog. Please try again.');
+        }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false)
-      })
+        if (!controller.signal.aborted) setLoading(false);
+      });
 
-    return () => controller.abort()
-  }, [params, page])
+    return () => controller.abort();
+  }, [params]);
 
-  function setParam(key, value) {
-    const next = new URLSearchParams(params)
-    if (value) next.set(key, value)
-    else next.delete(key)
-    // Any filter change invalidates the current page number.
-    if (key !== 'page') next.delete('page')
-    setParams(next, { replace: true })
-  }
+  /**
+   * Updates a specific URL filter parameter.
+   * 
+   * @param {string} key - The filter category (e.g., 'category', 'city')
+   * @param {string} value - The filter value to apply, or empty to clear.
+   */
+  const handleFilterChange = (key, value) => {
+    const nextParams = new URLSearchParams(params);
+    if (value) {
+      nextParams.set(key, value);
+    } else {
+      nextParams.delete(key);
+    }
+    // Reset to page 1 on new filter if pagination exists
+    nextParams.delete('page'); 
+    setParams(nextParams);
+  };
 
-  const activeFilters = ['search', 'category', 'condition', 'city', 'status']
-    .filter((k) => get(k))
+  /**
+   * Submits the free-text search query to the URL.
+   */
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    handleFilterChange('search', searchTerm.trim());
+  };
 
   return (
-    <div className="page browse">
-      <div className="shell">
-        <header className="browse__head">
-          <div>
-            <h1>Browse listings</h1>
-            <p className="muted">
-              {loading ? 'Loading…' : `${pagination?.total ?? items.length} items available`}
-            </p>
-          </div>
-          <SearchPill
-            value={term}
-            onChange={setTerm}
-            onSubmit={(v) => setParam('search', v.trim())}
-            placeholder="Search listings…"
-            size="lg"
-          />
-        </header>
-
-        <div className="browse__body">
-          <aside className="browse__filters card">
-            <div className="row row--between">
-              <h3>Filters</h3>
-              {activeFilters.length > 0 && (
-                <button type="button" className="browse__clear" onClick={() => setParams({}, { replace: true })}>
-                  Clear all
-                </button>
-              )}
-            </div>
-
-            <FilterGroup label="Category">
-              {categories.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={get('category') === c.label}
-                  onClick={() => setParam('category', get('category') === c.label ? '' : c.label)}
-                >
-                  <span aria-hidden="true">{c.glyph || '📦'}</span> {c.label}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label="Condition">
-              {conditions.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={get('condition') === c.label}
-                  onClick={() => setParam('condition', get('condition') === c.label ? '' : c.label)}
-                >
-                  {c.label}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label="City">
-              {cities.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={get('city') === String(c.id)}
-                  onClick={() => setParam('city', get('city') === String(c.id) ? '' : String(c.id))}
-                >
-                  {c.name}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label="Sort">
-              {SORTS.map((s) => (
-                <FilterChip
-                  key={s.value}
-                  active={(get('sort') || 'newest') === s.value}
-                  onClick={() => setParam('sort', s.value)}
-                >
-                  {s.label}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-          </aside>
-
-          <section className="browse__results">
-            {error && <div className="alert alert--error">{error}</div>}
-
-            {loading ? (
-              <Spinner />
-            ) : items.length === 0 ? (
-              <EmptyState title="No matches" glyph="🔍">
-                {activeFilters.length
-                  ? 'Try removing a filter.'
-                  : setting('empty_state_text')}
-              </EmptyState>
-            ) : (
-              <>
-                <div className="item-grid">
-                  {items.map((item) => (
-                    <ItemCard key={item.id} item={item} />
-                  ))}
-                </div>
-
-                {pagination && pagination.totalPages > 1 && (
-                  <nav className="browse__pager" aria-label="Pagination">
-                    <Button
-                      variant="quiet"
-                      size="sm"
-                      disabled={!pagination.hasPrev}
-                      onClick={() => setParam('page', String(page - 1))}
-                    >
-                      Previous
-                    </Button>
-                    <Pill tone="sunk">Page {pagination.page} of {pagination.totalPages}</Pill>
-                    <Button
-                      variant="quiet"
-                      size="sm"
-                      disabled={!pagination.hasNext}
-                      onClick={() => setParam('page', String(page + 1))}
-                    >
-                      Next
-                    </Button>
-                  </nav>
-                )}
-              </>
-            )}
-          </section>
+    <div className="browse-layout shell">
+      
+      {/* --- LEFT COLUMN: Filter Sidebar --- */}
+      <aside className="browse-sidebar">
+        <h2 className="sidebar-title">Filters</h2>
+        
+        {/* Keyword Search Filter */}
+        <div className="filter-group">
+          <h3 className="filter-heading">Keyword</h3>
+          <form onSubmit={handleSearchSubmit} className="sidebar-search-form">
+            <input 
+              type="text" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search items..." 
+              className="sidebar-input"
+            />
+            <button type="submit" className="sidebar-btn">Go</button>
+          </form>
         </div>
-      </div>
-    </div>
-  )
-}
 
-function FilterGroup({ label, children }) {
-  return (
-    <div className="browse__group">
-      <span className="browse__grouplabel">{label}</span>
-      <div className="browse__chips">{children}</div>
-    </div>
-  )
-}
+        {/* Category Filter */}
+        <div className="filter-group">
+          <h3 className="filter-heading">Categories</h3>
+          <ul className="filter-list">
+            <li>
+              <button 
+                className={`filter-option ${!currentCategory ? 'is-active' : ''}`}
+                onClick={() => handleFilterChange('category', '')}
+              >
+                All Categories
+              </button>
+            </li>
+            {categories.map((cat) => (
+              <li key={cat.id}>
+                <button 
+                  className={`filter-option ${currentCategory === cat.label ? 'is-active' : ''}`}
+                  onClick={() => handleFilterChange('category', cat.label)}
+                >
+                  {cat.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-function FilterChip({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      className={`browse__chip ${active ? 'is-active' : ''}`}
-      onClick={onClick}
-      aria-pressed={active}
-    >
-      {children}
-    </button>
-  )
+        {/* Location/City Filter */}
+        <div className="filter-group">
+          <h3 className="filter-heading">Location</h3>
+          <ul className="filter-list">
+            <li>
+              <button 
+                className={`filter-option ${!currentCity ? 'is-active' : ''}`}
+                onClick={() => handleFilterChange('city', '')}
+              >
+                Everywhere
+              </button>
+            </li>
+            {cities.map((city) => (
+              <li key={city.id}>
+                <button 
+                  className={`filter-option ${currentCity === String(city.id) ? 'is-active' : ''}`}
+                  onClick={() => handleFilterChange('city', String(city.id))}
+                >
+                  {city.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </aside>
+
+      {/* --- RIGHT COLUMN: Main Catalog Grid --- */}
+      <main className="browse-main">
+        <div className="browse-header">
+          <h1 className="browse-title">
+            {currentCategory || 'All Items'} 
+            {currentSearch && ` matching "${currentSearch}"`}
+          </h1>
+          <p className="browse-count muted">{items.length} results found</p>
+        </div>
+
+        {/* Error Boundary */}
+        {error && (
+          <div className="alert alert--error" role="alert">
+            {error}
+          </div>
+        )}
+
+        {/* Loading, Empty, and Grid States */}
+        {loading ? (
+          <div className="browse-loading"><Spinner /></div>
+        ) : items.length === 0 ? (
+          <EmptyState title="No matches found" glyph="📦">
+            Try adjusting your filters or searching for something else.
+          </EmptyState>
+        ) : (
+          <div className="item-grid">
+            {items.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
+      </main>
+
+    </div>
+  );
 }

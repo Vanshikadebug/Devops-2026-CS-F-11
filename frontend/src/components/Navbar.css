@@ -1,92 +1,256 @@
+/**
+ * ==============================================================================
+ * NAVBAR STYLESHEET (MANIA E-COMMERCE THEME)
+ * ==============================================================================
+ * 
+ * @file Navbar.css
+ * @description Controls the layout, typography, and responsive behavior of the 
+ * primary navigation header. 
+ * 
+ * ARCHITECTURAL NOTES:
+ * - This component sits at the top of the DOM hierarchy and utilizes `position: sticky`
+ *   to remain accessible as the user scrolls through product catalogs.
+ * - Adheres strictly to the CSS variables defined in `tokens.css` to ensure 
+ *   theme consistency (using sharp radii, stark surfaces, and the orange accent).
+ * - Utilizes a BEM-inspired (Block Element Modifier) class naming convention to 
+ *   prevent CSS scope leakage and improve maintainability.
+ * 
+ * RESPONSIVE STRATEGY:
+ * - Desktop (> 1080px): Full search bar, all links, and user actions visible.
+ * - Tablet (< 1080px): Auxiliary navigation links collapse to preserve search.
+ * - Mobile (< 860px): Search bar collapses into an icon, prioritizing brand and user login.
+ * ==============================================================================
+ */
+
+/* --------------------------------------------------------------------------
+   1. PRIMARY NAVIGATION BLOCK
+   -------------------------------------------------------------------------- */
+
+/**
+ * .nav
+ * The main wrapper for the navigation bar. 
+ * Uses a solid white surface and a crisp bottom border to separate it from 
+ * the gray application background, abandoning the blurred glassmorphism of 
+ * the previous design for a cleaner retail aesthetic.
+ */
 .nav {
   position: sticky;
   top: 0;
   z-index: 40;
   padding: var(--s4) 0;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(12px);
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
 }
 
+/**
+ * .nav__inner
+ * The structural container that centers the navigation content and limits 
+ * its maximum width on ultra-wide desktop monitors.
+ */
 .nav__inner {
   display: flex;
   align-items: center;
-  gap: var(--s4);
+  gap: var(--s6);
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 0 var(--s6);
 }
 
+/* --------------------------------------------------------------------------
+   2. BRANDING ELEMENTS
+   -------------------------------------------------------------------------- */
+
+/**
+ * .nav__brand
+ * The logo and brand name container. Fixed flexibility so it never shrinks 
+ * when the search bar expands.
+ */
 .nav__brand {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
-  font-weight: 680;
-  font-size: 1.05rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.25rem;
   letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
   flex: none;
 }
 
+/**
+ * .nav__glyph
+ * The graphical icon associated with the brand logo.
+ * Uses the primary energetic accent color to draw the user's eye.
+ */
 .nav__glyph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm); /* Changed from 50% to sharp square */
   background: var(--accent);
   color: var(--accent-ink);
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
+/* --------------------------------------------------------------------------
+   3. DESKTOP NAVIGATION LINKS
+   -------------------------------------------------------------------------- */
+
+/**
+ * .nav__links
+ * Container for the primary category and page routing links.
+ */
 .nav__links {
-  display: flex;
-  align-items: center;
-  gap: var(--s1);
-  flex: none;
-}
-
-.nav__link {
-  padding: 7px 14px;
-  border-radius: var(--r-pill);
-  font-size: 0.88rem;
-  font-weight: 580;
-  color: var(--muted);
-}
-
-.nav__link:hover { color: var(--ink); opacity: 1; background: var(--surface); }
-.nav__link.is-active { color: var(--ink); background: var(--surface); box-shadow: var(--shadow-sm); }
-
-/* The search field is the flexible element: it absorbs whatever width the
-   fixed brand, links and actions leave over. */
-.nav__search { flex: 1; min-width: 0; max-width: 460px; }
-
-.nav__actions {
   display: flex;
   align-items: center;
   gap: var(--s2);
   flex: none;
+}
+
+/**
+ * .nav__link
+ * Individual navigation anchors.
+ * Removed the highly rounded pill shape in favor of subtle retail blocks.
+ */
+.nav__link {
+  padding: 8px 16px;
+  border-radius: var(--r-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  transition: all var(--t);
+}
+
+/**
+ * Interactive states for the navigation links.
+ */
+.nav__link:hover { 
+  color: var(--accent); 
+  background: var(--surface-sunk); 
+}
+
+.nav__link.is-active { 
+  color: var(--accent); 
+  background: var(--surface-sunk); 
+  border-bottom: 2px solid var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   4. CENTRAL SEARCH (MANIA SPECIFIC)
+   -------------------------------------------------------------------------- */
+
+/**
+ * .nav__search
+ * The centralized search container. It absorbs all remaining horizontal 
+ * space between the brand logo and user actions.
+ */
+.nav__search { 
+  flex: 1; 
+  min-width: 0; 
+  max-width: 600px; 
+  display: flex;
+}
+
+/**
+ * .nav__search-input & .nav__search-btn
+ * Specific styling for the input and button to create a unified, 
+ * thick-bordered search widget typical of major e-commerce platforms.
+ */
+.nav__search input {
+  width: 100%;
+  padding: var(--s2) var(--s4);
+  border: 2px solid var(--accent);
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.nav__search button {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+  border: 2px solid var(--accent);
+  padding: 0 var(--s4);
+  font-weight: 600;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  cursor: pointer;
+  transition: opacity var(--t);
+}
+
+.nav__search button:hover {
+  opacity: 0.9;
+}
+
+/* --------------------------------------------------------------------------
+   5. USER ACTIONS & AUTHENTICATION
+   -------------------------------------------------------------------------- */
+
+/**
+ * .nav__actions
+ * Pushes the user profile and cart/listing buttons to the far right.
+ */
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex: none;
   margin-left: auto;
 }
 
+/**
+ * .nav__signin
+ * Unauthenticated state login button.
+ */
 .nav__signin {
-  padding: 7px 14px;
-  font-size: 0.9rem;
+  padding: 8px 16px;
+  font-size: 0.95rem;
   font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
 }
 
-.nav__user { position: relative; }
+.nav__signin:hover {
+  color: var(--accent);
+}
+
+/**
+ * .nav__user & .nav__userbtn
+ * Authenticated state user profile trigger.
+ * Features a sharp, boxed layout rather than a rounded pill.
+ */
+.nav__user { 
+  position: relative; 
+}
 
 .nav__userbtn {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
-  padding: 4px 14px 4px 5px;
-  border: 0;
-  border-radius: var(--r-pill);
+  padding: 6px 16px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
+  transition: border-color var(--t);
 }
 
+.nav__userbtn:hover {
+  border-color: var(--accent);
+}
+
+/**
+ * .nav__avatar
+ * The user's profile image or initial. 
+ * Remains circular as is standard convention, but utilizes high contrast.
+ */
 .nav__avatar {
   display: inline-flex;
   align-items: center;
@@ -94,51 +258,87 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--surface-ink);
-  color: #fff;
-  font-size: 0.82rem;
-  font-weight: 650;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
+/* --------------------------------------------------------------------------
+   6. DROPDOWN MENU
+   -------------------------------------------------------------------------- */
+
+/**
+ * .nav__menu
+ * The absolute positioned popover menu for user settings and logout.
+ */
 .nav__menu {
   position: absolute;
   right: 0;
-  top: calc(100% + 10px);
-  min-width: 190px;
+  top: calc(100% + 12px);
+  min-width: 220px;
   display: flex;
   flex-direction: column;
   padding: var(--s2);
   background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-lg);
+  z-index: 50;
 }
 
 .nav__menu a,
 .nav__menu button {
-  padding: 9px 12px;
+  padding: 12px 16px;
   border: 0;
   background: none;
   border-radius: var(--r-sm);
   text-align: left;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   cursor: pointer;
   color: var(--ink);
+  font-weight: 500;
 }
 
 .nav__menu a:hover,
-.nav__menu button:hover { background: var(--surface-sunk); opacity: 1; }
+.nav__menu button:hover { 
+  background: var(--surface-sunk); 
+  color: var(--accent); 
+}
 
+/* --------------------------------------------------------------------------
+   7. RESPONSIVE MEDIA QUERIES
+   -------------------------------------------------------------------------- */
+
+/* Tablet View: Collapse primary links to prioritize the search bar */
 @media (max-width: 1080px) {
-  .nav__links { display: none; }
+  .nav__links { 
+    display: none; 
+  }
 }
 
+/* Small Tablet / Large Mobile View: Collapse search and heavy CTA buttons */
 @media (max-width: 860px) {
-  .nav__search { display: none; }
-  .nav__cta { display: none; }
+  .nav__search { 
+    display: none; 
+  }
+  .nav__cta { 
+    display: none; 
+  }
 }
 
+/* Mobile View: Minimal navigation focusing solely on the brand icon and avatar */
 @media (max-width: 560px) {
-  .nav__name { display: none; }
-  .nav__username { display: none; }
-  .nav__userbtn { padding: 4px; }
+  .nav__name { 
+    display: none; 
+  }
+  .nav__username { 
+    display: none; 
+  }
+  .nav__userbtn { 
+    padding: 6px; 
+  }
+  .nav__brand {
+    font-size: 0; /* Hides text, keeps glyph */
+  }
 }

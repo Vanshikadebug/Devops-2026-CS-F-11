@@ -1,15 +1,60 @@
-.home { padding: var(--s2) 0 var(--s8); }
+/**
+ * ==============================================================================
+ * HOME PAGE STYLESHEET (MANIA E-COMMERCE THEME)
+ * ==============================================================================
+ * 
+ * @file Home.css
+ * @description Controls the layout, typography, and responsive grid behavior 
+ * for the application's primary landing page.
+ * 
+ * ARCHITECTURAL NOTES:
+ * - Uses advanced CSS Grid techniques for the Hero banner to allow overlapping
+ *   elements and complex responsive reflowing without redundant DOM nodes.
+ * - Adheres to the new Mania design tokens: sharp corners, high contrast borders,
+ *   and energetic accent colors. Circular elements (pills) have been squared off
+ *   to match traditional retail layouts.
+ * - Heavily utilizes the global spacing rhythm variables (e.g., var(--s4)) to 
+ *   ensure mathematical consistency across all margins and paddings.
+ * ==============================================================================
+ */
 
-.home__hero { margin-bottom: var(--s5); }
+/* --------------------------------------------------------------------------
+   1. GLOBAL PAGE WRAPPERS
+   -------------------------------------------------------------------------- */
 
-/* --- Hero ---------------------------------------------------------- */
+/**
+ * .home
+ * The outermost wrapper for the home page view.
+ * Provides the foundational vertical padding to separate the content from 
+ * the header and footer.
+ */
+.home { 
+  padding: var(--s4) 0 var(--s10); 
+}
 
+/**
+ * .home__hero
+ * Spacing utility applied to the top BentoGrid to push the stat strip down.
+ */
+.home__hero { 
+  margin-bottom: var(--s8); 
+}
+
+/* --------------------------------------------------------------------------
+   2. HERO BANNER (CSS GRID LAYOUT)
+   -------------------------------------------------------------------------- */
+
+/**
+ * .hero
+ * The primary marketing banner.
+ * Utilizes a 2-column explicit CSS Grid. Copy sits on the left, artwork on 
+ * the right. The `grid-template-areas` property makes redefining the layout 
+ * for mobile devices incredibly simple.
+ */
 .hero {
   position: relative;
   display: grid;
-  /* Copy on the left, artwork on the right; the artwork column collapses
-     first on narrow screens. */
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
   grid-template-areas:
     'badge art'
     'title art'
@@ -20,83 +65,142 @@
   gap: var(--s4) var(--s6);
   padding: var(--s8);
   overflow: hidden;
+  background-color: var(--surface);
 }
 
-.hero__badge { grid-area: badge; justify-self: start; }
+.hero__badge { 
+  grid-area: badge; 
+  justify-self: start; 
+}
 
+/**
+ * .hero__title
+ * The main H1 element. Uses the display font stack for maximum impact.
+ */
 .hero__title {
   grid-area: title;
-  max-width: 15ch;
+  max-width: 15ch; /* Limits width to create optimal reading line lengths */
   margin: var(--s2) 0;
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
 }
 
-.hero__lead { grid-area: lead; display: flex; align-items: center; gap: var(--s4); }
+/**
+ * .hero__lead & associated elements
+ * A decorative lead-in displaying the steps or sub-branding.
+ */
+.hero__lead { 
+  grid-area: lead; 
+  display: flex; 
+  align-items: center; 
+  gap: var(--s4); 
+}
 
 .hero__step {
-  font-size: 2rem;
-  font-weight: 300;
+  font-size: 2.5rem;
+  font-weight: 800; /* Increased weight for the Mania aesthetic */
   color: var(--muted);
-  opacity: 0.5;
+  opacity: 0.3;
   font-variant-numeric: tabular-nums;
   flex: none;
 }
 
 .hero__rule {
-  width: 54px;
-  height: 1px;
+  width: 64px;
+  height: 2px; /* Thicker rule for high contrast */
   background: var(--line-strong);
   flex: none;
 }
 
-.hero__sub { font-size: 0.92rem; max-width: 34ch; }
+.hero__sub { 
+  font-size: 1.1rem; 
+  max-width: 38ch; 
+  line-height: 1.6;
+}
 
-.hero__cta { grid-area: cta; justify-self: start; margin-top: var(--s3); }
+.hero__cta { 
+  grid-area: cta; 
+  justify-self: start; 
+  margin-top: var(--s3); 
+}
 
+/**
+ * .hero__art
+ * The container for the right-side marketing image.
+ */
 .hero__art {
   grid-area: art;
   align-self: center;
   justify-self: center;
   width: 100%;
-  max-width: 340px;
+  max-width: 380px;
 }
 
-.hero__img { width: 100%; border-radius: var(--r-card); }
-.hero__feature { display: block; border-radius: var(--r-card); overflow: hidden; }
-.hero__feature .itemimg { border-radius: var(--r-card); }
+.hero__img { 
+  width: 100%; 
+  border-radius: var(--r-md); /* Boxy corners */
+  box-shadow: var(--shadow);
+}
 
+.hero__feature { 
+  display: block; 
+  border-radius: var(--r-md); 
+  overflow: hidden; 
+  box-shadow: var(--shadow);
+}
+
+.hero__feature .itemimg { 
+  border-radius: var(--r-md); 
+}
+
+/**
+ * .hero__social
+ * Social media links container.
+ */
 .hero__social {
   grid-area: social;
   display: flex;
   align-items: center;
   gap: var(--s2);
   margin-top: var(--s5);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
 }
 
+/**
+ * .hero__socialdot
+ * Individual social links. 
+ * Converted from 50% rounded circles to sharp retail squares.
+ */
 .hero__socialdot {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm); /* Replaced 50% circle with sharp square */
   background: var(--surface-sunk);
-  font-size: 0.75rem;
-  font-weight: 650;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background var(--t), color var(--t);
 }
 
-@media (max-width: 760px) {
-  .hero {
-    grid-template-columns: 1fr;
-    grid-template-areas: 'badge' 'title' 'art' 'lead' 'cta' 'social';
-    padding: var(--s6);
-  }
-  .hero__title { max-width: none; }
-  .hero__art { max-width: 100%; }
+.hero__socialdot:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
-/* --- Category tiles ------------------------------------------------ */
+/* --------------------------------------------------------------------------
+   3. CATEGORY TILES
+   -------------------------------------------------------------------------- */
 
+/**
+ * .home__cats
+ * Responsive 3-column grid for category selections.
+ */
 .home__cats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -104,21 +208,37 @@
   margin-top: var(--s4);
 }
 
+/**
+ * .home__cat
+ * Individual category buttons.
+ */
 .home__cat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: var(--s2) 4px;
-  border: 1px solid transparent;
+  gap: 8px;
+  padding: var(--s3) 4px;
+  border: 1px solid var(--line); /* Added explicit border */
   border-radius: var(--r-md);
-  background: none;
+  background: var(--surface);
   cursor: pointer;
-  transition: background var(--t), border-color var(--t);
+  transition: all var(--t);
 }
 
-.home__cat:hover { background: var(--surface-sunk); }
-.home__cat.is-active { border-color: var(--ink); background: var(--surface-sunk); }
+.home__cat:hover { 
+  background: var(--surface-sunk); 
+  border-color: var(--line-strong);
+}
+
+/**
+ * .home__cat.is-active
+ * Active state utilizes the energetic Mania Orange border for high visibility.
+ */
+.home__cat.is-active { 
+  border-color: var(--accent); 
+  background: var(--surface-sunk); 
+  box-shadow: 0 0 0 1px var(--accent); /* Faux double border effect */
+}
 
 .home__catglyph {
   display: inline-flex;
@@ -126,16 +246,16 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  font-size: 1.1rem;
+  border-radius: var(--r-sm); /* Sharp square instead of circle */
+  background-color: var(--surface-sunk);
+  font-size: 1.25rem;
 }
 
 .home__catlabel {
-  font-size: 0.68rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-align: center;
   line-height: 1.2;
-  /* Category labels are admin-authored and can be long; keep the grid even. */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -146,50 +266,97 @@
   border: 0;
   background: none;
   cursor: pointer;
-  font-size: 0.76rem;
-  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.home__clear:hover {
   text-decoration: underline;
 }
 
-/* --- Cities -------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   4. CITIES / LOCATION PICKER
+   -------------------------------------------------------------------------- */
 
-.home__nearsub { font-size: 0.82rem; margin-top: var(--s1); }
+.home__nearsub { 
+  font-size: 0.85rem; 
+  margin-top: var(--s1); 
+}
 
-.home__cities { display: flex; flex-direction: column; gap: 4px; margin-top: var(--s4); }
+.home__cities { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+  margin-top: var(--s4); 
+}
 
+/**
+ * .home__city
+ * Individual location selection buttons.
+ * Rounded pill shapes removed in favor of boxy, standard retail lists.
+ */
 .home__city {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--s2);
-  padding: 9px 13px;
-  border: 1px solid transparent;
-  border-radius: var(--r-pill);
-  background: var(--surface-sunk);
+  padding: 12px 16px;
+  border: 1px solid var(--line); /* Added border */
+  border-radius: var(--r-sm); /* Removed pill radius */
+  background: var(--surface);
   cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 580;
+  font-size: 0.9rem;
+  font-weight: 600;
   text-align: left;
+  transition: all var(--t);
 }
 
-.home__city:hover { background: var(--surface); box-shadow: var(--shadow-sm); }
-.home__city.is-active { border-color: var(--ink); background: var(--accent); }
-.home__city.is-active .muted { color: var(--accent-ink); opacity: 0.7; }
+.home__city:hover { 
+  background: var(--surface-sunk); 
+  border-color: var(--line-strong); 
+}
 
-/* --- Stat strip ---------------------------------------------------- */
+.home__city.is-active { 
+  border-color: var(--accent); 
+  background: var(--accent); 
+  color: var(--accent-ink);
+}
 
-.home__strip { margin-bottom: var(--s12); }
+.home__city.is-active .muted { 
+  color: var(--accent-ink); 
+  opacity: 0.8; 
+}
+
+/* --------------------------------------------------------------------------
+   5. STAT STRIP & MANIA SEARCH WIDGET
+   -------------------------------------------------------------------------- */
+
+.home__strip { 
+  margin-bottom: var(--s12); 
+}
 
 .strip__stat,
-.strip__people { display: flex; align-items: center; gap: var(--s4); }
+.strip__people { 
+  display: flex; 
+  align-items: center; 
+  gap: var(--s4); 
+}
 
 .strip__stat strong,
 .strip__people strong,
-.strip__search strong { display: block; font-size: 0.95rem; }
+.strip__search strong { 
+  display: block; 
+  font-size: 1.05rem; 
+}
 
 .strip__stat p,
 .strip__people p,
-.strip__search p { font-size: 0.82rem; margin-top: 2px; }
+.strip__search p { 
+  font-size: 0.85rem; 
+  margin-top: 4px; 
+}
 
 .strip__search {
   display: flex;
@@ -198,16 +365,117 @@
   gap: var(--s5);
 }
 
-.strip__search > div { flex: none; }
-.strip__search .searchpill { max-width: 340px; }
-
-@media (max-width: 700px) {
-  .strip__search { flex-direction: column; align-items: stretch; }
-  .strip__search .searchpill { max-width: none; }
+.strip__search > div { 
+  flex: none; 
 }
 
-/* --- Listings ------------------------------------------------------ */
+/**
+ * .mania-search-widget
+ * Custom styling for the raw input/button search feature added to Home.jsx
+ * This creates a thick, high-contrast, fully united search bar.
+ */
+.mania-search-widget {
+  display: flex;
+  width: 100%;
+  max-width: 380px;
+}
 
-.home__listhead { margin-bottom: var(--s5); align-items: flex-end; }
-.home__listhead p { font-size: 0.85rem; margin-top: var(--s1); }
-.home__list .alert { margin-bottom: var(--s5); }
+.mania-search-input {
+  flex-grow: 1;
+  padding: var(--s2) var(--s4);
+  border: 2px solid var(--accent);
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+  font-size: 0.95rem;
+  outline: none;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.mania-search-btn {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+  border: 2px solid var(--accent);
+  padding: 0 var(--s5);
+  font-weight: 700;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  cursor: pointer;
+  transition: opacity var(--t);
+}
+
+.mania-search-btn:hover {
+  opacity: 0.9;
+}
+
+/* --------------------------------------------------------------------------
+   6. LISTINGS GRID HEADER
+   -------------------------------------------------------------------------- */
+
+.home__listhead { 
+  margin-bottom: var(--s6); 
+  align-items: flex-end; 
+  border-bottom: 2px solid var(--line); /* Strong anchor for the grid */
+  padding-bottom: var(--s4);
+}
+
+.home__listhead h2 {
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.home__listhead p { 
+  font-size: 0.95rem; 
+  margin-top: var(--s1); 
+}
+
+.home__list .alert { 
+  margin-bottom: var(--s5); 
+}
+
+/* --------------------------------------------------------------------------
+   7. RESPONSIVE MEDIA QUERIES
+   -------------------------------------------------------------------------- */
+
+/**
+ * Mobile Hero Breakpoint (< 760px)
+ * Reorders the grid areas so the artwork sits below the title but above 
+ * the subtext and call to action.
+ */
+@media (max-width: 760px) {
+  .hero {
+    grid-template-columns: 1fr;
+    grid-template-areas: 
+      'badge' 
+      'title' 
+      'art' 
+      'lead' 
+      'cta' 
+      'social';
+    padding: var(--s6);
+  }
+  
+  .hero__title { 
+    max-width: none; 
+    font-size: 2.75rem;
+  }
+  
+  .hero__art { 
+    max-width: 100%; 
+    margin: var(--s4) 0;
+  }
+}
+
+/**
+ * Mobile Stat Strip Breakpoint (< 700px)
+ * Stacks the search widget below the introductory text.
+ */
+@media (max-width: 700px) {
+  .strip__search { 
+    flex-direction: column; 
+    align-items: stretch; 
+    text-align: center;
+  }
+  
+  .mania-search-widget { 
+    max-width: none; 
+  }
+}
