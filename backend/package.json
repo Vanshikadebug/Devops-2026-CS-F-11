@@ -52,7 +52,8 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
-    "prisma": "^6.19.2"
+    "prisma": "^6.19.2",
+    "reusehub": "file:.."
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
