@@ -27,12 +27,13 @@
 
 /* --- Sizes --------------------------------------------------- */
 .btn--sm {
-  padding: var(--space-2) var(--space-3);
-  font-size: 0.85rem;
-}
-.btn--md {
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-2) var(--space-4);
   font-size: 0.95rem;
+}
+
+.btn--md {
+  padding: var(--space-3) var(--space-6);
+  font-size: 1.05rem;
 }
 
 .btn--full {
@@ -80,10 +81,31 @@
   color: var(--text-primary);
 }
 
+/* --- NEW ADDITIONS ------------------------------------------- */
+
+/* outline: high-emphasis alternative to secondary, great for "Cancel" or "Filters" */
+.btn--outline {
+  background: transparent;
+  color: var(--green-600);
+  border-color: var(--green-600);
+}
+.btn--outline:hover:not(:disabled) {
+  background: var(--green-600);
+  color: var(--text-inverse);
+}
+
+/* icon-only: perfectly circular button for standalone icons (e.g., a trash can or bookmark) */
+.btn--icon-only {
+  padding: var(--space-2);
+  border-radius: var(--radius-full);
+  /* Ensures the button stays perfectly square/round regardless of the icon inside */
+  aspect-ratio: 1 / 1; 
+}
+
 /* --- Loading spinner inside the button ----------------------- */
 .btn__spinner {
-  width: 0.9em;
-  height: 0.9em;
+  width: 1.2em;
+  height: 1.2em;
   border: 2px solid currentColor;
   /* Hiding one edge is what makes a ring look like it spins. */
   border-top-color: transparent;
