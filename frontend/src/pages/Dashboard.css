@@ -13,18 +13,19 @@
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-5); /* Bumped gap */
   margin-bottom: var(--space-6);
 }
 
 .dashboard__title {
-  font-size: 1.75rem;
+  font-size: 2rem; /* Bumped from 1.75rem */
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 var(--space-1);
+  margin: 0 0 var(--space-2); /* Bumped margin */
 }
 
 .dashboard__subtitle {
+  font-size: 1.05rem; /* Slightly larger text */
   color: var(--text-secondary);
   margin: 0;
 }
@@ -37,14 +38,14 @@
 
 .dashboard__status {
   color: var(--text-muted);
-  font-size: 0.9rem;
-  min-height: 1.2rem;
+  font-size: 1rem; /* Bumped from 0.9rem */
+  min-height: 1.5rem; /* Bumped from 1.2rem */
   margin-bottom: var(--space-4);
 }
 
 /* --- Sections --------------------------------------------------- */
 .dashboard__section {
-  margin-bottom: var(--space-10);
+  margin-bottom: var(--space-12); /* Bumped from 10 to give sections more breathing room */
 }
 
 .dashboard__section-head {
@@ -52,11 +53,11 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-4); /* Bumped gap */
 }
 
 .dashboard__section-title {
-  font-size: 1.1rem;
+  font-size: 1.25rem; /* Bumped from 1.1rem */
   font-weight: 600;
   color: var(--text-primary);
   margin: 0 0 var(--space-4);
@@ -67,7 +68,7 @@
 }
 
 .dashboard__see-all {
-  font-size: 0.9rem;
+  font-size: 1rem; /* Bumped from 0.9rem */
   font-weight: 600;
   color: var(--green-700);
   text-decoration: none;
@@ -85,10 +86,11 @@
 --------------------------------------------------------------- */
 .account-card {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-4) var(--space-6);
+  /* Bumped minmax to 240px for slightly larger cards before they wrap */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-5) var(--space-6);
   margin: 0;
-  padding: var(--space-5);
+  padding: var(--space-6); /* Bumped from 5 */
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -96,16 +98,17 @@
 }
 
 .account-card__row dt {
-  font-size: 0.8rem;
+  font-size: 0.9rem; /* Bumped from 0.8rem */
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--space-2); /* Bumped from 1 */
 }
 
 .account-card__row dd {
   margin: 0;
+  font-size: 1.05rem; /* Made the value text slightly larger */
   color: var(--text-primary);
   /* An email address has no spaces, so a long one would otherwise
      push the card wider than its container on a narrow screen. */
@@ -115,8 +118,9 @@
 /* --- The stat grid ---------------------------------------------- */
 .dashboard__stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: var(--space-4);
+  /* Bumped minmax to 220px to make stat columns wider */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-5); /* Bumped from 4 */
 }
 
 @media (max-width: 640px) {
@@ -126,6 +130,46 @@
   }
 
   .dashboard__title {
-    font-size: 1.5rem;
+    font-size: 1.65rem; /* Bumped from 1.5rem */
   }
+}
+
+/* --- NEW ADDITIONS ------------------------------------------- */
+
+/* 1. Stat Card: A dedicated component for the items inside .dashboard__stats */
+.stat-card {
+  padding: var(--space-5);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.stat-card__label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-card__value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+/* 2. Empty State: Perfect for sections where the user hasn't posted/requested anything yet */
+.dashboard__empty {
+  padding: var(--space-10) var(--space-4);
+  text-align: center;
+  background: var(--gray-50);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-size: 1.05rem;
 }

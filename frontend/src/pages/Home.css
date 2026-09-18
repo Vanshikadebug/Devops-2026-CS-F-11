@@ -29,7 +29,8 @@
  * the header and footer.
  */
 .home { 
-  padding: var(--s4) 0 var(--s10); 
+  /* Bumped top padding from s4 to s5, bottom from s10 to s12 */
+  padding: var(--s5) 0 var(--s12); 
 }
 
 /**
@@ -37,7 +38,8 @@
  * Spacing utility applied to the top BentoGrid to push the stat strip down.
  */
 .home__hero { 
-  margin-bottom: var(--s8); 
+  /* Bumped from s8 to s10 for more breathing room */
+  margin-bottom: var(--s10); 
 }
 
 /* --------------------------------------------------------------------------
@@ -62,8 +64,8 @@
     'cta   art'
     'social art';
   align-content: start;
-  gap: var(--s4) var(--s6);
-  padding: var(--s8);
+  gap: var(--s5) var(--s8); /* Widened grid gaps */
+  padding: var(--s10); /* Bumped from s8 */
   overflow: hidden;
   background-color: var(--surface);
 }
@@ -82,7 +84,7 @@
   max-width: 15ch; /* Limits width to create optimal reading line lengths */
   margin: var(--s2) 0;
   font-family: var(--font-display);
-  font-size: 3.5rem;
+  font-size: 4rem; /* Bumped from 3.5rem */
   line-height: 1.1;
   letter-spacing: -0.03em;
 }
@@ -95,11 +97,11 @@
   grid-area: lead; 
   display: flex; 
   align-items: center; 
-  gap: var(--s4); 
+  gap: var(--s5); /* Bumped from s4 */
 }
 
 .hero__step {
-  font-size: 2.5rem;
+  font-size: 3rem; /* Bumped from 2.5rem */
   font-weight: 800; /* Increased weight for the Mania aesthetic */
   color: var(--muted);
   opacity: 0.3;
@@ -108,14 +110,14 @@
 }
 
 .hero__rule {
-  width: 64px;
-  height: 2px; /* Thicker rule for high contrast */
+  width: 80px; /* Lengthened from 64px */
+  height: 3px; /* Thickened from 2px for even higher contrast */
   background: var(--line-strong);
   flex: none;
 }
 
 .hero__sub { 
-  font-size: 1.1rem; 
+  font-size: 1.2rem; /* Bumped from 1.1rem */
   max-width: 38ch; 
   line-height: 1.6;
 }
@@ -123,7 +125,7 @@
 .hero__cta { 
   grid-area: cta; 
   justify-self: start; 
-  margin-top: var(--s3); 
+  margin-top: var(--s4); /* Bumped from s3 */
 }
 
 /**
@@ -135,7 +137,7 @@
   align-self: center;
   justify-self: center;
   width: 100%;
-  max-width: 380px;
+  max-width: 420px; /* Increased from 380px to match larger text */
 }
 
 .hero__img { 
@@ -163,9 +165,9 @@
   grid-area: social;
   display: flex;
   align-items: center;
-  gap: var(--s2);
-  margin-top: var(--s5);
-  font-size: 0.85rem;
+  gap: var(--s3); /* Bumped from s2 */
+  margin-top: var(--s6); /* Bumped from s5 */
+  font-size: 0.95rem; /* Bumped from 0.85rem */
 }
 
 /**
@@ -177,12 +179,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 40px; /* Bumped from 32px for better touch targets */
+  height: 40px; /* Bumped from 32px */
   border-radius: var(--r-sm); /* Replaced 50% circle with sharp square */
   background: var(--surface-sunk);
   color: var(--ink);
-  font-size: 0.85rem;
+  font-size: 1rem; /* Bumped from 0.85rem */
   font-weight: 700;
   text-decoration: none;
   transition: background var(--t), color var(--t);
@@ -204,8 +206,8 @@
 .home__cats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--s2);
-  margin-top: var(--s4);
+  gap: var(--s3); /* Bumped from s2 */
+  margin-top: var(--s5); /* Bumped from s4 */
 }
 
 /**
@@ -216,9 +218,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: var(--s3) 4px;
-  border: 1px solid var(--line); /* Added explicit border */
+  gap: 12px; /* Bumped from 8px */
+  padding: var(--s4) 8px; /* Increased vertical padding */
+  border: 2px solid var(--line); /* Thickened border from 1px to 2px */
   border-radius: var(--r-md);
   background: var(--surface);
   cursor: pointer;
@@ -237,22 +239,23 @@
 .home__cat.is-active { 
   border-color: var(--accent); 
   background: var(--surface-sunk); 
-  box-shadow: 0 0 0 1px var(--accent); /* Faux double border effect */
+  /* Faux double border effect scaled to match 2px base border */
+  box-shadow: 0 0 0 2px var(--accent); 
 }
 
 .home__catglyph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 48px; /* Bumped from 40px */
+  height: 48px; /* Bumped from 40px */
   border-radius: var(--r-sm); /* Sharp square instead of circle */
   background-color: var(--surface-sunk);
-  font-size: 1.25rem;
+  font-size: 1.5rem; /* Bumped from 1.25rem */
 }
 
 .home__catlabel {
-  font-size: 0.75rem;
+  font-size: 0.85rem; /* Bumped from 0.75rem */
   font-weight: 700;
   text-align: center;
   line-height: 1.2;
@@ -266,7 +269,7 @@
   border: 0;
   background: none;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.9rem; /* Bumped from 0.8rem */
   font-weight: 600;
   color: var(--accent);
   text-decoration: none;
@@ -281,15 +284,15 @@
    -------------------------------------------------------------------------- */
 
 .home__nearsub { 
-  font-size: 0.85rem; 
-  margin-top: var(--s1); 
+  font-size: 0.95rem; /* Bumped from 0.85rem */
+  margin-top: var(--s2); 
 }
 
 .home__cities { 
   display: flex; 
   flex-direction: column; 
-  gap: 8px; 
-  margin-top: var(--s4); 
+  gap: 12px; /* Bumped from 8px */
+  margin-top: var(--s5); 
 }
 
 /**
@@ -301,13 +304,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--s2);
-  padding: 12px 16px;
-  border: 1px solid var(--line); /* Added border */
+  gap: var(--s3);
+  padding: 16px 20px; /* Bumped from 12px 16px */
+  border: 2px solid var(--line); /* Thickened from 1px */
   border-radius: var(--r-sm); /* Removed pill radius */
   background: var(--surface);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem; /* Bumped from 0.9rem */
   font-weight: 600;
   text-align: left;
   transition: all var(--t);
@@ -334,27 +337,27 @@
    -------------------------------------------------------------------------- */
 
 .home__strip { 
-  margin-bottom: var(--s12); 
+  margin-bottom: var(--s14); /* Bumped from s12 */
 }
 
 .strip__stat,
 .strip__people { 
   display: flex; 
   align-items: center; 
-  gap: var(--s4); 
+  gap: var(--s5); /* Bumped from s4 */
 }
 
 .strip__stat strong,
 .strip__people strong,
 .strip__search strong { 
   display: block; 
-  font-size: 1.05rem; 
+  font-size: 1.2rem; /* Bumped from 1.05rem */
 }
 
 .strip__stat p,
 .strip__people p,
 .strip__search p { 
-  font-size: 0.85rem; 
+  font-size: 0.95rem; /* Bumped from 0.85rem */
   margin-top: 4px; 
 }
 
@@ -362,7 +365,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--s5);
+  gap: var(--s6); /* Bumped from s5 */
 }
 
 .strip__search > div { 
@@ -377,26 +380,28 @@
 .mania-search-widget {
   display: flex;
   width: 100%;
-  max-width: 380px;
+  max-width: 420px; /* Bumped from 380px */
 }
 
 .mania-search-input {
   flex-grow: 1;
-  padding: var(--s2) var(--s4);
+  padding: var(--s3) var(--s5); /* Bumped from s2 s4 */
   border: 2px solid var(--accent);
   border-radius: var(--r-sm) 0 0 var(--r-sm);
-  font-size: 0.95rem;
+  font-size: 1.05rem; /* Bumped from 0.95rem */
   outline: none;
   background: var(--surface);
   color: var(--ink);
+  transition: box-shadow var(--t);
 }
 
 .mania-search-btn {
   background-color: var(--accent);
   color: var(--accent-ink);
   border: 2px solid var(--accent);
-  padding: 0 var(--s5);
+  padding: 0 var(--s6); /* Bumped from s5 */
   font-weight: 700;
+  font-size: 1.05rem;
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
   cursor: pointer;
   transition: opacity var(--t);
@@ -411,35 +416,30 @@
    -------------------------------------------------------------------------- */
 
 .home__listhead { 
-  margin-bottom: var(--s6); 
+  margin-bottom: var(--s8); /* Bumped from s6 */
   align-items: flex-end; 
-  border-bottom: 2px solid var(--line); /* Strong anchor for the grid */
-  padding-bottom: var(--s4);
+  border-bottom: 3px solid var(--line); /* Thickened from 2px */
+  padding-bottom: var(--s5); /* Bumped from s4 */
 }
 
 .home__listhead h2 {
-  font-size: 2rem;
+  font-size: 2.5rem; /* Bumped from 2rem */
   letter-spacing: -0.02em;
 }
 
 .home__listhead p { 
-  font-size: 0.95rem; 
-  margin-top: var(--s1); 
+  font-size: 1.05rem; /* Bumped from 0.95rem */
+  margin-top: var(--s2); /* Bumped from s1 */
 }
 
 .home__list .alert { 
-  margin-bottom: var(--s5); 
+  margin-bottom: var(--s6); /* Bumped from s5 */
 }
 
 /* --------------------------------------------------------------------------
    7. RESPONSIVE MEDIA QUERIES
    -------------------------------------------------------------------------- */
 
-/**
- * Mobile Hero Breakpoint (< 760px)
- * Reorders the grid areas so the artwork sits below the title but above 
- * the subtext and call to action.
- */
 @media (max-width: 760px) {
   .hero {
     grid-template-columns: 1fr;
@@ -455,19 +455,15 @@
   
   .hero__title { 
     max-width: none; 
-    font-size: 2.75rem;
+    font-size: 3rem; /* Scaled down slightly for mobile, but larger than original */
   }
   
   .hero__art { 
     max-width: 100%; 
-    margin: var(--s4) 0;
+    margin: var(--s5) 0;
   }
 }
 
-/**
- * Mobile Stat Strip Breakpoint (< 700px)
- * Stacks the search widget below the introductory text.
- */
 @media (max-width: 700px) {
   .strip__search { 
     flex-direction: column; 
@@ -478,4 +474,40 @@
   .mania-search-widget { 
     max-width: none; 
   }
+}
+
+/* --------------------------------------------------------------------------
+   8. NEW ADDITIONS
+   -------------------------------------------------------------------------- */
+
+/**
+ * Accessibility Improvement: Search Focus
+ * Ensures keyboard and screen-reader users see a clear focus state 
+ * without relying solely on the accent border.
+ */
+.mania-search-input:focus {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/**
+ * .mania-tag
+ * A sharp, retail-style tag component. Perfect for adding "New" or "Hot" 
+ * labels to your Hero section or individual Item Cards.
+ */
+.mania-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 2px; /* Intentionally sharp */
+  vertical-align: middle;
+}
+
+.mania-tag--accent {
+  background: var(--accent);
+  color: var(--accent-ink);
 }
