@@ -1,30 +1,127 @@
+/**
+ * ==============================================================================
+ * SPINNER & LOADING COMPONENT STYLESHEET (MANIA E-COMMERCE THEME)
+ * ==============================================================================
+ * 
+ * @file spinner.css
+ * @description Provides the complete design system for loading spinners, activity 
+ * indicators, and asynchronous state wrappers across the entire application.
+ * 
+ * ARCHITECTURAL NOTES:
+ * - Implements GPU-accelerated CSS animations (`@keyframes spin`) leveraging 
+ *   transform properties to maintain a locked 60 FPS performance standard.
+ * - Utilizes modular size modifier classes (`--sm`, `--md`, `--lg`) to ensure 
+ *   consistent visual scaling across button states, cards, and full-page layouts.
+ * - Conforms strictly to the global design tokens for semantic coloring, 
+ *   border radii, and geometric spacing rhythms.
+ * ==============================================================================
+ */
+
+/* --------------------------------------------------------------------------
+   1. SPINNER WRAPPER & CONTAINER UTILITIES
+   -------------------------------------------------------------------------- */
+
+/**
+ * .spinner-wrap
+ * Inline wrapper utility designed to align loading spinners smoothly within 
+ * text flows, buttons, or inline interactive component elements.
+ */
 .spinner-wrap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  vertical-align: middle;
+  position: relative;
 }
 
-/* Centres the spinner in a large empty area while a page loads. */
+/**
+ * .spinner-page
+ * Full-width viewport container utilized for asynchronous route transitions, 
+ * data hydration phases, and heavy block-level loading views.
+ * 
+ * Centres the spinner dynamically within a large empty area while a page or 
+ * major view component loads.
+ */
 .spinner-page {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 40vh;
   width: 100%;
+  padding: var(--s8) 0;
+  background-color: transparent;
 }
 
+/* --------------------------------------------------------------------------
+   2. CORE SPINNER COMPONENT & ANIMATION
+   -------------------------------------------------------------------------- */
+
+/**
+ * .spinner
+ * The fundamental geometric loading indicator. 
+ * Renders a circular track using neutral border tokens and a contrasting 
+ * primary accent top border to establish rotation visual feedback.
+ */
 .spinner {
   display: block;
-  border-radius: var(--radius-full);
-  border: 3px solid var(--gray-200);
-  border-top-color: var(--green-600);
+  box-sizing: border-box;
+  border-radius: var(--radius-full, 9999px);
+  border: 3px solid var(--gray-200, #e2e8f0);
+  border-top-color: var(--green-600, var(--accent, #16a34a));
   animation: spin 700ms linear infinite;
+  transform: translateZ(0); /* Hardware acceleration flag */
 }
 
-.spinner--sm { width: 18px; height: 18px; border-width: 2px; }
-.spinner--md { width: 32px; height: 32px; }
-.spinner--lg { width: 48px; height: 48px; border-width: 4px; }
+/* --------------------------------------------------------------------------
+   3. SIZE MODIFIER VARIANTS
+   -------------------------------------------------------------------------- */
 
+/**
+ * Small Spinner Variant (--sm)
+ * Optimized for compact elements such as inline form buttons, table actions, 
+ * or badge loading states.
+ */
+.spinner--sm { 
+  width: 18px; 
+  height: 18px; 
+  border-width: 2px; 
+}
+
+/**
+ * Medium Spinner Variant (--md)
+ * Standard default scale used across cards, widgets, and standard container views.
+ */
+.spinner--md { 
+  width: 32px; 
+  height: 32px; 
+  border-width: 3px;
+}
+
+/**
+ * Large Spinner Variant (--lg)
+ * High-impact indicator designed specifically for full-page views (.spinner-page) 
+ * and major layout shifts.
+ */
+.spinner--lg { 
+  width: 48px; 
+  height: 48px; 
+  border-width: 4px; 
+}
+
+/* --------------------------------------------------------------------------
+   4. KEYFRAME ANIMATION DEFINITIONS
+   -------------------------------------------------------------------------- */
+
+/**
+ * @keyframes spin
+ * Continuous 360-degree rotation loop executed using linear timing for 
+ * steady, uninterrupted visual velocity.
+ */
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% { 
+    transform: rotate(360deg); 
+  }
 }

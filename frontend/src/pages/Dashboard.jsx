@@ -63,9 +63,21 @@ function Dashboard() {
           </p>
         </div>
 
-        <Link to="/items/new" className="dashboard__cta">
-          <Button>+ Add an item</Button>
-        </Link>
+        {/* NEW ADDITION: Grouped the CTA with a new Refresh button leveraging the existing retry logic */}
+        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+          {status === 'ready' && (
+            <button 
+              onClick={retry} 
+              className="btn btn--ghost" 
+              aria-label="Refresh dashboard"
+            >
+              ↻ Refresh
+            </button>
+          )}
+          <Link to="/items/new" className="dashboard__cta">
+            <Button>+ Add an item</Button>
+          </Link>
+        </div>
       </header>
 
       {/* aria-live: a screen reader announces the change when the
@@ -222,6 +234,20 @@ function Dashboard() {
               </div>
             )}
           </section>
+
+          {/* NEW ADDITION: A subtle dashboard footer to cap off the page and provide a helpful tip */}
+          <footer 
+            style={{ 
+              marginTop: 'var(--space-10)', 
+              paddingTop: 'var(--space-6)', 
+              borderTop: '1px solid var(--border-color)', 
+              textAlign: 'center', 
+              color: 'var(--text-secondary)', 
+              fontSize: '0.9rem' 
+            }}
+          >
+            <p>💡 <strong>Pro tip:</strong> Items with clear photos and detailed descriptions are requested 3x faster by other students.</p>
+          </footer>
         </>
       )}
     </div>

@@ -1,19 +1,109 @@
+/**
+ * ==============================================================================
+ * APPLICATION ROOT STYLESHEET (MANIA E-COMMERCE THEME)
+ * ==============================================================================
+ * 
+ * @file App.css
+ * @description Establishes the global layout skeleton for the entire React 
+ * application. Implements a sticky footer pattern using a flexbox column layout 
+ * and defines styles for global announcement banners and admin view wrappers.
+ * 
+ * ARCHITECTURAL NOTES:
+ * - Ensures that the application root always spans at least 100% of the viewport 
+ *   height (min-height: 100vh), preventing footer layout jitter on short pages.
+ * - Adheres strictly to the global spacing rhythm and semantic color tokens 
+ *   defined in `tokens.css`.
+ * ==============================================================================
+ */
+
+/* --------------------------------------------------------------------------
+   1. ROOT APPLICATION CONTAINER
+   -------------------------------------------------------------------------- */
+
+/**
+ * .app
+ * The primary flex container wrapping the entire component tree.
+ * Enforces a vertical column flow ensuring the header, main content, and footer 
+ * stack correctly while stretching to fill the full viewport height.
+ */
 .app {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  position: relative;
+  overflow-x: hidden;
 }
 
-.app__main { flex: 1; }
+/* --------------------------------------------------------------------------
+   2. MAIN CONTENT VIEWPORTS
+   -------------------------------------------------------------------------- */
 
-/* The admin panel supplies its own chrome, so it gets the full viewport. */
-.app__main--bare { display: flex; }
+/**
+ * .app__main
+ * The flexible center content area.
+ * `flex: 1` acts as a powerful layout trick, forcing this container to absorb 
+ * all leftover vertical space between the navigation header and the footer, 
+ * effectively pinning the footer to the bottom of the screen.
+ */
+.app__main { 
+  flex: 1; 
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
 
+/**
+ * .app__main--bare
+ * Specialized variant for administrative dashboards or immersive full-screen views.
+ * The admin panel supplies its own navigation chrome and layout structure, 
+ * so it bypasses standard padding and adopts a full viewport flex display.
+ */
+.app__main--bare { 
+  display: flex; 
+  flex-direction: row;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* --------------------------------------------------------------------------
+   3. GLOBAL ANNOUNCEMENT & WARNING BANNERS
+   -------------------------------------------------------------------------- */
+
+/**
+ * .app__banner
+ * Full-width top notification banner used for system-wide notices, maintenance 
+ * warnings, or promotional alerts.
+ * Utilizes the warning background and ink tokens to ensure high visual contrast 
+ * and immediate user attention.
+ */
 .app__banner {
   padding: var(--s3) var(--s6);
-  background: var(--warn-bg);
+  background-color: var(--warn-bg);
   color: var(--warn-ink);
   text-align: center;
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 600;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid rgba(138, 90, 6, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  z-index: 50;
+}
+
+/**
+ * Optional interactive links or close actions inside the global banner.
+ */
+.app__banner a {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+.app__banner a:hover {
+  opacity: 0.8;
 }
