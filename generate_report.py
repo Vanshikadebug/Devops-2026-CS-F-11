@@ -23,7 +23,7 @@ from reportlab.platypus import (
 # ---------------------------------------------------------
 
 START_DATE = "2026-07-01"
-END_DATE = "2026-08-31"
+END_DATE = "2026-20-18"
 
 
 def run_git_command(command):
