@@ -160,7 +160,7 @@ pipeline {
   steps {
     script {
       def commitMessage = bat(
-        script: 'git log -1 --pretty=%B',
+        script: 'git log -1 --pretty=%%B',
         returnStdout: true
       ).trim()
 
@@ -300,6 +300,7 @@ Jenkins Job   : ${env.JOB_NAME}
 
 ========================================
 """
+bat 'if not exist feedback mkdir feedback'
 
             writeFile(
                 file: 'feedback/feedback.txt',
