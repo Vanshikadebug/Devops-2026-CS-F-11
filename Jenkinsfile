@@ -190,23 +190,14 @@ pipeline {
 
 
     stage('Database - Schema + Seed + Migrate') {
-      steps {
+    steps {
         dir('backend') {
-          // Same three steps a developer runs locally, in the same order:
-          //   setup   -> build the schema from database/schema.sql, but into
-          //              reusehub_ci (DB_NAME), never the dev `reusehub`
-          //   seed    -> insert the demo rows the suite logs in as
-          //              (e.g. aarav@example.com, used by several tests)
-          //   migrate -> apply the additive, idempotent later-phase changes
-          // These scripts use the mysql2 driver and read DB_* from the
-          // environment above, so they act on reusehub_ci only.
-          bat 'npm run db:setup'
-          bat 'npm run db:seed'
-          bat 'npm run db:migrate'
+            bat 'npm run db:generate'
+            bat 'npm run db:migrate'
+            bat 'npm run db:seed'
         }
-      }
     }
-
+}
    stage('Backend - Test (341)') {
     steps {
         script {
