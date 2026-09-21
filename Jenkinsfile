@@ -187,19 +187,7 @@ pipeline {
       }
     }
 
-    stage('Database - Wait for MySQL') {
-      steps {
-        // No container to launch anymore -- the local MySQL80 service is
-        // already running. wait-for-db stays as a fast, honest readiness AND
-        // credentials check: it connects with the CI account above and, if
-        // the service is down or database/ci-setup.sql was never run, fails
-        // HERE with a clear message instead of deep inside db:setup. When
-        // MySQL is up (the normal case) it returns almost immediately.
-        dir('backend') {
-          bat 'node scripts/wait-for-db.js'
-        }
-      }
-    }
+
 
     stage('Database - Schema + Seed + Migrate') {
       steps {
