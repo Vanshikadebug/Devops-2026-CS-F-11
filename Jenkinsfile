@@ -193,11 +193,11 @@ pipeline {
     steps {
         dir('backend') {
             bat 'npm run db:generate'
-            bat 'npm run db:migrate'
-            bat 'npm run db:seed'
+            bat 'npm run db:reset'
         }
     }
 }
+
    stage('Backend - Test (341)') {
     steps {
         script {
