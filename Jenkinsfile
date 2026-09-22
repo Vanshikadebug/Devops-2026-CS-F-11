@@ -205,7 +205,7 @@ pipeline {
 
             try {
                 dir('backend') {
-                    bat 'npm run test:ci'
+                    bat 'npm test'
                 }
             } catch (Exception e) {
                 env.TEST_STATUS = 'FAILED'
