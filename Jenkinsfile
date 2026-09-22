@@ -214,11 +214,11 @@ pipeline {
         }
     }
 
-    post {
-        always {
-           // junit 'backend/reports/junit.xml'
-        }
+   post {
+    always {
+        echo 'Backend tests completed.'
     }
+}
 }
 
     stage('Frontend - Install') {
