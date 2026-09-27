@@ -1,100 +1,441 @@
-/* AuthForm.css -- shared styling for Login and Register.
+/* =========================================================
+   ReUseHub Authentication
+   Shared Login + Register Styling
+   ========================================================= */
 
-   ONE STYLESHEET, TWO PAGES. The forms differ only in how many
-   fields they have, so duplicating this into Login.css and
-   Register.css would guarantee they eventually drift apart -- one
-   card 480px wide, the other 460px, for no reason anyone remembers.
 
-   Every value below comes from the tokens in index.css. */
+/* =========================================================
+   PAGE
+   ========================================================= */
 
 .auth {
+  min-height: calc(100vh - 64px);
+
   display: flex;
   justify-content: center;
-  /* Centres the card horizontally and gives it breathing room at the
-     top, without vertical centering -- a tall form (Register has five
-     fields) would otherwise push its own heading off the top of the
-     screen on a short laptop display. */
-  padding: var(--space-10) var(--space-4) var(--space-16);
+  align-items: flex-start;
+
+  padding: 3.5rem 1.5rem 5rem;
+
+  background:
+    radial-gradient(
+      circle at 10% 30%,
+      rgba(16, 185, 129, 0.08),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 70%,
+      rgba(20, 184, 166, 0.06),
+      transparent 30%
+    ),
+    #f8fafc;
 }
+
+
+/* =========================================================
+   AUTH CARD
+   ========================================================= */
 
 .auth__card {
   width: 100%;
-  max-width: 26rem;
-  padding: var(--space-8);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  max-width: 470px;
+
+  padding: 2.5rem 2.75rem;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 20px 50px rgba(15, 23, 42, 0.08),
+    0 4px 12px rgba(15, 23, 42, 0.04);
 }
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
 
 .auth__header {
-  margin-bottom: var(--space-6);
+  margin-bottom: 2rem;
+
+  text-align: left;
 }
+
 
 .auth__title {
-  margin-bottom: var(--space-1);
+  margin: 0 0 0.5rem;
+
+  color: #111827;
+
+  font-size: 2rem;
+
+  line-height: 1.2;
+
+  font-weight: 750;
+
+  letter-spacing: -0.035em;
 }
+
 
 .auth__subtitle {
-  color: var(--text-secondary);
-  font-size: 0.9375rem;
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 0.95rem;
+
+  line-height: 1.6;
 }
 
-/* A grid, not a stack of margins: the gap between fields is declared
-   once here rather than as a margin on every field. */
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
 .auth__form {
   display: grid;
-  gap: var(--space-4);
+
+  gap: 1.25rem;
 }
 
-/* The form-level error: a failed login, a duplicate email, an
-   unreachable server. Field-level errors live under their own field
-   (see FormField.css) -- this is for problems that belong to the
-   whole submission. */
-.auth__alert {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--red-100);
-  border-left: 3px solid var(--red-500);
-  border-radius: var(--radius-sm);
-  background: var(--red-50);
-  color: var(--red-700);
-  font-size: 0.875rem;
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+.auth__form input,
+.auth__form select,
+.auth__form textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  min-height: 48px;
+
+  padding: 0.75rem 0.9rem;
+
+  background: #ffffff;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 9px;
+
+  color: #111827;
+
+  font-family: inherit;
+
+  font-size: 0.94rem;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
+
+.auth__form input::placeholder,
+.auth__form textarea::placeholder {
+  color: #9ca3af;
+}
+
+
+/* Hover */
+
+.auth__form input:hover,
+.auth__form select:hover,
+.auth__form textarea:hover {
+  border-color: #9ca3af;
+}
+
+
+/* Focus */
+
+.auth__form input:focus,
+.auth__form select:focus,
+.auth__form textarea:focus {
+  border-color: #059669;
+
+  box-shadow:
+    0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+
+/* =========================================================
+   LABELS
+   ========================================================= */
+
+.auth__form label {
+  display: block;
+
+  margin-bottom: 0.45rem;
+
+  color: #374151;
+
+  font-size: 0.875rem;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+.auth__alert {
+  padding: 0.8rem 0.95rem;
+
+  border: 1px solid #fecaca;
+
+  border-left: 3px solid #ef4444;
+
+  border-radius: 8px;
+
+  background: #fef2f2;
+
+  color: #b91c1c;
+
+  font-size: 0.875rem;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   SUBMIT BUTTON
+   ========================================================= */
+
+.auth__form button[type="submit"] {
+  width: 100%;
+
+  min-height: 48px;
+
+  margin-top: 0.25rem;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #059669;
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 0.95rem;
+
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.auth__form button[type="submit"]:hover {
+  background: #047857;
+
+  box-shadow:
+    0 8px 18px rgba(5, 150, 105, 0.2);
+
+  transform: translateY(-1px);
+}
+
+
+.auth__form button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+
+.auth__form button[type="submit"]:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+
+  transform: none;
+
+  box-shadow: none;
+}
+
+
+/* =========================================================
+   LOGIN / REGISTER SWITCH
+   ========================================================= */
 
 .auth__switch {
-  margin-top: var(--space-6);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  font-size: 0.9375rem;
+  margin-top: 1.75rem;
+
+  padding-top: 1.4rem;
+
+  border-top: 1px solid #e5e7eb;
+
+  color: #6b7280;
+
+  font-size: 0.9rem;
+
   text-align: center;
 }
 
-/* --- The full-page "checking your session" state ----------------
-   Rendered by ProtectedRoute while AuthProvider asks /api/auth/me
-   who the stored token belongs to. Usually a few hundred
-   milliseconds; visible on a slow connection.
 
-   min-height keeps the footer from jumping up the page and back
-   down again as this is replaced by the real content. */
-.auth__checking {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
+.auth__switch a {
+  margin-left: 0.25rem;
+
+  color: #047857;
+
+  font-weight: 650;
+
+  text-decoration: none;
 }
 
-@media (max-width: 480px) {
+
+.auth__switch a:hover {
+  color: #065f46;
+
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   OPTIONAL ACTIONS
+   ========================================================= */
+
+.auth__actions {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-top: -0.25rem;
+
+  font-size: 0.85rem;
+}
+
+
+.auth__actions a {
+  color: #047857;
+
+  font-weight: 600;
+
+  text-decoration: none;
+}
+
+
+.auth__actions a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   FIELD ERRORS
+   ========================================================= */
+
+.auth__form input[aria-invalid="true"],
+.auth__form select[aria-invalid="true"],
+.auth__form textarea[aria-invalid="true"] {
+  border-color: #ef4444;
+}
+
+
+.auth__form input[aria-invalid="true"]:focus,
+.auth__form select[aria-invalid="true"]:focus,
+.auth__form textarea[aria-invalid="true"]:focus {
+  border-color: #ef4444;
+
+  box-shadow:
+    0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+
+/* =========================================================
+   SESSION CHECKING
+   ========================================================= */
+
+.auth__checking {
+  min-height: 60vh;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  color: #6b7280;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
   .auth {
-    padding: var(--space-6) var(--space-3) var(--space-12);
+    min-height: calc(100vh - 56px);
+
+    padding: 2rem 1rem 3rem;
+
+    background: #f8fafc;
   }
 
-  /* On a narrow phone the card border and shadow just eat width, so
-     the form fills the screen instead. */
+
   .auth__card {
-    padding: var(--space-6) var(--space-4);
+    max-width: 100%;
+
+    padding: 2rem 1.5rem;
+
+    border-radius: 14px;
+  }
+
+
+  .auth__title {
+    font-size: 1.7rem;
+  }
+
+
+  .auth__subtitle {
+    font-size: 0.9rem;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 400px) {
+
+  .auth {
+    padding: 1rem 0.75rem 2rem;
+  }
+
+
+  .auth__card {
+    padding: 1.75rem 1.15rem;
+
     border: none;
+
     box-shadow: none;
-    background: transparent;
+  }
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .auth__form input,
+  .auth__form select,
+  .auth__form textarea,
+  .auth__form button[type="submit"] {
+    transition: none;
   }
 }
