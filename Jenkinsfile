@@ -251,8 +251,8 @@ pipeline {
       steps {
         dir('docker_practice') {
           echo 'Deploying Docker Practice containers...'
-          bat 'docker-compose down'
-          bat 'docker-compose up -d --build'
+          bat 'docker compose down'
+          bat 'docker compose up -d --build'
         }
       }
     }
