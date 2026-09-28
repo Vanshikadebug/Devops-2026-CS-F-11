@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Student Registration Portal with constraint validation and registered student directory.">
+  <title>Student Registration Portal</title>
+  
+  <!-- External CSS stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Feather Icons SVG helper -->
+  <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Theme Switcher -->
+    <div class="theme-toggle-wrapper">
+      <button type="button" id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle Theme">
+        <i data-feather="sun" id="themeIcon"></i>
+        <span id="themeText">Light Mode</span>
+      </button>
+    </div>
+
+    <!-- Main Registration Card -->
+    <main class="register-card">
+      <header class="form-header">
+        <h1>Student Registration</h1>
+        <p>Please enter your details to complete registration.</p>
+      </header>
+
+      <form id="registrationForm" class="registration-form" novalidate>
+        
+        <!-- Student Name -->
+        <div class="form-group" id="nameGroup">
+          <label for="name">Full Name <span class="required-star">*</span></label>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="name" 
+              name="name" 
+              class="form-input" 
+              placeholder="e.g. Yash Mittal" 
+              required
+              autocomplete="name"
+            >
+            <span class="input-icon"><i data-feather="user"></i></span>
+          </div>
+          <div class="error-message" id="nameError">
+            <i data-feather="alert-circle"></i>
+            <span>Name cannot be empty.</span>
+          </div>
+        </div>
+
+        <!-- Mobile Number -->
+        <div class="form-group" id="mobileGroup">
+          <label for="mobile">Mobile Number <span class="required-star">*</span></label>
+          <div class="input-wrapper">
+            <input 
+              type="tel" 
+              id="mobile" 
+              name="mobile" 
+              class="form-input" 
+              placeholder="10-digit mobile number" 
+              required
+              pattern="^[0-9]{10}$"
+              maxlength="10"
+              autocomplete="tel"
+            >
+            <span class="input-icon"><i data-feather="phone"></i></span>
+          </div>
+          <div class="error-message" id="mobileError">
+            <i data-feather="alert-circle"></i>
+            <span>Mobile number must be strictly 10 digits.</span>
+          </div>
+        </div>
+
+        <!-- Email Address -->
+        <div class="form-group" id="emailGroup">
+          <label for="email">Email Address <span class="required-star">*</span></label>
+          <div class="input-wrapper">
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              class="form-input" 
+              placeholder="student@gmail.com" 
+              required
+              pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$"
+              autocomplete="email"
+            >
+            <span class="input-icon"><i data-feather="mail"></i></span>
+          </div>
+          <div class="error-message" id="emailError">
+            <i data-feather="alert-circle"></i>
+            <span>Email must strictly end with @gmail.com</span>
+          </div>
+        </div>
+
+        <!-- Academic Branch Dropdown -->
+        <div class="form-group" id="branchGroup">
+          <label for="branch">Select Branch <span class="required-star">*</span></label>
+          <div class="input-wrapper">
+            <select id="branch" name="branch" class="form-input select-input" required>
+              <option value="" disabled selected>-- Choose your branch --</option>
+              <option value="CSE">Computer Science & Engineering (CSE)</option>
+              <option value="CSE-AI">CSE - Artificial Intelligence & ML (CSE-AI)</option>
+              <option value="ECE">Electronics & Communication (ECE)</option>
+              <option value="IT">Information Technology (IT)</option>
+              <option value="ME">Mechanical Engineering (ME)</option>
+              <option value="CE">Civil Engineering (CE)</option>
+            </select>
+            <span class="input-icon"><i data-feather="book-open"></i></span>
+          </div>
+          <div class="error-message" id="branchError">
+            <i data-feather="alert-circle"></i>
+            <span>Please select a branch. Field cannot be empty.</span>
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group" id="passwordGroup">
+          <label for="password">Password <span class="required-star">*</span></label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="form-input" 
+              placeholder="6-char strong password" 
+              required
+              minlength="6"
+              maxlength="6"
+              autocomplete="new-password"
+            >
+            <span class="input-icon"><i data-feather="lock"></i></span>
+            <button type="button" class="toggle-password" id="togglePasswordBtn" title="Toggle password visibility">
+              <i data-feather="eye" id="passwordEyeIcon"></i>
+            </button>
+          </div>
+          <div class="error-message" id="passwordError">
+            <i data-feather="alert-circle"></i>
+            <span>Password must be a strong 6-character code.</span>
+          </div>
+
+          <!-- Password Constraints & Strength Meter -->
+          <div class="password-requirements">
+            <div class="strength-meter-wrapper">
+              <div class="strength-meter-label">
+                <span>Password Strength</span>
+                <span id="strengthText">Weak</span>
+              </div>
+              <div class="strength-meter-bg">
+                <div class="strength-meter-fill" id="strengthBar"></div>
+              </div>
+            </div>
+
+            <ul class="requirements-list">
+              <li class="requirement-item" id="reqMinLength">
+                <span class="req-icon">✓</span> Strictly 6 characters
+              </li>
+              <li class="requirement-item" id="reqUppercase">
+                <span class="req-icon">✓</span> Capital letter (A-Z)
+              </li>
+              <li class="requirement-item" id="reqLowercase">
+                <span class="req-icon">✓</span> Lowercase letter (a-z)
+              </li>
+              <li class="requirement-item" id="reqNumber">
+                <span class="req-icon">✓</span> Number (0-9)
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <span>Submit Registration</span>
+          <i data-feather="arrow-right"></i>
+        </button>
+      </form>
+    </main>
+
+    <!-- Registered Students List / Directory -->
+    <section class="students-section">
+      <div class="students-header">
+        <h2>Registered Students</h2>
+        <span class="badge" id="studentCount">5 Students</span>
+      </div>
+      <div class="table-responsive">
+        <table class="students-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Mobile</th>
+              <th>Email</th>
+              <th>Branch</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody">
+            <!-- Dynamic student rows loaded from students.json and form submits -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Success Confirmation Modal -->
+  <div class="modal-overlay" id="successModal">
+    <div class="modal-card">
+      <div class="success-badge">
+        <i data-feather="check"></i>
+      </div>
+      <h2>Registration Successful!</h2>
+      <p id="modalDescription">Student record has been successfully verified and added to the directory.</p>
+      <button type="button" class="close-modal-btn" id="closeModalBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- External JavaScript logic -->
+  <script src="script.js"></script>
+</body>
+</html>
+<!-- my name is yash -->

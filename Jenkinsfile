@@ -246,6 +246,16 @@ pipeline {
         archiveArtifacts artifacts: 'frontend/dist/**', fingerprint: true, allowEmptyArchive: false
       }
     }
+
+    stage('Docker Practice') {
+      steps {
+        dir('docker_practice') {
+          echo 'Deploying Docker Practice containers...'
+          bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down'
+          bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d --build'
+        }
+      }
+    }
   }
 
   post {
