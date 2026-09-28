@@ -1,0 +1,58 @@
+[
+  {
+    "id": "STU001",
+    "name": "Aarav Sharma",
+    "mobile": "9876543210",
+    "email": "aarav.sharma@gmail.com",
+    "branch": "CSE",
+    "password": "Pass12"
+  },
+  {
+    "id": "STU002",
+    "name": "Ananya Patel",
+    "mobile": "9812345678",
+    "email": "ananya.patel@gmail.com",
+    "branch": "CSE-AI",
+    "password": "Pass12"
+  },
+  {
+    "id": "STU003",
+    "name": "Rohan Verma",
+    "mobile": "9765432109",
+    "email": "rohan.verma@gmail.com",
+    "branch": "ECE",
+    "password": "Pass12"
+  },
+  {
+    "id": "STU004",
+    "name": "Priya Singh",
+    "mobile": "9654321098",
+    "email": "priya.singh@gmail.com",
+    "branch": "IT",
+    "password": "Pass12"
+  },
+  {
+    "id": "STU005",
+    "name": "Karan Gupta",
+    "mobile": "9543210987",
+    "email": "karan.gupta@gmail.com",
+    "branch": "ME",
+    "password": "Pass12"
+  },
+  {
+    "id": "STU006",
+    "name": "fyuvvhj",
+    "mobile": "4978794456",
+    "email": "hvhvjhv@gmail.com",
+    "branch": "CSE-AI",
+    "password": "59Wfhh"
+  },
+  {
+    "id": "STU007",
+    "name": "vanshika",
+    "mobile": "7894561123",
+    "email": "meenavasnhika@gmail.com",
+    "branch": "CSE",
+    "password": "aR8Hkf"
+  }
+]
