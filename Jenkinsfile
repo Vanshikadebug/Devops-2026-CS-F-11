@@ -277,6 +277,8 @@ stage('Docker Practice') {
         }
     }
 } 
+
+  }
   post {
   always {
     script {
