@@ -276,7 +276,7 @@ stage('Docker Practice') {
             bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" ps'
         }
     }
-}
+} 
   post {
   always {
     script {
@@ -359,6 +359,5 @@ bat 'if not exist feedback mkdir feedback'
     failure {
         echo 'BUILD RED: tests failed or another pipeline stage failed. Feedback file generated.'
     }
+  }
 }
-}
-// Docker integration test
