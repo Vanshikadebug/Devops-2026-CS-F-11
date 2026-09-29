@@ -248,35 +248,35 @@ pipeline {
     }
 
     stage('Check Docker') {
-    steps {
-        echo 'Checking Docker connection from Jenkins...'
+  steps {
+    echo 'Checking Docker connection from Jenkins...'
 
-        bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" --version'
+    bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" --version'
 
-        bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose version'
+    bat '"C:\\ProgramData\\Docker\\cli-plugins\\docker-compose.exe" version'
 
-        bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" ps'
-    }
+    bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" ps'
+  }
 }
 
 stage('Docker Practice') {
-    steps {
-        dir('docker_practice') {
+  steps {
+    dir('docker_practice') {
 
-            echo 'Stopping existing Docker Practice containers...'
+      echo 'Stopping existing Docker Practice containers...'
 
-            bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose down'
+      bat '"C:\\ProgramData\\Docker\\cli-plugins\\docker-compose.exe" down'
 
-            echo 'Building and starting Docker Practice containers...'
+      echo 'Building and starting Docker Practice containers...'
 
-            bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose up -d --build'
+      bat '"C:\\ProgramData\\Docker\\cli-plugins\\docker-compose.exe" up -d --build'
 
-            echo 'Docker Practice deployment completed.'
+      echo 'Docker Practice deployment completed.'
 
-            bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" ps'
-        }
+      bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" ps'
     }
-} 
+  }
+}
 
   }
   post {
