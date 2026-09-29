@@ -427,3 +427,4 @@ currently run — it was written against the mysql2 pool and the enum-based
 taxonomy, both of which are gone. `tests-legacy/README.md` describes what each
 file needs in order to be ported back.
 Jenkins test push
+Jenkins CI/CD pipeline test - Tue Sep 29 16:39:55 UTC 2026
