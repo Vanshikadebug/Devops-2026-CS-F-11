@@ -251,9 +251,9 @@ pipeline {
       steps {
         dir('docker_practice') {
           echo 'Deploying Docker Practice containers...'
-          bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down'
-          bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d --build'
-        }
+          bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose down'
+          bat '"C:\\Users\\meena\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" compose up -d --build'
+      }
       }
     }
   }
