@@ -156,6 +156,24 @@ pipeline {
       }
     }
 
+    stage('Check Jenkins Feedback Commit') {
+  steps {
+    script {
+      def commitMessage = bat(
+        script: 'git log -1 --pretty=%%B',
+        returnStdout: true
+      ).trim()
+
+      if (commitMessage.contains('docs: update Jenkins test feedback')) {
+        echo 'This commit was created by Jenkins. Skipping normal build.'
+        env.SKIP_JENKINS_FEEDBACK = 'true'
+        currentBuild.result = 'NOT_BUILT'
+        error('Skipping Jenkins-generated feedback commit.')
+      }
+    }
+  }
+}
+
     stage('Backend - Install') {
       steps {
         dir('backend') {
@@ -169,56 +187,39 @@ pipeline {
       }
     }
 
-    stage('Database - Wait for MySQL') {
-      steps {
-        // No container to launch anymore -- the local MySQL80 service is
-        // already running. wait-for-db stays as a fast, honest readiness AND
-        // credentials check: it connects with the CI account above and, if
-        // the service is down or database/ci-setup.sql was never run, fails
-        // HERE with a clear message instead of deep inside db:setup. When
-        // MySQL is up (the normal case) it returns almost immediately.
-        dir('backend') {
-          bat 'node scripts/wait-for-db.js'
-        }
-      }
-    }
+
 
     stage('Database - Schema + Seed + Migrate') {
-      steps {
+    steps {
         dir('backend') {
-          // Same three steps a developer runs locally, in the same order:
-          //   setup   -> build the schema from database/schema.sql, but into
-          //              reusehub_ci (DB_NAME), never the dev `reusehub`
-          //   seed    -> insert the demo rows the suite logs in as
-          //              (e.g. aarav@example.com, used by several tests)
-          //   migrate -> apply the additive, idempotent later-phase changes
-          // These scripts use the mysql2 driver and read DB_* from the
-          // environment above, so they act on reusehub_ci only.
-          bat 'npm run db:setup'
-          bat 'npm run db:seed'
-          bat 'npm run db:migrate'
+            bat 'npm run db:generate'
+            bat 'npm run db:reset'
         }
-      }
+    }
+}
+
+   stage('Backend - Test (341)') {
+    steps {
+        script {
+            env.TEST_STATUS = 'PASSED'
+
+            try {
+                dir('backend') {
+                    bat 'npm test'
+                }
+            } catch (Exception e) {
+                env.TEST_STATUS = 'FAILED'
+                throw e
+            }
+        }
     }
 
-    stage('Backend - Test (341)') {
-      steps {
-        dir('backend') {
-          // test:ci runs Jest with --ci and the jest-junit reporter, writing
-          // backend/reports/junit.xml alongside the usual console output.
-          bat 'npm run test:ci'
-        }
-      }
-      post {
-        always {
-          // Publish the JUnit report even if some tests failed -- that is
-          // precisely when you most want to see WHICH ones. This draws the
-          // Test Result Trend graph and the clickable per-test breakdown.
-          // Path is relative to the workspace root, hence the backend/ prefix.
-          junit 'backend/reports/junit.xml'
-        }
-      }
+   post {
+    always {
+        echo 'Backend tests completed.'
     }
+}
+}
 
     stage('Frontend - Install') {
       steps {
@@ -245,21 +246,99 @@ pipeline {
         archiveArtifacts artifacts: 'frontend/dist/**', fingerprint: true, allowEmptyArchive: false
       }
     }
+
+    stage('Docker Practice') {
+      steps {
+        dir('docker_practice') {
+          echo 'Deploying Docker Practice containers...'
+          bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down'
+          bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d --build'
+        }
+      }
+    }
   }
 
   post {
-    always {
-      // Nothing to tear down: CI uses the local MySQL service, not a
-      // container, and reusehub_ci is left in place (db:setup rebuilds it
-      // from scratch at the start of the next run). Results are published by
-      // the Test stage's own post block above.
-      echo 'Build finished -- see the Stage View and Test Result Trend above.'
+  always {
+    script {
+
+      if (env.SKIP_JENKINS_FEEDBACK == 'true') {
+        echo 'Skipping feedback generation for Jenkins-generated commit.'
+        return
+      }
+
+      echo 'Build finished -- generating Jenkins feedback file.'
+
+      def testStatus = env.TEST_STATUS ?: 'NOT EXECUTED'
+            def buildStatus = currentBuild.currentResult
+
+            def feedback = """
+========================================
+        JENKINS TEST FEEDBACK
+========================================
+
+Project       : DevOps-2026-CS-F-11
+Build Number  : ${env.BUILD_NUMBER}
+
+Build Status  : ${buildStatus}
+Test Status   : ${testStatus}
+
+Date          : ${new Date()}
+
+Jenkins Job   : ${env.JOB_NAME}
+
+========================================
+"""
+bat 'if not exist feedback mkdir feedback'
+
+            writeFile(
+                file: 'feedback/feedback.txt',
+                text: feedback
+            )
+
+            echo 'Feedback file generated successfully.'
+
+            archiveArtifacts(
+                artifacts: 'feedback/feedback.txt',
+                fingerprint: true,
+                allowEmptyArchive: false
+            )
+
+            /*
+             * Commit feedback file back to GitHub.
+             *
+             * [skip ci] prevents GitHub Actions from unnecessarily
+             * starting another workflow because of this documentation commit.
+             */
+
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'github-token',
+                    usernameVariable: 'GIT_USERNAME',
+                    passwordVariable: 'GIT_TOKEN'
+                )
+            ]) {
+
+                bat '''
+                    git config user.name "Jenkins"
+                    git config user.email "jenkins@localhost"
+
+                    git add feedback/feedback.txt
+
+                    git diff --cached --quiet || git commit -m "docs: update Jenkins test feedback [skip ci]"
+
+                    git push https://%GIT_USERNAME%:%GIT_TOKEN%@github.com/Vanshikadebug/Devops-2026-CS-F-11.git HEAD:main
+                '''
+            }
+        }
     }
+
     success {
-      echo 'BUILD GREEN: 341 tests passed and the frontend built.'
+        echo 'BUILD GREEN: tests passed and feedback file generated.'
     }
+
     failure {
-      echo 'BUILD RED: open the failed stage and the Test Result trend to see what broke.'
+        echo 'BUILD RED: tests failed or another pipeline stage failed. Feedback file generated.'
     }
-  }
+}
 }
