@@ -4,12 +4,12 @@
 ========================================
 
 Project       : DevOps-2026-CS-F-11
-Build Number  : 143
+Build Number  : 145
 
-Build Status  : SUCCESS
+Build Status  : FAILURE
 Test Status   : PASSED
 
-Date          : Thu Oct 01 12:01:19 IST 2026
+Date          : Mon Oct 05 15:51:18 IST 2026
 
 Jenkins Job   : reusehub-project
 
