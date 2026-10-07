@@ -203,8 +203,14 @@ async function updateMany(entries, adminId) {
 /** Inserts any missing default rows. Idempotent; never overwrites a value an
     admin deliberately changed. */
 async function ensureDefaults() {
+  // MongoDB has no skipDuplicates: insert only the keys not stored yet.
+  const existing = await prisma.platformSetting.findMany({ select: { setting_key: true } })
+  const have = new Set(existing.map((r) => r.setting_key))
+  const missing = DEFAULT_SETTINGS.filter((s) => !have.has(s.key))
+  if (missing.length === 0) return 0
+
   const result = await prisma.platformSetting.createMany({
-    data: DEFAULT_SETTINGS.map((s) => ({
+    data: missing.map((s) => ({
       setting_key: s.key,
       setting_value: s.value,
       value_type: s.type,
@@ -212,7 +218,6 @@ async function ensureDefaults() {
       description: s.description,
       category: s.category,
     })),
-    skipDuplicates: true,
   })
 
   await cache.bustAll()

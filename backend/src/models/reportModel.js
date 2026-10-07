@@ -1,8 +1,7 @@
 const { prisma } = require('../lib/prisma')
 const { clampLimitOffset } = require('../utils/pagination')
-const { normaliseRawRows } = require('../utils/rawRows')
 const { formatDates } = require('../utils/sqlDateTime')
-const escapeLike = require('../utils/escapeLike')
+const textMatch = require('../utils/textMatch')
 
 const REASONS = ['Spam', 'Inappropriate', 'Fraud', 'Duplicate', 'Wrong Category', 'Other']
 const STATUSES = ['Open', 'Under Review', 'Resolved', 'Rejected']
@@ -77,60 +76,49 @@ async function create({ reporterId, itemId = null, userId = null, reason, detail
   return created.id
 }
 
-async function list({ page, limit, offset }, filters = {}) {
-  const where = []
-  const params = []
+const STATUS_RANK = Object.fromEntries(STATUSES.map((st, i) => [st, i]))
 
-  if (filters.status) { where.push('r.status = ?'); params.push(filters.status) }
-  if (filters.reason) { where.push('r.reason = ?'); params.push(filters.reason) }
-  if (filters.target === 'item') where.push('r.reported_item_id IS NOT NULL')
-  if (filters.target === 'user') where.push('r.reported_user_id IS NOT NULL')
+async function list({ page, limit, offset }, filters = {}) {
+  const where = {}
+  if (filters.status) where.status = filters.status
+  if (filters.reason) where.reason = filters.reason
+  if (filters.target === 'item') where.reported_item_id = { not: null }
+  if (filters.target === 'user') where.reported_user_id = { not: null }
 
   if (filters.search) {
-    where.push('(r.details LIKE ? OR rep.email LIKE ? OR it.name LIKE ? OR ru.email LIKE ?)')
-    const like = `%${escapeLike(filters.search)}%`
-    params.push(like, like, like, like)
+    const term = textMatch(filters.search)
+    where.OR = [
+      { details: term },
+      { reporter: { is: { email: term } } },
+      { item: { is: { name: term } } },
+      { reportedUser: { is: { email: term } } },
+    ]
   }
 
-  const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
-  const SORTS = {
-    newest: 'r.created_at DESC, r.id DESC',
-    oldest: 'r.created_at ASC, r.id ASC',
-    priority: "FIELD(r.status, 'Open', 'Under Review', 'Resolved', 'Rejected'), r.created_at ASC",
-  }
-  const order = SORTS[filters.sort] || SORTS.priority
   const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
-
-  const FIELDS = `
-    r.id, r.reporter_id, r.reported_item_id, r.reported_user_id,
-    r.reason, r.details, r.status, r.reviewed_by, r.reviewed_at,
-    r.resolution_note, r.created_at,
-    rep.name AS reporter_name, rep.email AS reporter_email,
-    it.name AS item_name, it.moderation_status AS item_moderation_status,
-    ru.name AS reported_user_name, ru.email AS reported_user_email,
-    ru.status AS reported_user_status, rv.name AS reviewer_name`
-  const SOURCE = `
-    FROM reports r
-    LEFT JOIN users rep ON rep.id = r.reporter_id
-    LEFT JOIN items it  ON it.id  = r.reported_item_id
-    LEFT JOIN users ru  ON ru.id  = r.reported_user_id
-    LEFT JOIN users rv  ON rv.id  = r.reviewed_by`
-
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT ${FIELDS} ${SOURCE} ${clause} ORDER BY ${order} LIMIT ${safeLimit} OFFSET ${safeOffset}`,
-    ...params,
-  )
-  const totalRows = await prisma.$queryRawUnsafe(
-    `SELECT COUNT(*) AS total ${SOURCE} ${clause}`,
-    ...params,
-  )
-
-  return {
-    rows: normaliseRawRows(rows, DATE_FIELDS),
-    total: Number(totalRows[0].total),
-    page,
-    limit,
+  const SORTS = {
+    newest: [{ created_at: 'desc' }, { id: 'desc' }],
+    oldest: [{ created_at: 'asc' }, { id: 'asc' }],
   }
+
+  let rows
+  let total
+  if (SORTS[filters.sort]) {
+    ;[rows, total] = await Promise.all([
+      prisma.report.findMany({ where, select: REPORT_SELECT, orderBy: SORTS[filters.sort], skip: safeOffset, take: safeLimit }),
+      prisma.report.count({ where }),
+    ])
+  } else {
+    // ponytail: "priority" (workflow order, then oldest) has no Mongo sort
+    // key, so it sorts in memory. Fine for a moderation queue of hundreds;
+    // store a numeric status_rank field if it grows to tens of thousands.
+    const all = await prisma.report.findMany({ where, select: REPORT_SELECT, orderBy: { created_at: 'asc' } })
+    all.sort((x, y) => STATUS_RANK[x.status] - STATUS_RANK[y.status])
+    rows = all.slice(safeOffset, safeOffset + safeLimit)
+    total = all.length
+  }
+
+  return { rows: rows.map(mapReport), total, page, limit }
 }
 
 /** One report in full, or null. */
@@ -143,11 +131,10 @@ async function review(id, { status, reviewerId, note = null }) {
     throw new Error(`reportModel.review: "${status}" is not one of ${REVIEWABLE.join(', ')}`)
   }
 
-  const count = await prisma.$executeRaw`
-    UPDATE reports
-       SET status = ${status}, reviewed_by = ${reviewerId},
-           reviewed_at = NOW(), resolution_note = ${note}
-     WHERE id = ${id}`
+  const { count } = await prisma.report.updateMany({
+    where: { id },
+    data: { status, reviewed_by: reviewerId, reviewed_at: new Date(), resolution_note: note },
+  })
 
   return count > 0 ? findById(id) : null
 }

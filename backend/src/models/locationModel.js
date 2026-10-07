@@ -1,24 +1,32 @@
-const { Prisma } = require('@prisma/client')
 const { prisma } = require('../lib/prisma')
 const { clampLimitOffset } = require('../utils/pagination')
 const { formatDates } = require('../utils/sqlDateTime')
 const { normaliseRawRows } = require('../utils/rawRows')
-const escapeLike = require('../utils/escapeLike')
+const textMatch = require('../utils/textMatch')
 
-/** Wraps a LIKE term so wildcards typed by a user are matched literally. */
-const like = (term) => `%${escapeLike(term)}%`
+/** Items per college_id across all statuses, for the admin counts. */
+async function itemCountsByCollege() {
+  const rows = await prisma.item.groupBy({
+    by: ['college_id'],
+    where: { college_id: { not: null } },
+    _count: { _all: true },
+  })
+  return new Map(rows.map((r) => [r.college_id, r._count._all]))
+}
 
 async function findCities() {
-  const rows = await prisma.$queryRaw`
-    SELECT c.id, c.name, c.state, c.slug,
-           COUNT(co.id) AS college_count
-      FROM cities c
-      LEFT JOIN areas    a  ON a.city_id  = c.id
-      LEFT JOIN colleges co ON co.area_id = a.id
-     GROUP BY c.id
-     ORDER BY c.name`
+  const cities = await prisma.city.findMany({
+    select: {
+      id: true, name: true, state: true, slug: true,
+      areas: { select: { _count: { select: { colleges: true } } } },
+    },
+    orderBy: { name: 'asc' },
+  })
 
-  return normaliseRawRows(rows)
+  return cities.map(({ areas, ...city }) => ({
+    ...city,
+    college_count: areas.reduce((n, a) => n + a._count.colleges, 0),
+  }))
 }
 
 async function findAreas(cityId) {
@@ -134,18 +142,26 @@ async function uniqueSlug(name, isTaken) {
 /* --- Cities ----------------------------------------------------- */
 
 async function listCitiesForAdmin() {
-  const rows = await prisma.$queryRaw`
-    SELECT c.id, c.name, c.state, c.slug, c.created_at,
-           COUNT(DISTINCT a.id)  AS area_count,
-           COUNT(DISTINCT co.id) AS college_count,
-           COUNT(DISTINCT i.id)  AS item_count
-      FROM cities c
-      LEFT JOIN areas    a  ON a.city_id    = c.id
-      LEFT JOIN colleges co ON co.area_id   = a.id
-      LEFT JOIN items    i  ON i.college_id = co.id
-     GROUP BY c.id
-     ORDER BY c.name`
+  const [cities, itemsBy] = await Promise.all([
+    prisma.city.findMany({
+      select: {
+        id: true, name: true, state: true, slug: true, created_at: true,
+        areas: { select: { id: true, colleges: { select: { id: true } } } },
+      },
+      orderBy: { name: 'asc' },
+    }),
+    itemCountsByCollege(),
+  ])
 
+  const rows = cities.map(({ areas, ...city }) => {
+    const colleges = areas.flatMap((a) => a.colleges)
+    return {
+      ...city,
+      area_count: areas.length,
+      college_count: colleges.length,
+      item_count: colleges.reduce((n, c) => n + (itemsBy.get(c.id) ?? 0), 0),
+    }
+  })
   return normaliseRawRows(rows, ['created_at'])
 }
 
@@ -206,21 +222,27 @@ async function findAreaById(id) {
 }
 
 async function listAreasForAdmin({ cityId } = {}) {
-  const filter = cityId ? Prisma.sql`WHERE a.city_id = ${cityId}` : Prisma.empty
+  const [areas, itemsBy] = await Promise.all([
+    prisma.area.findMany({
+      where: cityId ? { city_id: cityId } : {},
+      select: {
+        id: true, name: true, slug: true, created_at: true, city_id: true,
+        city: { select: { name: true, state: true } },
+        colleges: { select: { id: true } },
+      },
+    }),
+    itemCountsByCollege(),
+  ])
 
-  const rows = await prisma.$queryRaw`
-    SELECT a.id, a.name, a.slug, a.created_at,
-           a.city_id, c.name AS city_name, c.state,
-           COUNT(DISTINCT co.id) AS college_count,
-           COUNT(DISTINCT i.id)  AS item_count
-      FROM areas a
-      JOIN cities c ON c.id = a.city_id
-      LEFT JOIN colleges co ON co.area_id   = a.id
-      LEFT JOIN items    i  ON i.college_id = co.id
-     ${filter}
-     GROUP BY a.id
-     ORDER BY c.name, a.name`
-
+  const rows = areas
+    .map(({ city, colleges, ...area }) => ({
+      ...area,
+      city_name: city.name,
+      state: city.state,
+      college_count: colleges.length,
+      item_count: colleges.reduce((n, c) => n + (itemsBy.get(c.id) ?? 0), 0),
+    }))
+    .sort((x, y) => x.city_name.localeCompare(y.city_name) || x.name.localeCompare(y.name))
   return normaliseRawRows(rows, ['created_at'])
 }
 
@@ -265,10 +287,8 @@ async function listCollegesForAdmin({ page, limit, offset }, filters = {}) {
   if (filters.areaId) where.area_id = filters.areaId
   if (filters.cityId) where.area = { city_id: filters.cityId }
   if (filters.search) {
-    // escapeLike so a search for "St. Xavier_" treats the _ as text, not
-    // as a single-character wildcard over the whole directory.
-    const term = like(filters.search)
-    where.OR = [{ name: { contains: term } }, { short_name: { contains: term } }]
+    const term = textMatch(filters.search)
+    where.OR = [{ name: term }, { short_name: term }]
   }
 
   const { limit: safeLimit, offset: safeOffset } = clampLimitOffset(limit, offset)
