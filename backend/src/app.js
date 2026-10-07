@@ -132,6 +132,7 @@ app.use('/api/auth', authLimiter)
 app.use(writeLimiter)
 
 app.use('/api/config', require('./routes/configRoutes'))
+app.use('/api/stats', require('./routes/statsRoutes'))
 app.use('/api', require('./routes/taxonomyRoutes'))
 app.use('/api/auth', require('./routes/authRoutes'))
 app.use('/api/users', require('./routes/userRoutes'))

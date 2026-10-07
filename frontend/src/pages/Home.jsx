@@ -6,13 +6,21 @@
  * feature tiles), closing on a statement block. Category, search and sort
  * live in the URL so a filtered view can be shared.
  */
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  motion, useAnimationFrame, useInView, useMotionValue, useScroll, useSpring, useTransform, useVelocity,
+} from 'framer-motion'
 
 import { useConfig } from '../app/ConfigProvider'
 import { api } from '../lib/api'
+import { assetUrl } from '../lib/origin'
+import { categoryArt } from '../lib/display'
 import ItemCard from '../components/ItemCard'
+import LiveIndex from '../components/LiveIndex'
+
+// three.js is ~0.7 MB; it only loads when the orbit section is reached.
+const ReuseOrbit = lazy(() => import('../components/ReuseOrbit'))
 
 import './Home.css'
 
@@ -101,6 +109,9 @@ export default function Home() {
         </div>
       </section>
 
+      <OrbitSection />
+      <Marquee words={['Reduce', 'Reuse', 'Reshare', 'Repeat']} />
+
       {/* --------------------------------------------------------------- INDEX */}
       <section className="index shell" aria-label="Listings">
         <div className="index__bar">
@@ -178,6 +189,8 @@ export default function Home() {
         )}
       </section>
 
+      <LiveIndex />
+
       {/* ----------------------------------------------------------- STATEMENT */}
       <section className="statement shell">
         <hr className="hero__rule" />
@@ -193,6 +206,101 @@ export default function Home() {
           List it in a minute, hand it over in person, keep it out of the bin.
         </p>
       </section>
+    </div>
+  )
+}
+
+/** Sticky full-screen 3D ring of real listings, turned by scrolling. */
+function OrbitSection() {
+  const ref = useRef(null)
+  const navigate = useNavigate()
+  const { categoryByLabel } = useConfig()
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
+  const near = useInView(ref, { margin: '300px 0px' })
+  const [mounted, setMounted] = useState(false)
+  const [items, setItems] = useState([])
+  const [hovered, setHovered] = useState(null)
+
+  useEffect(() => { if (near) setMounted(true) }, [near])
+
+  useEffect(() => {
+    if (!mounted) return undefined
+    const controller = new AbortController()
+    api.get('/items?limit=16&status=Available', { signal: controller.signal })
+      .then((res) => setItems(Array.isArray(res.data) ? res.data : []))
+      .catch(() => {})
+    return () => controller.abort()
+  }, [mounted])
+
+  const glyphFor = useCallback((label) => categoryArt(categoryByLabel, label).glyph, [categoryByLabel])
+  const titleY = useTransform(scrollYProgress, [0.15, 0.85], ['30%', '-30%'])
+
+  return (
+    <section ref={ref} className="orbit" aria-label="Listings in orbit">
+      <div className="orbit__sticky" data-cursor={hovered ? 'View item' : undefined}>
+        {mounted && (
+          <Suspense fallback={null}>
+            <ReuseOrbit
+              items={items}
+              glyphFor={glyphFor}
+              photoUrl={assetUrl}
+              progress={scrollYProgress}
+              active={near}
+              onHover={setHovered}
+              onOpen={(card) => navigate(`/items/${card.id}`)}
+            />
+          </Suspense>
+        )}
+
+        <motion.h2 className="orbit__title" style={{ y: titleY }}>
+          Every thing,
+          <span>another orbit.</span>
+        </motion.h2>
+
+        <p className="orbit__caption label" aria-live="polite">
+          {hovered
+            ? <>{hovered.name}<span> — {hovered.category} · click to open</span></>
+            : <>Scroll to turn the ring<span> — every card is a real listing</span></>}
+        </p>
+      </div>
+    </section>
+  )
+}
+
+const wrap = (min, max, v) => {
+  const range = max - min
+  return ((((v - min) % range) + range) % range) + min
+}
+
+/** Huge text band; scroll speed pushes it, scroll direction flips it. */
+function Marquee({ words }) {
+  const base = useMotionValue(0)
+  const { scrollY } = useScroll()
+  const velocity = useSpring(useVelocity(scrollY), { damping: 50, stiffness: 400 })
+  const boost = useTransform(velocity, [0, 1000], [0, 5], { clamp: false })
+  const direction = useRef(1)
+  const x = useTransform(base, (v) => `${wrap(-50, 0, v)}%`)
+  const reduced = useRef(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+
+  useAnimationFrame((_, delta) => {
+    if (reduced.current) return
+    if (boost.get() < 0) direction.current = -1
+    else if (boost.get() > 0) direction.current = 1
+    const step = direction.current * -2.2 * (delta / 1000)
+    base.set(base.get() + step + step * Math.abs(boost.get()))
+  })
+
+  const run = words.flatMap((w, i) => [
+    <span key={`w${i}`} className={i % 2 ? 'marquee__word marquee__word--outline' : 'marquee__word'}>{w}</span>,
+    <span key={`s${i}`} className="marquee__star" aria-hidden="true">✺</span>,
+  ])
+
+  return (
+    <div className="marquee" aria-label={words.join(', ')}>
+      <motion.div className="marquee__track" style={{ x }} aria-hidden="true">
+        <div className="marquee__run">{run}</div>
+        <div className="marquee__run">{run}</div>
+      </motion.div>
     </div>
   )
 }
