@@ -1,0 +1,112 @@
+name: CI / Docker
+
+# Every push and every PR into main:
+#   test  -> backend Jest + frontend lint/build
+#   stack -> build the api + web images, boot the full docker compose stack
+#            (MongoDB replica set, Redis, API, web, monitoring) and run the
+#            end-to-end smoke test against it
+# Pushes to main additionally publish both images to GitHub Container
+# Registry: ghcr.io/<owner>/reusehub-api and ghcr.io/<owner>/reusehub-web.
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore: ['feedback/**', 'weekly_reports/**', '**/*.md', '**/*.pdf']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Backend - install
+        working-directory: backend
+        run: |
+          npm ci
+          npx prisma generate
+
+      - name: Backend - test
+        working-directory: backend
+        run: npm test
+
+      - name: Frontend - install
+        working-directory: frontend
+        run: npm ci
+
+      - name: Frontend - lint + build
+        working-directory: frontend
+        run: |
+          npm run lint
+          npm run build
+
+  stack:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build images
+        run: docker compose build api web
+
+      - name: Start the full stack
+        run: docker compose up -d --wait --wait-timeout 300
+
+      - name: Smoke test (end to end against MongoDB)
+        working-directory: backend
+        env:
+          SMOKE_WAIT: '120'
+        run: node scripts/smoke.js
+
+      - name: Service status + API logs on failure
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --tail 100 mongodb api
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish images to ghcr.io
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          for svc in api web; do
+            for tag in "$IMAGE_TAG" latest; do
+              docker tag "reusehub-$svc:$IMAGE_TAG" "ghcr.io/$owner/reusehub-$svc:$tag"
+              docker push "ghcr.io/$owner/reusehub-$svc:$tag"
+            done
+          done
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v
