@@ -9,7 +9,7 @@ const maintenance = require('./middleware/maintenance')
 const { authLimiter, writeLimiter } = require('./middleware/rateLimit')
 const redis = require('./lib/redis')
 const ApiError = require('./utils/ApiError')
-const { prisma } = require('./lib/prisma')
+const { testPrismaConnection } = require('./lib/prisma')
 const { UPLOAD_DIR } = require('./controllers/uploadController')
 
 const app = express()
@@ -42,21 +42,15 @@ app.use(
        it is an upper bound rather than a promise. */
     maxAge: 86400,
     origin(origin, callback) {
+      if (origin === 'http://localhost:5173') return callback(null, true);
+      if (!config.isProduction) return callback(null, true); // ALLOW ALL IN DEV
+      
       // No Origin header: curl, a health probe, a same-origin navigation.
       if (!origin) return callback(null, true)
 
       const clean = origin.replace(/\/+$/, '')
       if (config.corsOrigins.includes(clean)) return callback(null, true)
 
-      /* Tunnel namespaces are shared and throwaway -- anyone can claim a
-         *.trycloudflare.com or *.ngrok-free.app name in seconds. With
-         credentials:true that would let an attacker's tunnel page call this API
-         as a logged-in user and read the replies, so production refuses them
-         regardless of ALLOW_TUNNEL_ORIGINS; the flag only picks the behaviour
-         outside production.
-
-         HTTPS for the same reason: all four providers serve TLS, so an http://
-         origin on one of these hosts did not come from them. */
       if (config.allowTunnelOrigins && !config.isProduction) {
         try {
           const url = new URL(origin)
@@ -80,6 +74,10 @@ app.use(
 app.use(express.json({ limit: '200kb' }))
 app.use(express.urlencoded({ extended: true, limit: '200kb' }))
 
+const { metricsMiddleware, metricsHandler } = require('./middleware/metrics')
+app.use(metricsMiddleware)
+app.get('/metrics', metricsHandler)
+
 if (!config.isTest) app.use(morgan('dev'))
 
 /* Always answers 200, even with the database down -- that is what lets it tell
@@ -87,8 +85,7 @@ if (!config.isTest) app.use(morgan('dev'))
    rather than asserted, so Docker's healthcheck still passes while MySQL is
    restarting and the container is not needlessly killed. */
 app.get('/api/health', async (req, res) => {
-  const database = await prisma
-    .$queryRaw`SELECT 1`
+  const database = await testPrismaConnection()
     .then(() => 'connected')
     .catch(() => 'unavailable')
 

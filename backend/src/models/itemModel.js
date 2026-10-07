@@ -1,7 +1,7 @@
 const { prisma } = require('../lib/prisma')
 const { parsePagination, clampLimitOffset } = require('../utils/pagination')
 const { formatDates } = require('../utils/sqlDateTime')
-const escapeLike = require('../utils/escapeLike')
+const textMatch = require('../utils/textMatch')
 
 const ITEM_SELECT = {
   id: true,
@@ -55,7 +55,7 @@ const SORTS = {
 const ADMIN_SORTS = {
   ...SORTS,
   requests: [{ requests: { _count: 'desc' } }, { id: 'asc' }],
-  moderated: [{ moderated_at: { sort: 'desc', nulls: 'last' } }],
+  moderated: [{ moderated_at: 'desc' }],
 }
 
 const STATUSES = ['Available', 'Reserved', 'Unavailable']
@@ -108,12 +108,11 @@ async function findAll(filters = {}) {
   else if (filters.area) where.college = { area_id: filters.area }
   else if (filters.city) where.college = { area: { city_id: filters.city } }
 
-  /* LIKE, not the fulltext index: in natural-language mode InnoDB ignores
-     words under 3 characters and matches whole words only, so "calc" would
-     find nothing while "Calculator" sits right there. */
+  /* Substring match, not a text index: a text index matches whole words
+     only, so "calc" would find nothing while "Calculator" sits right there. */
   if (filters.search) {
-    const pattern = `%${escapeLike(filters.search)}%`
-    where.OR = [{ name: { contains: pattern } }, { description: { contains: pattern } }]
+    const term = textMatch(filters.search)
+    where.OR = [{ name: term }, { description: term }]
   }
 
   if (filters.category) where.category = filters.category
@@ -261,12 +260,8 @@ async function listForAdmin({ page, limit, offset }, filters = {}) {
   if (filters.userId) where.user_id = filters.userId
   if (filters.college) where.college_id = filters.college
   if (filters.search) {
-    const pattern = `%${escapeLike(filters.search)}%`
-    where.OR = [
-      { name: { contains: pattern } },
-      { description: { contains: pattern } },
-      { owner: { email: { contains: pattern } } },
-    ]
+    const term = textMatch(filters.search)
+    where.OR = [{ name: term }, { description: term }, { owner: { email: term } }]
   }
   // No owner-status condition: an admin listing shows everything, including
   // items belonging to blocked accounts -- usually the ones being looked for.
