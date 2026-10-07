@@ -51,7 +51,7 @@
 }
 
 .adm__link:hover { background: var(--surface-sunk); color: var(--ink); opacity: 1; }
-.adm__link.is-active { background: var(--surface-ink); color: #fff; }
+.adm__link.is-active { background: var(--surface-ink); color: var(--bg); }
 
 .adm__linkglyph { width: 16px; text-align: center; flex: none; }
 

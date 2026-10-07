@@ -12,6 +12,11 @@
     />
 
     <title>ReuseHub · Give your things a second life</title>
+
+    <!-- Restore the chosen colour theme before first paint (no flash). -->
+    <script>
+      try { document.documentElement.dataset.theme = localStorage.getItem('rh-theme') || 'red' } catch (e) {}
+    </script>
   </head>
   <body>
     <!-- React mounts the whole application into this one element.

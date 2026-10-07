@@ -1,320 +1,77 @@
-/* =========================================================
-   REUSEHUB LISTING CARD
-   ========================================================= */
-
-.icard {
-  position: relative;
-
+.item-card {
   display: flex;
-
   flex-direction: column;
-
   min-width: 0;
-
-  height: 100%;
-
-  background: #ffffff;
-
-  border: 1px solid #e8e8e8;
-
-  border-radius: 8px;
-
-  overflow: hidden;
-
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
+  color: var(--ink);
 }
 
-
-.icard:hover {
-  transform: translateY(-4px);
-
-  border-color: #dddddd;
-
-  box-shadow:
-    0 10px 25px rgba(0, 0, 0, 0.08);
-}
-
-
-/* =========================================================
-   IMAGE
-   ========================================================= */
-
-.icard__media {
-  position: relative;
-
+.item-card__image {
   display: block;
-
   overflow: hidden;
-
-  background: #f5f5f5;
-
-  text-decoration: none;
+  background: var(--photo);
 }
 
-
-.icard__media .itemimg {
-  width: 100%;
-
-  border-radius: 0;
-
-  background: #f5f5f5;
+.item-card__image .itemimg {
+  transition: transform 900ms var(--ease);
 }
+.item-card__image:hover .itemimg { transform: scale(1.045); }
 
-
-.icard__media .itemimg__photo {
-  transition:
-    transform 300ms ease;
-}
-
-
-.icard:hover
-.icard__media
-.itemimg__photo {
-  transform: scale(1.035);
-}
-
-
-/* =========================================================
-   FAVORITE
-   ========================================================= */
-
-.icard__favorite {
-  position: absolute;
-
-  top: 12px;
-
-  right: 12px;
-
+.item-card__caption {
   display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  width: 34px;
-
-  height: 34px;
-
-  border-radius: 50%;
-
-  background: rgba(255, 255, 255, 0.95);
-
-  color: #333333;
-
-  font-size: 19px;
-
-  opacity: 0;
-
-  transform: translateY(-3px);
-
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s3);
+  margin-top: var(--s2);
 }
 
-
-.icard:hover .icard__favorite {
-  opacity: 1;
-
-  transform: translateY(0);
-}
-
-
-/* =========================================================
-   STATUS
-   ========================================================= */
-
-.icard__status {
-  position: absolute;
-
-  top: 12px;
-
-  left: 12px;
-
-  padding: 6px 10px;
-
-  border-radius: 20px;
-
-  font-size: 11px;
-
-  font-weight: 600;
-}
-
-
-/* =========================================================
-   BODY
-   ========================================================= */
-
-.icard__body {
-  display: flex;
-
-  flex-direction: column;
-
-  padding: 16px;
-
-  gap: 6px;
-
-  flex: 1;
-}
-
-
-/* CATEGORY */
-
-.icard__category {
-  color: #999999;
-
-  font-size: 12px;
-
+.item-card__title {
+  min-width: 0;
+  font-size: 0.8125rem;
   font-weight: 500;
-
-  text-transform: uppercase;
-
-  letter-spacing: 0.04em;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
 }
-
-
-/* TITLE */
-
-.icard__title {
-  margin: 0;
-
-  font-size: 17px;
-
-  line-height: 1.3;
-
-  font-weight: 600;
-
-  color: #161616;
-
-  display: -webkit-box;
-
-  -webkit-line-clamp: 2;
-
-  -webkit-box-orient: vertical;
-
+.item-card__title a {
+  display: block;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-
-.icard__title a {
-  color: inherit;
-
-  text-decoration: none;
+.item-card__cond {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
 }
 
-
-.icard__title a:hover {
-  color: #bd5b5d;
-
-  opacity: 1;
-}
-
-
-/* PRICE */
-
-.icard__price {
-  margin-top: 4px;
-
-  color: #bd5b5d;
-
-  font-size: 17px;
-
-  font-weight: 600;
-}
-
-
-/* DETAILS */
-
-.icard__details {
+.item-card__meta {
   display: flex;
-
   align-items: center;
-
-  flex-wrap: wrap;
-
-  gap: 5px;
-
-  margin-top: 2px;
-
-  color: #888888;
-
-  font-size: 12px;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.625rem;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-
-.icard__dot {
-  color: #cccccc;
-}
-
-
-/* SELLER */
-
-.icard__seller {
-  display: flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  margin-top: auto;
-
-  padding-top: 12px;
-
-  color: #555555;
-
-  font-size: 12px;
-}
-
-
-.icard__avatar {
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  width: 26px;
-
-  height: 26px;
-
+.item-card__dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
+  background: var(--accent);
+}
+.item-card__dot--off { background: transparent; border: 1px solid var(--muted); }
 
-  background: #f0dddd;
-
-  color: #bd5b5d;
-
-  font-size: 11px;
-
-  font-weight: 700;
+.item-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s3);
 }
 
-
-/* FOOTER */
-
-.icard__footer {
-  margin-top: 12px;
-
-  padding-top: 12px;
-
-  border-top: 1px solid #eeeeee;
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 560px) {
-
-  .icard__body {
-    padding: 14px;
-  }
-
-  .icard__title {
-    font-size: 16px;
-  }
-
-}
+.item-card--feature .item-card__title,
+.item-card--feature .item-card__cond { font-size: 0.9375rem; }

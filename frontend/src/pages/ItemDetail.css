@@ -1,247 +1,159 @@
-/* ItemDetail.css -- the single-item page.
+/* Item detail — big photo left, product column right (sticky). */
 
-   Companion to ItemDetail.jsx. Colours and spacing all come from the
-   tokens in index.css; nothing here is hard-coded. */
-
-.item-detail__back {
-  display: inline-block;
-  margin-bottom: var(--space-5);
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+.item-detail {
+  padding-top: 0;
 }
 
-.item-detail__back:hover {
-  color: var(--green-700);
-  text-decoration: none;
-}
-
-/* Two columns on a desktop: the photo on the left, everything about
-   the item on the right. On a phone they stack, with the photo first
-   -- the image is the fastest way to recognise the item, so it should
-   not be pushed below the fold. */
 .item-detail__layout {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: var(--space-8);
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: var(--gutter);
   align-items: start;
 }
 
-/* Sticky keeps the photo in view while a long description scrolls
-   past it, so the reader never loses sight of what the text is
-   about. Off when there is no room for it. */
 .item-detail__media {
   position: sticky;
-  top: calc(var(--navbar-height) + var(--space-6));
+  top: var(--nav-h);
+  overflow: hidden;
+  background: var(--photo);
+  animation: unclip 1s var(--ease) both;
 }
 
-/* ItemImage's default frame is sized for the card grid (4:3 within a
-   small box). Here the frame fills the column, so the aspect ratio
-   and border are overridden rather than multiplied. */
-.item-detail__image {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  border-radius: var(--radius-lg);
+.item-detail__media .itemimg {
+  aspect-ratio: 4 / 5 !important;
+  max-height: calc(100vh - var(--nav-h) - var(--gutter));
+}
+
+@keyframes unclip {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0); }
 }
 
 .item-detail__body {
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+  padding-top: var(--s2);
+  animation: fade-up 0.9s var(--ease) 0.15s both;
 }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+}
+
+.item-detail__back {
+  display: inline-block;
+  margin: 0 0 var(--s4);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.item-detail__back:hover { color: var(--accent); }
 
 .item-detail__heading {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
+  gap: var(--s4);
 }
 
-/* Uppercase, tracked-out category label above the title. This is the
-   only place in the app where text is transformed this way; the
-   badge beside it is a real status and is NOT transformed, so the
-   two can never be confused. */
 .item-detail__category {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 0.6875rem;
+  font-weight: 600;
   text-transform: uppercase;
-  color: var(--green-700);
+  letter-spacing: 0.02em;
 }
 
 .item-detail__title {
-  margin-bottom: var(--space-4);
-  line-height: 1.2;
-}
-
-.item-detail__description {
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin-bottom: var(--space-6);
-  /* Preserves paragraph breaks the owner typed, instead of
-     collapsing them into one wall of text. */
-  white-space: pre-wrap;
+  font-size: clamp(2.2rem, 4.4vw, 4rem);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
   overflow-wrap: anywhere;
 }
 
-/* A definition list, because each row is a term and its value. A
-   screen reader announces "Condition: Good" rather than relying on
-   visual pairing. */
+.item-detail__description {
+  max-width: 46ch;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
 .item-detail__facts {
-  margin: 0 0 var(--space-6);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  border-top: 1px solid var(--ink);
 }
 
 .item-detail__fact {
   display: grid;
-  grid-template-columns: 8rem 1fr;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-}
-
-/* Hairline separators between rows, drawn with a border rather than
-   a margin so the lines never double up at the edges. */
-.item-detail__fact + .item-detail__fact {
-  border-top: 1px solid var(--border-color);
-}
-
-.item-detail__fact dt {
+  grid-template-columns: 9rem 1fr;
+  gap: var(--s4);
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
   font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-muted);
+}
+.item-detail__fact dt { color: var(--muted); }
+.item-detail__fact dd { color: var(--ink); font-weight: 500; }
+.item-detail__fact-detail { color: var(--muted); font-weight: 400; }
+
+.item-detail__owner,
+.item-detail__cta,
+.item-detail__request-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
 }
 
-.item-detail__fact dd {
-  margin: 0;
-  color: var(--text-primary);
-}
-
-/* The area-and-city suffix that follows a college name, muted so it
-   reads as a qualifier to the name rather than a second fact. */
-.item-detail__fact-detail {
-  color: var(--text-muted);
-}
-
-.item-detail__alert {
-  margin-bottom: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--red-100);
-  border-left: 3px solid var(--red-500);
-  border-radius: var(--radius-sm);
-  background: var(--red-50);
-  color: var(--red-700);
-  font-size: 0.875rem;
-}
-
-/* --- Owner-only section --------------------------------------- */
-.item-detail__owner {
-  padding: var(--space-5);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--bg-muted);
-}
-
-.item-detail__owner-note {
-  margin-bottom: var(--space-3);
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+.item-detail__owner-note,
+.item-detail__cta-note,
+.item-detail__modal-hint {
+  color: var(--ink);
+  font-size: 0.8125rem;
 }
 
 .item-detail__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--s2);
 }
 
-/* --- The CTA shown to everyone else ---------------------------- */
-.item-detail__cta {
-  padding: var(--space-5);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-}
-
-.item-detail__cta-note {
-  font-size: 0.9375rem;
-  color: var(--text-secondary);
-}
-
-.item-detail__request-state {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.item-detail__request-message {
-  margin: 0;
-  font-size: 0.9375rem;
-  color: var(--text-secondary);
-  font-style: italic;
-}
-
+.item-detail__request-message,
 .item-detail__contact {
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--green-200);
-  border-radius: var(--radius-sm);
-  background: var(--green-50);
-  color: var(--text-primary);
-  font-size: 0.9375rem;
+  padding: var(--s3) var(--s4);
+  border-left: 2px solid var(--accent);
+  color: var(--ink);
+  font-size: 0.8125rem;
+}
+
+.item-detail__alert {
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--bad-ink);
+  color: var(--bad-ink);
+  font-size: 0.8125rem;
 }
 
 .item-detail__message-label {
   display: block;
-  margin-top: var(--space-4);
-  margin-bottom: var(--space-2);
-  font-size: 0.875rem;
-  font-weight: 600;
+  margin-bottom: var(--s2);
+  font-size: 0.8125rem;
+  font-weight: 500;
 }
-
-.item-detail__optional {
-  font-weight: 400;
-  color: var(--text-muted);
-}
+.item-detail__optional { color: var(--muted); font-weight: 400; }
 
 .item-detail__message {
   width: 100%;
-  padding: var(--space-3);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
+  min-height: 7rem;
+  padding: var(--s3);
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
   font: inherit;
+  font-size: 0.875rem;
   resize: vertical;
 }
+.item-detail__message:focus { outline: none; border-color: var(--accent); }
 
-.item-detail__message:focus {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-.item-detail__modal-hint {
-  margin-top: var(--space-3);
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-@media (max-width: 880px) {
-  .item-detail__layout {
-    /* One column: the photo becomes a normal block at the top, and
-       the sticky behaviour would pin nothing useful. */
-    grid-template-columns: 1fr;
-    gap: var(--space-5);
-  }
-
-  .item-detail__media {
-    position: static;
-  }
-
-  .item-detail__image {
-    max-width: 30rem;
-  }
-}
-
-@media (max-width: 520px) {
-  .item-detail__fact {
-    /* 8rem of label leaves a phone-width value with almost no room.
-       Stacking the term above its value restores the room. */
-    grid-template-columns: 1fr;
-    gap: var(--space-1);
-  }
+@media (max-width: 900px) {
+  .item-detail__layout { grid-template-columns: 1fr; }
+  .item-detail__media { position: static; }
+  .item-detail__fact { grid-template-columns: 7rem 1fr; }
 }

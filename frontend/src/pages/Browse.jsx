@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom'
 import { useConfig } from '../app/ConfigProvider'
 import { api } from '../lib/api'
 import ItemCard from '../components/ItemCard'
-import { SearchPill, Pill, Spinner, EmptyState, Button } from '../components/ui'
 import './Browse.css'
 
 /* The full listing page. Every filter option -- categories, conditions,
@@ -76,139 +75,134 @@ export default function Browse() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const total = pagination?.total ?? items.length
+  const pad = (n) => String(n).padStart(2, '0')
+
   return (
-    <div className="page browse">
-      <div className="shell">
-        <header className="browse__head">
-          <div>
-            <h1>Browse listings</h1>
-            <p className="muted">
-              {loading ? 'Loading…' : `${pagination?.total ?? items.length} items available`}
-            </p>
-          </div>
-          <SearchPill
-            value={term}
-            onChange={setTerm}
-            onSubmit={(v) => setParam('search', v.trim())}
-            placeholder="Search listings…"
-            size="lg"
-          />
-        </header>
+    <div className="browse shell">
+      <header className="browse__head">
+        <h1 className="browse__title">
+          Index<sup>{loading ? '··' : total}</sup>
+        </h1>
+        <hr className="browse__rule" />
+        <div className="browse__bar">
+          <form
+            className="browse__search"
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setParam('search', term.trim())
+            }}
+          >
+            <input
+              type="search"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              placeholder="Search the index…"
+              aria-label="Search listings"
+            />
+            <button type="submit" className="label ulink">Search →</button>
+          </form>
 
-        <div className="browse__body">
-          <aside className="browse__filters card">
-            <div className="row row--between">
-              <h3>Filters</h3>
-              {activeFilters.length > 0 && (
-                <button
-                  type="button"
-                  className="browse__clear"
-                  onClick={() => {
-                    setParams({}, { replace: true })
-                    // `term` is seeded from the URL only on mount, so clearing
-                    // the params alone would unfilter the results while leaving
-                    // the old query sitting visibly in the search box.
-                    setTerm('')
-                  }}
-                >
-                  Clear all
-                </button>
-              )}
-            </div>
-
-            <FilterGroup label="Category">
-              {categories.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={get('category') === c.label}
-                  onClick={() => setParam('category', get('category') === c.label ? '' : c.label)}
-                >
-                  <span aria-hidden="true">{c.glyph || '📦'}</span> {c.label}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label="Condition">
-              {conditions.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={get('condition') === c.label}
-                  onClick={() => setParam('condition', get('condition') === c.label ? '' : c.label)}
-                >
-                  {c.label}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label="City">
-              {cities.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={get('city') === String(c.id)}
-                  onClick={() => setParam('city', get('city') === String(c.id) ? '' : String(c.id))}
-                >
-                  {c.name}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label="Sort">
-              {SORTS.map((s) => (
-                <FilterChip
-                  key={s.value}
-                  active={(get('sort') || 'newest') === s.value}
-                  onClick={() => setParam('sort', s.value)}
-                >
-                  {s.label}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-          </aside>
-
-          <section className="browse__results">
-            {error && <div className="alert alert--error">{error}</div>}
-
-            {loading ? (
-              <Spinner />
-            ) : items.length === 0 ? (
-              <EmptyState title="No matches" glyph="🔍">
-                {activeFilters.length
-                  ? 'Try removing a filter.'
-                  : setting('empty_state_text')}
-              </EmptyState>
-            ) : (
-              <>
-                <div className="item-grid">
-                  {items.map((item) => (
-                    <ItemCard key={item.id} item={item} />
-                  ))}
-                </div>
-
-                {pagination && pagination.totalPages > 1 && (
-                  <nav className="browse__pager" aria-label="Pagination">
-                    <Button
-                      variant="quiet"
-                      size="sm"
-                      disabled={!pagination.hasPrev}
-                      onClick={() => goToPage(page - 1)}
-                    >
-                      Previous
-                    </Button>
-                    <Pill tone="sunk">Page {pagination.page} of {pagination.totalPages}</Pill>
-                    <Button
-                      variant="quiet"
-                      size="sm"
-                      disabled={!pagination.hasNext}
-                      onClick={() => goToPage(page + 1)}
-                    >
-                      Next
-                    </Button>
-                  </nav>
-                )}
-              </>
-            )}
-          </section>
+          <label className="browse__sort">
+            <span className="label">Sort</span>
+            <select value={get('sort') || 'newest'} onChange={(e) => setParam('sort', e.target.value)}>
+              {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </label>
         </div>
+      </header>
+
+      <div className="browse__body">
+        <aside className="browse__filters" aria-label="Filters">
+          <FilterGroup label="Category">
+            {categories.map((c) => (
+              <FilterChip
+                key={c.id}
+                active={get('category') === c.label}
+                onClick={() => setParam('category', get('category') === c.label ? '' : c.label)}
+              >
+                {c.label}
+              </FilterChip>
+            ))}
+          </FilterGroup>
+
+          <FilterGroup label="Condition">
+            {conditions.map((c) => (
+              <FilterChip
+                key={c.id}
+                active={get('condition') === c.label}
+                onClick={() => setParam('condition', get('condition') === c.label ? '' : c.label)}
+              >
+                {c.label}
+              </FilterChip>
+            ))}
+          </FilterGroup>
+
+          <FilterGroup label="City">
+            {cities.map((c) => (
+              <FilterChip
+                key={c.id}
+                active={get('city') === String(c.id)}
+                onClick={() => setParam('city', get('city') === String(c.id) ? '' : String(c.id))}
+              >
+                {c.name}
+              </FilterChip>
+            ))}
+          </FilterGroup>
+
+          {activeFilters.length > 0 && (
+            <button
+              type="button"
+              className="browse__clear label ulink is-active"
+              onClick={() => {
+                setParams({}, { replace: true })
+                // `term` is seeded from the URL only on mount, so clearing
+                // the params alone would unfilter the results while leaving
+                // the old query sitting visibly in the search box.
+                setTerm('')
+              }}
+            >
+              Clear all filters ×
+            </button>
+          )}
+        </aside>
+
+        <section className="browse__results" aria-busy={loading}>
+          {error && <p className="browse__note">{error}</p>}
+
+          {loading ? (
+            <div className="item-grid browse__grid">
+              {Array.from({ length: 6 }, (_, i) => <div key={i} className="skeleton" />)}
+            </div>
+          ) : items.length === 0 ? (
+            <p className="browse__note">
+              No matches. {activeFilters.length ? 'Try removing a filter.' : setting('empty_state_text')}
+            </p>
+          ) : (
+            <>
+              <div className="item-grid browse__grid">
+                {items.map((item, i) => (
+                  <div key={item.id} className="browse__cell" style={{ '--i': i % 12 }}>
+                    <ItemCard item={item} />
+                  </div>
+                ))}
+              </div>
+
+              {pagination && pagination.totalPages > 1 && (
+                <nav className="browse__pager" aria-label="Pagination">
+                  <button type="button" className="ulink" disabled={!pagination.hasPrev} onClick={() => goToPage(page - 1)}>
+                    ← Previous
+                  </button>
+                  <span>{pad(pagination.page)} / {pad(pagination.totalPages)}</span>
+                  <button type="button" className="ulink" disabled={!pagination.hasNext} onClick={() => goToPage(page + 1)}>
+                    Next →
+                  </button>
+                </nav>
+              )}
+            </>
+          )}
+        </section>
       </div>
     </div>
   )
@@ -227,7 +221,7 @@ function FilterChip({ active, onClick, children }) {
   return (
     <button
       type="button"
-      className={`browse__chip ${active ? 'is-active' : ''}`}
+      className={`browse__chip ulink ${active ? 'is-active' : ''}`}
       onClick={onClick}
       aria-pressed={active}
     >

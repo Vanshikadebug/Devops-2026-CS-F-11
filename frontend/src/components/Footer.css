@@ -1,50 +1,35 @@
 .foot {
   margin-top: var(--s16);
-  padding: var(--s10) 0 var(--s8);
+  padding-top: var(--s4);
+  padding-bottom: calc(var(--s16) + 1rem); /* clear the ticker pill */
+  border-top: 1px solid var(--ink);
+  color: var(--ink);
+  font-size: 0.6875rem;
+  font-weight: 500;
 }
 
-.foot__inner {
+.foot__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: var(--gutter);
+}
+
+.foot__grid > * {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: flex-start;
-  gap: var(--s8);
-  padding-bottom: var(--s6);
-  border-bottom: 1px solid var(--line);
+  gap: 0.2rem;
 }
 
-.foot__brand { display: flex; align-items: center; gap: var(--s3); flex: 1; min-width: 220px; }
+.foot p { color: inherit; line-height: 1.35; }
+.foot__talk { align-items: flex-end !important; }
 
-.foot__glyph {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-ink);
-  flex: none;
+.foot__note {
+  margin-top: var(--s8);
+  color: var(--muted) !important;
 }
 
-.foot__brand p { font-size: 0.85rem; }
-
-.foot__links,
-.foot__contact { display: flex; flex-direction: column; gap: var(--s2); font-size: 0.88rem; }
-
-.foot__social { display: flex; gap: var(--s2); }
-
-.foot__socialbtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  font-weight: 650;
-  font-size: 0.85rem;
+@media (max-width: 800px) {
+  .foot__grid { grid-template-columns: 1fr 1fr; row-gap: var(--s6); }
+  .foot__talk { align-items: flex-start !important; }
 }
-
-.foot__note { padding-top: var(--s5); }
-.foot__note p { font-size: 0.82rem; }

@@ -108,23 +108,21 @@ async function reopen(id, message = null) {
   return count > 0 ? findById(id) : null
 }
 
-/* MySQL types the locked-read columns as BIGINT under $queryRaw, so
-   owner_id arrives as a BigInt and `1n !== 1` is TRUE -- an unconverted
-   compare would reject the legitimate owner. Number() before comparing. */
+/* Read inside the transaction. MongoDB has no SELECT ... FOR UPDATE; instead
+   two transactions that both write the same request/item document conflict,
+   and the second one aborts -- so a double accept still cannot succeed. */
 async function lockRow(tx, id) {
-  const rows = await tx.$queryRaw`
-    SELECT r.id, r.status, r.item_id, i.user_id AS owner_id, i.status AS item_status
-      FROM requests r JOIN items i ON i.id = r.item_id
-     WHERE r.id = ${id}
-     FOR UPDATE`
-  const row = rows[0]
+  const row = await tx.request.findUnique({
+    where: { id },
+    select: { id: true, status: true, item_id: true, item: { select: { user_id: true, status: true } } },
+  })
   if (!row) return null
   return {
-    id: Number(row.id),
+    id: row.id,
     status: row.status,
-    item_id: Number(row.item_id),
-    owner_id: Number(row.owner_id),
-    item_status: row.item_status,
+    item_id: row.item_id,
+    owner_id: row.item.user_id,
+    item_status: row.item.status,
   }
 }
 

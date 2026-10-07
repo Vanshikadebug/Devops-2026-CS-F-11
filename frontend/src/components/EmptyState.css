@@ -1,48 +1,41 @@
-/* EmptyState -- centred message panel for the empty and error states.
-   Sized to roughly match the height of a row of item cards, so the
-   page does not visibly collapse when a request returns nothing. */
+/* ==========================================================================
+   EMPTY STATE — DARK LUXURY EDITION
+   ========================================================================== */
 
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: var(--space-16) var(--space-6);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  padding: 4rem 2rem;
+  background: var(--surface-sunk);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-card);
+  min-height: 300px;
 }
 
 .empty-state__icon {
-  font-size: 2.5rem;
-  line-height: 1;
-  margin-bottom: var(--space-4);
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+  filter: grayscale(1);
 }
 
 .empty-state__title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
   font-size: 1.25rem;
-  margin-bottom: var(--space-2);
+  color: var(--ink);
 }
 
-.empty-state__message {
-  color: var(--text-secondary);
-  max-width: 32rem;
-  font-size: 0.95rem;
+.empty-state__desc {
+  margin: 0 0 2rem;
+  color: var(--muted);
+  max-width: 400px;
+  line-height: 1.6;
 }
 
 .empty-state__action {
-  margin-top: var(--space-6);
-}
-
-/* A failure should not look like a normal empty result. The tinted
-   border and background make the difference obvious before the user
-   has read a word. */
-.empty-state--error {
-  border-color: var(--red-100);
-  background: var(--red-50);
-}
-
-.empty-state--error .empty-state__title {
-  color: var(--red-700);
+  margin-top: 1rem;
 }

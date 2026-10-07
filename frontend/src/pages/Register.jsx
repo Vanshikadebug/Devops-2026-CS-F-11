@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../app/authContext'
 import FormField from '../components/FormField'
 import Button from '../components/Button'
+import AuthAside from './AuthAside'
 import './AuthForm.css'
 
 function validate(form) {
@@ -111,7 +112,9 @@ function Register() {
   }
 
   return (
-    <div className="page auth">
+    <div className="auth">
+      <AuthAside title="Join the index." subtitle="Free, local, and about a minute." />
+
       <div className="auth__card">
         <header className="auth__header">
           <h1 className="auth__title">Create your account</h1>

@@ -1,109 +1,73 @@
-/* CampusCard -- the Dashboard's "your campus" panel.
-
-   Shares the surface treatment of .account-card above it so the two
-   read as one group of profile facts, rather than a card and a
-   widget. */
+/* ==========================================================================
+   CAMPUS CARD — DARK LUXURY EDITION
+   ========================================================================== */
 
 .campus-card {
-  padding: var(--space-5);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: var(--space-10);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.campus-card__head {
+.campus-card:hover {
+  border-color: var(--line);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-glow);
+}
+
+.campus-card__image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--surface-sunk);
+  position: relative;
+  overflow: hidden;
+}
+
+.campus-card__image::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(10, 10, 10, 0.8), transparent);
+  pointer-events: none;
+}
+
+.campus-card__body {
+  padding: 1.5rem;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
 }
 
 .campus-card__title {
+  font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 600;
+  color: var(--ink);
   margin: 0;
 }
 
-/* --- Resting state --------------------------------------------- */
-.campus-card__current {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.campus-card__glyph {
-  font-size: 1.75rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.campus-card__college {
-  font-weight: 650;
-  color: var(--text-primary);
-}
-
-.campus-card__place {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.campus-card__empty {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-/* --- Editing state ---------------------------------------------- */
-.campus-card__editor {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.campus-card__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-/* Deliberately quieter than the two Buttons beside it: clearing your
-   campus is a legitimate choice but not the expected one, so it
-   should not compete with Save for attention. */
-.campus-card__clear {
-  margin-left: auto;
-  padding: var(--space-2) var(--space-3);
-  border: none;
-  background: none;
-  color: var(--text-muted);
+.campus-card__city {
   font-size: 0.85rem;
-  text-decoration: underline;
-  cursor: pointer;
+  color: var(--muted);
 }
 
-.campus-card__clear:hover:not(:disabled) {
-  color: var(--red-700);
-}
-
-.campus-card__clear:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.campus-card__error {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--red-100);
-  border-radius: var(--radius-md);
-  background: var(--red-50);
-  color: var(--red-700);
-  font-size: 0.9rem;
-}
-
-@media (max-width: 640px) {
-  .campus-card__clear {
-    margin-left: 0;
-  }
+.campus-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem;
+  color: var(--muted);
 }

@@ -11,7 +11,7 @@ editable from the admin panel. There are no hardcoded categories or locations.
 ```
 Frontend   React 19 + Vite          frontend
 Backend    Express 5 + Prisma 6     backend
-Database   MySQL 8
+Database   MongoDB 8 (via Prisma, single-node replica set)
 Cache      Redis 7 (optional)
 ```
 
@@ -67,9 +67,10 @@ ADMIN_MOBILE=9876500000
 npm run docker:up
 ```
 
-First run takes a few minutes (it downloads MySQL, Redis, Node and nginx). It is
-finished when you see `api` become `healthy`. The API container waits for MySQL
-and Redis, applies migrations, seeds demo data, then starts.
+First run takes a few minutes (it downloads MongoDB, Redis, Node and nginx). It
+is finished when you see `api` become `healthy`. The API container waits for
+MongoDB and Redis, syncs the collections' indexes (`prisma db push`), seeds demo
+data into an empty database, then starts.
 
 **Step 5.** Open **http://localhost:3000**
 
@@ -79,18 +80,24 @@ and Redis, applies migrations, seeds demo data, then starts.
 | Admin panel | http://localhost:3000/admin |
 | API | http://localhost:5000/api |
 | Health | http://localhost:5000/api/health |
+| mongo-express (browse the database) | http://localhost:8081 — login `admin` / `reusehub` |
+| Grafana (API + MongoDB dashboards) | http://localhost:3005 — login `admin` / `admin` |
+| Prometheus | http://localhost:9091 |
 
 Stop it with `npm run docker:down`. To wipe the database and start clean,
 `npm run docker:reset`.
 
-Ports 3000 and 3307 are used rather than 80 and 3306 so the stack does not
-collide with a local MySQL, or with Jenkins on 8080.
+Port 3000 is used rather than 80 or 8080 so the stack does not collide with
+Jenkins on 8080. Every host port can be changed in the root `.env`.
+
+To check a running stack end to end: `node backend/scripts/smoke.js`.
 
 ---
 
 ### Option B — Local (no Docker)
 
-You need **Node 20+** and a **MySQL 8** server you can connect to.
+You need **Node 20+** and Docker (only for MongoDB — Prisma needs a replica
+set, which the compose file sets up for you).
 
 **Step 1.** Install dependencies, once, from the repo root:
 
@@ -100,14 +107,11 @@ npm install
 
 This is an npm workspace, so one install covers both apps.
 
-**Step 2.** Create the database in MySQL:
+**Step 2.** Start MongoDB (and mongo-express to look at it):
 
-```sql
-CREATE DATABASE reusehub CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```powershell
+docker compose up -d mongodb mongo-express
 ```
-
-`utf8mb4` matters — category icons are emoji, and `utf8mb3` silently replaces
-them with `??`.
 
 **Step 3.** Configure the API:
 
@@ -118,12 +122,12 @@ copy backend/.env.example backend/.env
 Edit `backend/.env` and set two values:
 
 ```env
-DATABASE_URL="mysql://root:your_mysql_password@localhost:3306/reusehub"
+DATABASE_URL="mongodb://admin:password@localhost:27017/reusehub?authSource=admin&directConnection=true"
 JWT_SECRET=paste-a-generated-secret-here
 ```
 
-If your MySQL password contains `% : / ? # @`, percent-encode it — those are URL
-syntax and will otherwise be misparsed.
+If the MongoDB password contains `% : / ? # @`, percent-encode it — those are
+URL syntax and will otherwise be misparsed.
 
 Leave `REDIS_ENABLED=false` unless you have Redis running locally. The app works
 either way; caching just becomes a pass-through.
@@ -227,13 +231,8 @@ separate files.
 
 **Docker and local show different data**
 
-They are different databases. Docker uses its own volume; local uses your
-installed MySQL. An account created in one does not exist in the other.
-
-**Category icons show as `??`**
-
-The database was created without `utf8mb4`. Recreate it with the `CREATE DATABASE`
-statement in Option B, step 2.
+They are different databases when `DATABASE_URL` points somewhere other than
+the compose MongoDB. An account created in one does not exist in the other.
 
 **Admin panel says "You do not have permission"**
 
@@ -386,16 +385,21 @@ state.
 
 ## Database changes
 
-Prisma is the single source of truth for the schema.
+Prisma is the single source of truth for the schema; the data lives in MongoDB.
+MongoDB has no SQL migrations — `db push` creates the collections' indexes and
+unique constraints from `prisma/schema.prisma`.
 
 ```bash
 cd backend
-npm run db:migrate:dev -- --name what_changed   # development
-npm run db:migrate                             # production / CI
-npm run db:studio                           # browse the data
+npm run db:migrate     # prisma db push: apply schema indexes (dev, CI, Docker)
+npm run db:reset       # drop everything, push, and re-seed
+npm run db:studio      # browse the data (or mongo-express on :8081)
 ```
 
-`items.category` and `items.item_condition` are `VARCHAR`, not `ENUM`, and are
+Ids stay plain integers (stored as `_id`) so URLs and the API are unchanged;
+`src/lib/prisma.js` hands them out from a `counters` collection.
+
+`items.category` and `items.item_condition` are plain strings, not enums, and are
 validated at write time against the active rows in `categories` / `conditions`.
 That is what allows a new category to be added without a migration. They store
 the label rather than a foreign key so the `category: "Books"` JSON shape the
@@ -421,6 +425,10 @@ frontend reads stays unchanged.
   its value.
 
 ## Tests
+
+`npm test` (in `backend/`) runs the Jest suite, which needs no database.
+`node scripts/smoke.js` runs the end-to-end checks against a running stack —
+Jenkins and GitHub Actions both run it after starting the containers.
 
 The previous 341-test suite is in `backend/tests-legacy/` and does not
 currently run — it was written against the mysql2 pool and the enum-based

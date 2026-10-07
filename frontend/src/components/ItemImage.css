@@ -1,28 +1,23 @@
 .itemimg {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   width: 100%;
   overflow: hidden;
-  border-radius: var(--r-md);
-  background: var(--surface-sunk);
+  background: var(--photo);
 }
 
 .itemimg__photo {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 420ms cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-.itemimg__glyph { font-size: 2.2rem; opacity: 0.75; }
-
-/* Category tints. `tint` is an admin-editable column, so an unknown value
-   simply falls through to the neutral background above. */
-.itemimg--books       { background: #e8eeff; }
-.itemimg--electronics { background: #e6f4f6; }
-.itemimg--clothing    { background: #fdeced; }
-.itemimg--furniture   { background: #f5eee3; }
-.itemimg--stationery  { background: #eef6e4; }
-.itemimg--other       { background: var(--surface-sunk); }
+/* No photo: the category glyph, desaturated so it sits in the palette. */
+.itemimg__glyph {
+  font-size: clamp(2rem, 5vw, 4rem);
+  filter: grayscale(1);
+  opacity: 0.35;
+}
