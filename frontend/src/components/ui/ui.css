@@ -14,7 +14,7 @@
 .pill--surface { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
 .pill--sunk    { background: var(--surface-sunk); color: var(--muted); }
 .pill--accent  { background: var(--accent); color: var(--accent-ink); }
-.pill--ink     { background: var(--surface-ink); color: #fff; }
+.pill--ink     { background: var(--surface-ink); color: var(--bg); }
 .pill--ghost   { background: rgba(255, 255, 255, 0.6); color: var(--ink); }
 
 /* --- IconButton ---------------------------------------------------- */
@@ -36,7 +36,7 @@
 
 .iconbtn--surface { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
 .iconbtn--sunk    { background: var(--surface-sunk); color: var(--ink); }
-.iconbtn--ink     { background: var(--surface-ink); color: #fff; }
+.iconbtn--ink     { background: var(--surface-ink); color: var(--bg); }
 .iconbtn--accent  { background: var(--accent); color: var(--accent-ink); }
 
 .iconbtn:hover:not(:disabled) { transform: translateY(-1px); opacity: 1; }
@@ -64,7 +64,7 @@
 .arrowbtn--lg { font-size: 1.05rem; padding: 7px 8px 7px 26px; }
 
 .arrowbtn--accent { background: var(--accent); color: var(--accent-ink); }
-.arrowbtn--ink    { background: var(--surface-ink); color: #fff; }
+.arrowbtn--ink    { background: var(--surface-ink); color: var(--bg); }
 .arrowbtn--surface { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
 
 .arrowbtn__circle {
@@ -75,47 +75,19 @@
   height: 34px;
   border-radius: 50%;
   background: var(--surface-ink);
-  color: #fff;
+  color: var(--bg);
   flex: none;
   transition: transform var(--t);
 }
 
 .arrowbtn--lg .arrowbtn__circle { width: 40px; height: 40px; }
 .arrowbtn--ink .arrowbtn__circle { background: var(--accent); color: var(--accent-ink); }
-.arrowbtn--surface .arrowbtn__circle { background: var(--surface-ink); color: #fff; }
+.arrowbtn--surface .arrowbtn__circle { background: var(--surface-ink); color: var(--bg); }
 
 .arrowbtn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow); }
 .arrowbtn:hover:not(:disabled) .arrowbtn__circle { transform: rotate(45deg); }
 .arrowbtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* --- Button -------------------------------------------------------- */
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s2);
-  border: 1px solid transparent;
-  border-radius: var(--r-pill);
-  cursor: pointer;
-  font-weight: 620;
-  padding: 0.6rem 1.25rem;
-  transition: transform var(--t), opacity var(--t), background var(--t);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.btn--sm { padding: 0.4rem 0.9rem; font-size: 0.83rem; }
-.btn--lg { padding: 0.8rem 1.6rem; font-size: 1rem; }
-
-.btn--primary { background: var(--surface-ink); color: #fff; }
-.btn--accent  { background: var(--accent); color: var(--accent-ink); }
-.btn--ghost   { background: transparent; color: var(--ink); border-color: var(--line-strong); }
-.btn--quiet   { background: var(--surface-sunk); color: var(--ink); }
-.btn--danger  { background: var(--bad-ink); color: #fff; }
-
-.btn:hover:not(:disabled) { transform: translateY(-1px); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 /* --- SearchPill ---------------------------------------------------- */
 
@@ -152,7 +124,7 @@
   border: 0;
   border-radius: 50%;
   background: var(--surface-ink);
-  color: #fff;
+  color: var(--bg);
   cursor: pointer;
   flex: none;
   transition: transform var(--t);
@@ -227,7 +199,7 @@
 }
 
 .avatars__item:first-child { margin-left: 0; }
-.avatars__item--more { background: var(--surface-ink); color: #fff; font-size: 0.72rem; }
+.avatars__item--more { background: var(--surface-ink); color: var(--bg); font-size: 0.72rem; }
 
 /* --- Spinner ------------------------------------------------------- */
 
