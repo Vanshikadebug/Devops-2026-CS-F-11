@@ -16,7 +16,7 @@
   color: var(--ink);
   font-family: var(--font-sans);
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip; /* not hidden: hidden makes .app a scroll box and breaks position: sticky */
 }
 
 /* --------------------------------------------------------------------------

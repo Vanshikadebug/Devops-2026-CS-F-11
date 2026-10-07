@@ -84,6 +84,13 @@ async function main() {
     ctx.condition = json.data.conditions[0].label
   })
 
+  await check('public stats (live index charts)', async () => {
+    const { status, json } = await call('GET', '/stats')
+    expect(status === 200, `HTTP ${status}`)
+    expect(json.data.daily.length === 30, `daily has ${json.data.daily?.length} days`)
+    expect(typeof json.data.totals.listed === 'number', 'no totals.listed')
+  })
+
   await check('cities with college counts', async () => {
     const { json } = await call('GET', '/locations/cities')
     expect(json.data.length > 0 && typeof json.data[0].college_count === 'number', 'no college_count')
