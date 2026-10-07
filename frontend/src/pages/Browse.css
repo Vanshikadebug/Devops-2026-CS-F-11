@@ -1,171 +1,195 @@
-/**
- * ==============================================================================
- * BROWSE / SEARCH STYLESHEET (MANIA THEME)
- * ==============================================================================
- * 
- * @file Browse.css
- * @description Controls the two-column layout of the catalog page.
- * Implements a responsive CSS Grid that collapses the sidebar on mobile devices.
- */
+/* Browse — the full index: giant title, underline search, text filters. */
 
-/* --------------------------------------------------------------------------
-   1. MAIN LAYOUT GRID
-   -------------------------------------------------------------------------- */
+.browse { padding-bottom: var(--s16); }
 
-/**
- * .browse-layout
- * Establishes the 2-column structure (Sidebar + Main Content).
- */
-.browse-layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
+.browse__title {
+  font-size: clamp(4.5rem, 17vw, 17rem);
+  font-weight: 800;
+  letter-spacing: -0.07em;
+  line-height: 0.8;
+  animation: browse-rise 1s var(--ease) both;
+}
+.browse__title sup {
+  margin-left: 0.04em;
+  font-size: 0.14em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  vertical-align: top;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes browse-rise {
+  from { clip-path: inset(100% 0 0 0); transform: translateY(20%); }
+  to { clip-path: inset(0); }
+}
+
+.browse__rule {
+  margin: var(--s3) 0 var(--s4);
+  border: 0;
+  border-top: 2px solid var(--ink);
+  transform-origin: left;
+  animation: draw 1.2s var(--ease) 0.2s both;
+}
+
+.browse__bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: var(--s8);
-  padding: var(--s8) var(--s6);
+  padding-bottom: var(--s12);
+}
+
+.browse__search {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s4);
+  flex: 1;
+  max-width: 640px;
+}
+
+.browse__search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.browse__search input::placeholder { color: var(--muted); }
+.browse__search input:focus { outline: none; border-color: var(--ink); }
+
+.browse__search button,
+.browse__pager button,
+.browse__clear,
+.browse__chip {
+  border: 0;
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.browse__sort {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.browse__sort select {
+  padding: 0.2rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+.browse__sort option { background: var(--bg); color: var(--ink); }
+
+/* Body: narrow sticky filter column + grid ------------------------------ */
+.browse__body {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) 3fr;
+  gap: var(--gutter);
   align-items: start;
 }
 
-/* --------------------------------------------------------------------------
-   2. SIDEBAR FILTERS
-   -------------------------------------------------------------------------- */
-
-.browse-sidebar {
-  background-color: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: var(--s6);
+.browse__filters {
   position: sticky;
-  top: calc(var(--nav-h) + var(--s6));
-  box-shadow: var(--shadow-sm);
-}
-
-.sidebar-title {
-  font-size: 1.25rem;
-  font-weight: 800;
-  margin-bottom: var(--s5);
-  padding-bottom: var(--s3);
-  border-bottom: 2px solid var(--line);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.filter-group {
-  margin-bottom: var(--s6);
-}
-
-.filter-heading {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: var(--s3);
-}
-
-/* Sidebar Search Input */
-.sidebar-search-form {
-  display: flex;
-}
-
-.sidebar-input {
-  flex-grow: 1;
-  width: 100%;
-  padding: var(--s2);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-sm) 0 0 var(--r-sm);
-  font-size: 0.9rem;
-  outline: none;
-}
-
-.sidebar-input:focus {
-  border-color: var(--accent);
-}
-
-.sidebar-btn {
-  background-color: var(--accent);
-  color: var(--accent-ink);
-  border: 1px solid var(--accent);
-  padding: 0 var(--s3);
-  border-radius: 0 var(--r-sm) var(--r-sm) 0;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-/* List Filters (Categories / Cities) */
-.filter-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  top: calc(var(--nav-h) + var(--s4));
   display: flex;
   flex-direction: column;
-  gap: var(--s1);
+  gap: var(--s8);
 }
 
-.filter-option {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: var(--s2) var(--s3);
-  font-size: 0.9rem;
-  color: var(--muted);
-  cursor: pointer;
-  border-radius: var(--r-sm);
-  transition: all var(--t);
-}
-
-.filter-option:hover {
-  background-color: var(--surface-sunk);
-  color: var(--ink);
-}
-
-.filter-option.is-active {
-  background-color: var(--surface-sunk);
-  color: var(--accent);
-  font-weight: 700;
-  border-left: 3px solid var(--accent);
-  border-radius: 0 var(--r-sm) var(--r-sm) 0;
-}
-
-/* --------------------------------------------------------------------------
-   3. MAIN CATALOG AREA
-   -------------------------------------------------------------------------- */
-
-.browse-main {
-  min-width: 0; /* Prevents CSS grid blowout */
-}
-
-.browse-header {
-  margin-bottom: var(--s6);
-}
-
-.browse-title {
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin-bottom: var(--s1);
-}
-
-.browse-count {
-  font-weight: 600;
-}
-
-.browse-loading {
+.browse__group {
   display: flex;
-  justify-content: center;
-  padding: var(--s12) 0;
+  flex-direction: column;
+  gap: var(--s2);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--ink);
 }
 
-/* --------------------------------------------------------------------------
-   4. RESPONSIVE BREAKPOINTS
-   -------------------------------------------------------------------------- */
+.browse__grouplabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.browse__chips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+.browse__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: color var(--t), background-size var(--t);
+}
+.browse__chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: scale(0);
+  transition: transform var(--t);
+}
+.browse__chip:hover,
+.browse__chip.is-active { color: var(--ink); }
+.browse__chip.is-active::before { transform: scale(1); }
+
+.browse__clear { align-self: flex-start; }
+
+.browse__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.browse__cell {
+  animation: browse-card 0.8s var(--ease) both;
+  animation-delay: calc(var(--i) * 45ms);
+}
+@keyframes browse-card {
+  from { opacity: 0; transform: translateY(30px); }
+}
+
+.browse__note {
+  padding: var(--s12) 0;
+  color: var(--ink);
+  font-size: 1.25rem;
+}
+
+.browse__pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--s16);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.browse__pager button:disabled { opacity: 0.3; cursor: default; }
 
 @media (max-width: 900px) {
-  /* Stack the sidebar on top of the grid on tablets/mobile */
-  .browse-layout {
-    grid-template-columns: 1fr;
+  .browse__body { grid-template-columns: 1fr; }
+  .browse__filters {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: var(--s6);
   }
-  
-  .browse-sidebar {
-    position: relative;
-    top: 0;
-  }
+  .browse__group { flex: 1 1 140px; }
+  .browse__bar { flex-direction: column; align-items: stretch; }
+  .browse__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
