@@ -26,22 +26,8 @@ const FALLBACK = {
   cities: [],
 }
 
-// Setting key -> CSS custom property. Only these reach the stylesheet.
-const THEME_VARS = {
-  color_bg: '--bg',
-  color_surface: '--surface',
-  color_ink: '--ink',
-  color_muted: '--muted',
-  color_accent: '--accent',
-  color_accent_ink: '--accent-ink',
-  color_ring: '--ring',
-  font_display: '--font-display',
-}
-
-const NUMERIC_THEME_VARS = {
-  radius_card: '--r-card',
-  radius_pill: '--r-pill',
-}
+// Colours are no longer pushed from admin settings: the palette comes from
+// the three built-in themes in styles/tokens.css (picked in the navbar).
 
 const ConfigContext = createContext(null)
 
@@ -71,20 +57,6 @@ export function ConfigProvider({ children }) {
   useEffect(() => {
     load()
   }, [load])
-
-  useEffect(() => {
-    const root = document.documentElement
-    for (const [key, cssVar] of Object.entries(THEME_VARS)) {
-      const value = config.settings[key]
-      if (value) root.style.setProperty(cssVar, String(value))
-    }
-    for (const [key, cssVar] of Object.entries(NUMERIC_THEME_VARS)) {
-      const value = config.settings[key]
-      if (value !== undefined && value !== null && value !== '') {
-        root.style.setProperty(cssVar, `${Number(value)}px`)
-      }
-    }
-  }, [config])
 
   // Document title and meta description are content, so they follow settings.
   useEffect(() => {

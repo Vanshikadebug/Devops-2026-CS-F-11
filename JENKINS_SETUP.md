@@ -1,294 +1,141 @@
-# Jenkins Setup — ReuseHub (Phase 14)
-
-This guide sets up a Jenkins **Pipeline** that builds ReuseHub end to end on
-every push and shows the whole thing as a row of stage boxes — **Checkout →
-Backend Install → Wait for MySQL → Schema/Seed/Migrate → Test (341) → Frontend
-Install → Frontend Build → Archive** — plus a **Test Result Trend** graph.
-That "everything, side by side, going green" view is the page to show in a
-review.
-
-The pipeline is defined by the [`Jenkinsfile`](./Jenkinsfile) at the repo
-root. Jenkins reads it straight from GitHub, so there is nothing to paste
-into Jenkins by hand except the job configuration below.
-
-> **No Docker required.** CI runs against the **local MySQL** already on this
-> machine — the always-on `MySQL80` Windows service — so a build has nothing to
-> start or open and a push just goes green. Docker (the app's own image) is a
-> separate, later phase and is intentionally **not** part of CI: that coupling
-> is what used to turn a push red whenever Docker Desktop happened to be closed.
-
----
-
-## What you get
-
-| Where in Jenkins | What it shows |
-|---|---|
-| **Stage View** (job page) | The 8 stages side by side, each green/red, with per-stage timing |
-| **Test Result Trend** (job page) | A graph of passed/failed tests across builds — the 341 tests |
-| **Test Result** (per build) | Every test by name; click a failure to see why |
-| **Console Output** (per build) | The full timestamped log of the whole build |
-| **Build Artifacts** (per build) | The built `frontend/dist` bundle, kept for later |
-
----
-
-## Prerequisites (on the machine running Jenkins)
-
-1. **Jenkins** is running (you have it on `http://localhost:8080`). Leave it on
-   the default **Local System** service account — nothing here needs it to run
-   as your own user.
-2. **MySQL is running.** The `MySQL80` Windows service starts with Windows by
-   default; confirm it in `services.msc` if a build ever can't reach the
-   database. CI talks to it on the normal port **3306**.
-3. **The one-time CI database exists** — see
-   [One-time: create the CI database](#one-time-create-the-ci-database) below.
-   Run it once and you never touch it again.
-4. **Node.js + npm** are reachable from the account Jenkins runs as. Quick
-   check: on the job's first run the *Backend - Install* stage runs `npm ci`;
-   if it errors with *"'npm' is not recognized"*, see
-   [Troubleshooting](#troubleshooting).
-5. **Plugins** (all in Jenkins' default "recommended" set): Pipeline, Git,
-   JUnit, Timestamper. The NodeJS plugin is optional (only if npm is not on
-   PATH).
-
-> CI builds into a **separate `reusehub_ci` database** and logs in as a
-> **dedicated account that can reach nothing else**, so it never touches your
-> real `reusehub` data on the same MySQL.
-
----
-
-## One-time: create the CI database
-
-CI logs in as a dedicated MySQL account scoped to a throwaway `reusehub_ci`
-database. Create both by running [`database/ci-setup.sql`](./database/ci-setup.sql)
-**once, as root**. It is safe to re-run (every statement is `IF NOT EXISTS` /
-`GRANT`).
-
-```powershell
-cd C:\ReUseHub
-Get-Content database\ci-setup.sql | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p
-```
-
-You will be prompted for your MySQL **root** password (it is not stored).
-
-> **PowerShell note.** PowerShell doesn't support the `<` input redirect and
-> needs the `&` call operator to run a quoted path, so the classic
-> `mysql ... < file.sql` form errors there ("The '<' operator is reserved").
-> The `Get-Content … | &` line above is the PowerShell equivalent. (In
-> `cmd.exe` the classic `"...\mysql.exe" -u root -p < database\ci-setup.sql`
-> works as-is.) Easiest of all: open the file in **MySQL Workbench** and run it
-> with the ⚡ button.
-
-Why this exists, in one line: it lets the committed `Jenkinsfile` carry a
-**working, non-secret** login (`reusehub_ci` / `reusehub_ci_pw`) that can only
-ever touch disposable CI data — so your real root password never goes near the
-repo. The full reasoning is in the header of `database/ci-setup.sql`.
-
----
-
-## One-time: push the repo first
-
-Jenkins builds from your GitHub repository, so make sure this phase is pushed
-before you create the job:
-
-```powershell
-cd C:\ReUseHub
-git add Jenkinsfile JENKINS_SETUP.md database/ci-setup.sql backend/scripts/setup-db.js README.md
-git commit -m "CI: run against local MySQL in an isolated reusehub_ci database (drop Docker from the pipeline)"
-git push
-```
-
----
-
-## Create the Pipeline job
-
-1. Jenkins → **New Item**.
-2. Name it `reusehub` (or `reusehub-ci`), choose **Pipeline**, click **OK**.
-3. **Build Triggers** — you can leave this alone. The `Jenkinsfile` already
-   declares `triggers { pollSCM('H/2 * * * *') }`, so once the job has run once,
-   Jenkins polls GitHub about every 2 minutes and builds automatically on a new
-   push. (If you want polling active *before* that first run, tick **Poll SCM**
-   here and enter `H/2 * * * *` — same effect.) See
-   [Automatic builds on every push](#automatic-builds-on-every-push) below.
-4. **Pipeline** section:
-   - **Definition:** `Pipeline script from SCM`
-   - **SCM:** `Git`
-   - **Repository URL:** `https://github.com/Vanshikadebug/reusehub.git`
-   - **Branch Specifier:** `*/main` (or `*/master` — whichever your default
-     branch is)
-   - **Script Path:** `Jenkinsfile`  *(this is the default; leave as-is)*
-5. **Save**, then click **Build Now**.
-
-There is no slow first build anymore — nothing pulls a MySQL image; the local
-service is already there.
-
----
-
-## Automatic builds on every push
-
-Once the job exists you do **not** keep clicking **Build Now**. The
-`Jenkinsfile` declares:
-
-```groovy
-triggers {
-  pollSCM('H/2 * * * *')
-}
-```
-
-which tells Jenkins to check GitHub about every 2 minutes and start a build
-whenever a new commit has landed. (The `H` just spreads the poll across the
-window so many jobs don't all hit GitHub on the same tick.)
-
-**The chain is: save → commit → push → poll → build.**
+# CI/CD Setup — ReuseHub
 
 ```
-edit in VS Code  →  git commit  →  git push  →  Jenkins polls GitHub  →  build
+developer ──git push──▶ GitHub ──webhook / poll──▶ Jenkins ──▶ Docker (compose)
+                          │                           │           MongoDB · mongo-express
+                          │                           │           API · web · Redis
+                          ▼                           │           Prometheus · Grafana
+                   GitHub Actions                     ▼
+            test ▸ build images ▸ boot stack   feedback/feedback.txt
+            ▸ smoke test ▸ push to ghcr.io     committed back to main
 ```
 
-The trigger watches **GitHub**, not your local folder — so a change you have
-only saved (or even committed) but **not pushed** is invisible to Jenkins.
-"Changes show up in Jenkins" means *changes you have pushed*.
+Two pipelines run on every push, and both must be green before merging:
 
-**One catch the first time:** a trigger declared inside the `Jenkinsfile`
-only starts working *after* Jenkins has run one build and read it. So to turn
-it on:
-
-1. Push the commit that contains the `triggers { pollSCM(...) }` block.
-2. Click **Build Now** once — this is the build where Jenkins first *reads*
-   the trigger.
-3. From then on every `git push` builds on its own within ~2 minutes, no
-   clicking.
-
-To confirm polling is live, open the job and look for **Git Polling Log** in
-the left menu (it appears after that first build); it logs each poll and
-whether it found a change. It is set to `H/2 * * * *` (~2 min) for a snappy
-demo; raise it to `H/5 * * * *` to poll less often day to day.
-
-**Why polling and not an instant webhook?** A GitHub webhook would build the
-moment you push, but GitHub has to reach Jenkins over the internet to deliver
-it. This Jenkins lives on `http://localhost:8080`, which has no public
-address, so a webhook can't get in without a tunnel. Polling has Jenkins
-reach *out* to GitHub instead, which works fine from localhost — so it is the
-right fit here.
-
----
-
-## What each stage does (for the walkthrough)
-
-| # | Stage | What it proves |
+| | Runs on | Does |
 |---|---|---|
-| 1 | Checkout | Jenkins pulled the exact commit from GitHub |
-| 2 | Backend - Install | Backend dependencies install cleanly (`npm ci`) |
-| 3 | Database - Wait for MySQL | The local MySQL service answers and the CI credentials work |
-| 4 | Database - Schema + Seed + Migrate | The database builds from `schema.sql` into `reusehub_ci`, seeds demo data, applies migrations |
-| 5 | Backend - Test (341) | The full Jest + Supertest suite passes; results published as JUnit |
-| 6 | Frontend - Install | Frontend dependencies install cleanly |
-| 7 | Frontend - Build | The production Vite bundle builds without errors |
-| 8 | Archive | The built site is saved as a build artifact |
-
-There is no container to tear down at the end. `reusehub_ci` is left in place;
-the next build's *Schema* stage rebuilds it from scratch, so every run starts
-clean anyway.
+| **GitHub Actions** (`.github/workflows/ci.yml`) | GitHub's servers | Tests, builds both Docker images, boots the **whole** compose stack, runs the end-to-end smoke test; on `main`, publishes the images to GitHub Container Registry |
+| **Jenkins** (`Jenkinsfile`) | Your own machine | The same tests and image build; on `main`, **deploys** the stack on that machine and smoke-tests it |
 
 ---
 
-## Verify locally before you push (optional but recommended)
+## 1. What the Jenkins pipeline does
 
-You can produce the exact JUnit report Jenkins consumes, on your own machine:
+| Stage | Every branch | `main` only |
+|---|---|---|
+| Checkout | ✓ | |
+| Skip Jenkins feedback commit | ✓ | |
+| Backend - Install (`npm ci`, `prisma generate`) | ✓ | |
+| Backend - Test (Jest, no database needed) | ✓ | |
+| Frontend - Install | ✓ | |
+| Frontend - Lint + Build (bundle archived) | ✓ | |
+| Docker - Build (`reusehub-api`, `reusehub-web`, tagged with the build number) | ✓ | |
+| Docker - Push (Docker Hub) | | ✓ if configured |
+| Deploy (`docker compose up -d --wait`) | | ✓ |
+| Smoke test (`backend/scripts/smoke.js`) | | ✓ |
+| Feedback file committed to `main` | | ✓ |
 
-```powershell
-cd C:\ReUseHub\backend
-npm install          # refreshes package-lock.json with jest-junit (first time only)
-npm run test:ci      # runs the 341 tests AND writes reports\junit.xml
+A branch build never deploys and never pushes to `main`.
+
+## 2. Prerequisites on the Jenkins machine
+
+1. **Jenkins** (LTS) with the default recommended plugins (Pipeline, Git,
+   GitHub, Credentials Binding, Timestamper).
+2. **Node.js 20+** on the PATH of the account Jenkins runs as. If it isn't,
+   install the *NodeJS* plugin, add a Node install named `node20` under
+   *Manage Jenkins → Tools*, and uncomment the `tools` block in the Jenkinsfile.
+3. **Docker Desktop**, running, with `docker` on Jenkins' PATH.
+   On Windows the Jenkins service must be allowed to talk to Docker: either run
+   the Jenkins service as your own Windows user (*services.msc → Jenkins → Log
+   On*), or add the service account to the local `docker-users` group, then
+   restart Jenkins. Check with a build: the *Docker - Build* stage starts with
+   `docker version`.
+4. Free host ports: 3000 (web), 5000 (API), 8081 (mongo-express), 3005
+   (Grafana), 9091 (Prometheus), 27017 (MongoDB), 6380 (Redis). Change any of
+   them in a root `.env` (see `.env.example`).
+
+No database setup is needed: the stack brings its own MongoDB.
+
+## 3. Create the job
+
+*New Item → Pipeline* (name e.g. `reusehub`), then:
+
+- **Build Triggers:** tick **GitHub hook trigger for GITScm polling** (see §5).
+- **Pipeline → Definition:** *Pipeline script from SCM*
+  - SCM: Git, Repository URL `https://github.com/Vanshikadebug/Devops-2026-CS-F-11.git`
+  - Branch specifier: `*/main`
+  - Script path: `Jenkinsfile`
+
+Want every branch and pull request built too? Use *New Item → Multibranch
+Pipeline* with the same repository instead; the Jenkinsfile already restricts
+deploys to `main`.
+
+Click **Build Now** once — Jenkins only learns the triggers after a first run.
+
+## 4. Credentials (*Manage Jenkins → Credentials → Global*)
+
+| ID | Kind | Used for |
+|---|---|---|
+| `github-token` | Username + password: your GitHub username and a **personal access token** with `repo` scope | Pushing `feedback/feedback.txt` to `main` |
+| `dockerhub` *(optional)* | Username + password: Docker Hub username and an **access token** | The *Docker - Push* stage |
+
+To turn the Docker Hub push on, also add a global environment variable
+`DOCKERHUB_NAMESPACE` = your Docker Hub username (*Manage Jenkins → System →
+Global properties → Environment variables*). Without it the stage is skipped.
+
+Each person uses **their own** GitHub token. Never share account passwords —
+the repo owner adds teammates as collaborators instead.
+
+## 5. GitHub → Jenkins trigger
+
+**Webhook (instant).** GitHub must be able to reach Jenkins, so a Jenkins on
+`localhost` needs a public tunnel first:
+
+```bash
+cloudflared tunnel --url http://localhost:8080
 ```
 
-If `backend\reports\junit.xml` appears and the suite is green, the pipeline's
-test stage will behave the same way. (`reports/` is gitignored, so it is not
-committed.)
+Then in GitHub: *repo → Settings → Webhooks → Add webhook*
 
-> Note: run this way, the tests use your **local dev** database and settings
-> from `backend/.env` (that is what a developer's machine is set up for).
-> Jenkins is the one that points `DB_NAME` at `reusehub_ci` via the
-> `Jenkinsfile`, so the isolated CI database is used **on the CI run**, not
-> when you run the suite by hand.
+- Payload URL: `https://<your-tunnel-host>/github-webhook/` (trailing slash matters)
+- Content type: `application/json`
+- Events: *Just the push event*
 
----
+GitHub shows a green tick next to the webhook after its first delivery.
 
-## Troubleshooting
+**Polling (fallback, no setup).** The Jenkinsfile also polls GitHub about every
+2 minutes, so pushes still build when no webhook can reach the machine.
 
-**`'npm' is not recognized` / `'node' is not recognized` in a stage.**
-Node is not on the PATH of the account Jenkins runs as. Two fixes:
-- *Simplest:* add Node's install folder to that account's PATH and restart
-  the Jenkins service.
-- *Cleaner:* install the **NodeJS** plugin, go to **Manage Jenkins → Tools →
-  NodeJS installations**, add one named exactly **`node20`**, then uncomment
-  the `tools { nodejs 'node20' }` block near the top of the `Jenkinsfile`.
+Either way Jenkins sees **pushed** commits only — commit, then `git push`.
 
-**The build fails at *Database - Wait for MySQL* with `ECONNREFUSED`.**
-Nothing is listening on `127.0.0.1:3306`. The `MySQL80` service is not running
-— start it in `services.msc` (and set it to *Automatic* so it comes up with
-Windows). This is environmental, not a code problem: the Test stage never ran,
-so the red build says nothing about the app.
+## 6. GitHub Actions and the container registry
 
-**The build fails with `ER_ACCESS_DENIED_ERROR` / "Access denied for user
-'reusehub_ci'".**
-The dedicated CI account is missing or has a different password. Re-run the
-one-time setup: `database\ci-setup.sql` as root (see
-[One-time: create the CI database](#one-time-create-the-ci-database)). The
-account name and password there must match `DB_USER` / `DB_PASSWORD` in the
-`Jenkinsfile`.
+Nothing to configure: the workflow uses the repository's built-in
+`GITHUB_TOKEN`. After a push to `main`, the images appear under the repo
+owner's *Packages*:
 
-**The build fails with `ER_DBACCESS_DENIED_ERROR` on `reusehub_ci`.**
-The account exists but wasn't granted rights on `reusehub_ci`. Re-running
-`database\ci-setup.sql` fixes it — the `GRANT ALL PRIVILEGES ON reusehub_ci.*`
-lines are what the build needs.
+```
+ghcr.io/<owner>/reusehub-api:latest   ghcr.io/<owner>/reusehub-api:<commit-sha>
+ghcr.io/<owner>/reusehub-web:latest   ghcr.io/<owner>/reusehub-web:<commit-sha>
+```
 
-**The build fails at *Database - Schema + Seed + Migrate* with
-`ER_BINLOG_CREATE_ROUTINE_NEED_SUPER`.**
-Every table builds, then it dies creating `schema.sql`'s report triggers. This
-is a MySQL 8 gate, not a bug: with binary logging on (the default), MySQL won't
-let an account *without* the global SUPER privilege create a trigger — and the
-`reusehub_ci` account deliberately isn't SUPER (it's fenced to one database).
-The one-time `database\ci-setup.sql` now sets the global
-`log_bin_trust_function_creators=1` that lifts this. If you set up CI before
-that line existed, just **re-run `database\ci-setup.sql` as root once** and
-rebuild. It's a harmless relaxation on a dev/CI server with no replication, and
-`SET PERSIST` makes it survive a MySQL restart.
+## 7. After a `main` deploy
 
-**A test unexpectedly touched my dev data.**
-It shouldn't be possible from CI: the `reusehub_ci` account has no rights on
-`reusehub`. If you saw this, check that the `Jenkinsfile` still sets
-`DB_NAME = 'reusehub_ci'` and that you didn't run `npm run db:reset` by hand
-against your dev database.
+| | |
+|---|---|
+| Website | http://localhost:3000 |
+| API health | http://localhost:5000/api/health |
+| mongo-express | http://localhost:8081 — `admin` / `reusehub` |
+| Grafana | http://localhost:3005 — `admin` / `admin` (dashboards: *ReuseHub - Detailed App Metrics*, *ReuseHub - MongoDB*) |
+| Prometheus | http://localhost:9091/targets — `reusehub-api`, `mongodb`, `prometheus` all UP |
 
----
+## 8. Troubleshooting
 
-## Where Docker went
-
-Earlier versions of this pipeline started a throwaway `mysql:8.0` **Docker**
-container per build. It worked, but it coupled CI to Docker Desktop being open:
-if the daemon was closed (or its TCP toggle got reset by an update), a push
-auto-triggered a build that went red at the *Start MySQL* stage — a failure
-that had nothing to do with the code. Running against the always-on local MySQL
-service removes that moving part entirely.
-
-Docker is not gone from the project — packaging the app itself (a `Dockerfile`
-per service plus a `docker-compose.yml`) is **Phase 13**, tracked separately in
-the README. It just isn't a dependency of the test pipeline anymore.
-
----
-
-## A note on secrets
-
-`DB_USER` / `DB_PASSWORD` in the committed `Jenkinsfile` are a **dedicated,
-non-secret CI login** (`reusehub_ci` / `reusehub_ci_pw`) created by
-`database/ci-setup.sql`. That account is scoped to the `reusehub_ci` database
-and can reach no real data, which is exactly why the values can live in the
-repo — they are not a real credential. The `Jenkinsfile` sets a disposable
-**`JWT_SECRET`** for a related reason: the DB-prep scripts (`wait-for-db`,
-`db:setup`/`db:seed`/`db:migrate`) load `config/env.js`, which **requires
-`JWT_SECRET` whenever `NODE_ENV` is not `test`** — and those scripts run in
-development mode, not test mode. Anything genuinely secret (a production
-database password, a real `JWT_SECRET`) must live in **Jenkins → Credentials**
-and be pulled in with `credentials('id')`, never written into the repo. The
-test suite itself runs as `NODE_ENV=test` and uses a built-in dummy, so it
-needs neither value.
+| Symptom | Fix |
+|---|---|
+| `'npm' is not recognized` | Node is not on the Jenkins account's PATH — see §2.2 |
+| `'docker' is not recognized` or `open //./pipe/docker_engine: Access is denied` | See §2.3; restart Jenkins after changing its account or groups |
+| `Bind for 0.0.0.0:<port> failed: port is already allocated` | Another program holds the port; set a different one in the root `.env` |
+| `mongodb` unhealthy, log says *Invalid featureCompatibilityVersion* | The `mongodb_data` volume was created by a newer MongoDB than the pinned image. Keep the image at or above that version |
+| Grafana rejects `admin` / `admin` | The password was changed earlier and is stored in the `grafana-data` volume; use that password (or reset with `docker compose exec grafana grafana cli admin reset-admin-password <new>`) |
+| Feedback push skipped | `main` moved during the build; harmless, the next build commits it |

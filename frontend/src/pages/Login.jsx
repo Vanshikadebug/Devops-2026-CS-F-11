@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../app/authContext'
 import FormField from '../components/FormField'
 import Button from '../components/Button'
+import AuthAside from './AuthAside'
 import './AuthForm.css'
 
 function Login() {
@@ -47,7 +48,9 @@ function Login() {
   }
 
   return (
-    <div className="page auth">
+    <div className="auth">
+      <AuthAside title="Welcome back." subtitle="List it. Lend it. Reuse it." />
+
       <div className="auth__card">
         <header className="auth__header">
           <h1 className="auth__title">Welcome back</h1>

@@ -8,7 +8,7 @@
  *                                    the Docker entrypoint can run it on every
  *                                    boot without wiping a live database
  *
- * Everything is an upsert or a skipDuplicates createMany, so running it twice
+ * Everything is an upsert or an insert-if-missing, so running it twice
  * changes nothing. It never deletes.
  */
 

@@ -1,30 +1,70 @@
 name: reusehub
 
+# Full stack:  docker compose up -d --build
+#   web            http://localhost:3000   React app (nginx, proxies /api)
+#   api            http://localhost:5000   Express + Prisma
+#   mongo-express  http://localhost:8081   browse the MongoDB data
+#   grafana        http://localhost:3005   API + MongoDB dashboards
+#   prometheus     http://localhost:9091   raw metrics
+
 services:
-  mysql:
-    image: mysql:8.0
+  # MongoDB -- the only database. Prisma needs a replica set (it wraps writes
+  # in transactions), so this runs a single-member set "rs0". A replica set
+  # with auth also needs a keyfile; one is generated at every start (it only
+  # authenticates members to each other, and there is just one member).
+  mongodb:
+    image: mongo:8.2
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-reusehub}
-      MYSQL_DATABASE: ${DB_NAME:-reusehub}
-    # 3307 on the host: a local MySQL usually already holds 3306.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
+    entrypoint:
+      - bash
+      - -c
+      - |
+        head -c 756 /dev/urandom | base64 > /tmp/mongo-keyfile
+        chmod 400 /tmp/mongo-keyfile && chown mongodb:mongodb /tmp/mongo-keyfile
+        exec docker-entrypoint.sh mongod --replSet rs0 --bind_ip_all --keyFile /tmp/mongo-keyfile
     ports:
-      - '${DB_PORT_HOST:-3307}:3306'
+      - '${MONGO_PORT_HOST:-27017}:27017'
     volumes:
-      - mysql-data:/var/lib/mysql
+      - mongodb_data:/data/db
+    # Also initiates the replica set on first boot; healthy = writable primary.
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-p${DB_PASSWORD:-reusehub}']
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD"
+          --authenticationDatabase admin --eval
+          "try { rs.status() } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongodb:27017' }] }) }
+          print(db.hello().isWritablePrimary)" | grep -q true
       interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 30s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  mongo-express:
+    image: mongo-express:1.0.2
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - '${MONGO_EXPRESS_PORT:-8081}:8081'
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/?authSource=admin&directConnection=true
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: 'true'
+      # Login for the mongo-express UI itself (not the database).
+      ME_CONFIG_BASICAUTH: 'true'
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-reusehub}
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     command: redis-server --save 60 1 --loglevel warning
     ports:
-      - '${REDIS_PORT_HOST:-6379}:6379'
+      - '${REDIS_PORT_HOST:-6380}:6379'
     volumes:
       - redis-data:/data
     healthcheck:
@@ -37,32 +77,36 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    image: ${IMAGE_PREFIX:-reusehub}-api:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
-      mysql:
+      mongodb:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 5000
-      DATABASE_URL: mysql://root:${DB_PASSWORD:-reusehub}@mysql:3306/${DB_NAME:-reusehub}
+      DATABASE_URL: mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/${DB_NAME:-reusehub}?authSource=admin&replicaSet=rs0
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_SECRET: ${JWT_SECRET:-reusehub_jwt_secret_dev_3a86a876_secure}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-10}
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:3000}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
-      ADMIN_NAME: ${ADMIN_NAME:-}
-      ADMIN_MOBILE: ${ADMIN_MOBILE:-}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@reusehub.test}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-AdminPassword123!}
+      ADMIN_NAME: ${ADMIN_NAME:-Site Admin}
+      ADMIN_MOBILE: ${ADMIN_MOBILE:-9876543210}
     ports:
       - '${API_PORT:-5000}:5000'
     volumes:
       # Uploaded photos must outlive the container -- without this, every
       # rebuild silently drops every listing photo.
       - api-uploads:/app/uploads
-    command: sh -c "npx prisma migrate deploy && node prisma/seed.js --if-empty && node src/server.js"
+    # db push creates the collections' indexes/uniques (MongoDB has no SQL
+    # migrations); the seed only runs on an empty database.
+    command: sh -c "npx prisma db push --skip-generate && node prisma/seed.js --if-empty && node src/server.js"
     healthcheck:
       test: ['CMD', 'node', '-e', "require('http').get('http://127.0.0.1:5000/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 10s
@@ -74,12 +118,58 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+    image: ${IMAGE_PREFIX:-reusehub}-web:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       - api
     # 3000, not 8080: Jenkins commonly holds 8080 on dev machines.
     ports:
       - '${WEB_PORT:-3000}:80'
+
+  # MongoDB metrics (connections, operations, collection sizes) for Prometheus.
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.43.1
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command:
+      - --mongodb.uri=mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/admin?directConnection=true
+      - --collect-all
+      - --compatible-mode
+      - --collector.collstats-limit=0
+      - --discovering-mode
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - '${PROMETHEUS_PORT:-9091}:9090'
+    depends_on:
+      - api
+      - mongodb-exporter
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '${GRAFANA_PORT:-3005}:3000'
+    depends_on:
+      - prometheus
 
   # Optional public HTTPS URL for the API, so teammates point their frontend at
   # this machine and share one database. Opt-in -- `docker compose up` alone
@@ -94,6 +184,8 @@ services:
     command: tunnel --no-autoupdate --url http://api:5000
 
 volumes:
-  mysql-data:
+  mongodb_data:
   redis-data:
   api-uploads:
+  prometheus-data:
+  grafana-data:
