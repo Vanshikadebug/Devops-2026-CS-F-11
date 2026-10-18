@@ -1,73 +1,53 @@
-/* ==========================================================================
-   CAMPUS CARD — DARK LUXURY EDITION
-   ========================================================================== */
+/* Campus card — same caption rule + fact layout as the dashboard. */
 
-.campus-card {
-  position: relative;
+.campus-card { min-width: 0; }
+
+.campus-card__head {
   display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.campus-card:hover {
-  border-color: var(--line);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-glow);
-}
-
-.campus-card__image {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: var(--surface-sunk);
-  position: relative;
-  overflow: hidden;
-}
-
-.campus-card__image::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60%;
-  background: linear-gradient(to top, rgba(10, 10, 10, 0.8), transparent);
-  pointer-events: none;
-}
-
-.campus-card__body {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s4);
+  margin-bottom: var(--s4);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--ink);
 }
 
 .campus-card__title {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 600;
   color: var(--ink);
-  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-.campus-card__city {
-  font-size: 0.85rem;
-  color: var(--muted);
+.campus-card__college {
+  color: var(--ink);
+  font-size: clamp(1.8rem, 3.4vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 1;
 }
 
-.campus-card__meta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
-  font-size: 0.8rem;
+.campus-card__place {
+  margin-top: var(--s2);
   color: var(--muted);
+  font-size: 0.875rem;
 }
+
+.campus-card__empty { color: var(--ink); font-size: 0.875rem; max-width: 40ch; }
+
+.campus-card__editor { display: flex; flex-direction: column; gap: var(--s4); }
+
+.campus-card__error { color: var(--bad-ink); font-size: 0.8125rem; font-weight: 500; }
+
+.campus-card__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
+
+.campus-card__clear {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.campus-card__clear:hover { color: var(--ink); }

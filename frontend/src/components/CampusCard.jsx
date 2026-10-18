@@ -81,7 +81,6 @@ function CampusCard({ user }) {
         <div className="campus-card__current">
           {user.college_id ? (
             <>
-              <span className="campus-card__glyph" aria-hidden="true">🎓</span>
               <div>
                 <p className="campus-card__college">{user.college_name}</p>
                 {/* `place` is a joined string, so it is '' rather than
