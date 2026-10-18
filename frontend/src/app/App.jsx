@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { Preloader, Cursor, RouteCurtain, Ticker } from '../components/Experience'
+import { Preloader, Cursor, RouteCurtain, ScrollProgress, Ticker } from '../components/Experience'
 import ProtectedRoute from './ProtectedRoute'
 import AdminRoute from './AdminRoute'
 import { useAuth } from './authContext'
@@ -41,6 +41,7 @@ export default function App() {
       {!bare && <Preloader />}
       <RouteCurtain />
       <Cursor />
+      {!bare && <ScrollProgress />}
       {!bare && <Ticker />}
       {!bare && <Navbar />}
 

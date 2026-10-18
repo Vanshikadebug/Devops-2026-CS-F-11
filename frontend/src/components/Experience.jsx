@@ -7,7 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useSpring } from 'framer-motion'
 
 import { api } from '../lib/api'
 import { assetUrl } from '../lib/origin'
@@ -179,6 +179,15 @@ export function RouteCurtain() {
       <span className="curtain__word">{setting('site_name', 'ReuseHub').toUpperCase()}<sup>®</sup></span>
     </motion.div>
   )
+}
+
+/* -------------------------------------------------------------------------
+   Scroll progress — a hairline of accent under the navbar.
+   ------------------------------------------------------------------------- */
+export function ScrollProgress() {
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 220, damping: 40, restDelta: 0.001 })
+  return <motion.div className="progress" style={{ scaleX }} aria-hidden="true" />
 }
 
 /* -------------------------------------------------------------------------

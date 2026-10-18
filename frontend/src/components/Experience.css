@@ -147,3 +147,16 @@
 @keyframes ticker {
   to { transform: translateX(-50%); }
 }
+
+/* Scroll progress -------------------------------------------------------- */
+.progress {
+  position: fixed;
+  top: var(--nav-h);
+  left: 0;
+  right: 0;
+  z-index: 701;
+  height: 2px;
+  background: var(--accent);
+  transform-origin: 0 50%;
+  pointer-events: none;
+}

@@ -187,7 +187,17 @@ function ItemDetail() {
           destination, so it works when someone arrives from a shared
           URL with no history to go back to. */}
       <div className="item-detail__layout">
-        <div className="item-detail__media">
+        {/* Hover to magnify: the zoom origin follows the pointer, so the
+            photo can be inspected for wear before requesting it. */}
+        <div
+          className="item-detail__media"
+          data-cursor={item.image_url ? 'Zoom' : undefined}
+          onMouseMove={(e) => {
+            const r = e.currentTarget.getBoundingClientRect()
+            e.currentTarget.style.setProperty('--zx', `${((e.clientX - r.left) / r.width) * 100}%`)
+            e.currentTarget.style.setProperty('--zy', `${((e.clientY - r.top) / r.height) * 100}%`)
+          }}
+        >
           <ItemImage item={item} ratio="4 / 5" className="item-detail__image" />
         </div>
 

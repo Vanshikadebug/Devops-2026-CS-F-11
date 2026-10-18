@@ -157,3 +157,12 @@
   .item-detail__media { position: static; }
   .item-detail__fact { grid-template-columns: 7rem 1fr; }
 }
+
+/* Hover-zoom: scale the photo around the pointer (set as --zx / --zy). */
+@media (hover: hover) and (pointer: fine) {
+  .item-detail__media .itemimg__photo {
+    transform-origin: var(--zx, 50%) var(--zy, 50%);
+    transition: transform 400ms var(--ease);
+  }
+  .item-detail__media:hover .itemimg__photo { transform: scale(1.9); }
+}
