@@ -87,7 +87,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5000
-      DATABASE_URL: mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/${DB_NAME:-reusehub}?authSource=admin&replicaSet=rs0
+      DATABASE_URL: mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/${DB_NAME:-reusehub}?authSource=admin&replicaSet=rs0&serverSelectionTimeoutMS=5000
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-reusehub_jwt_secret_dev_3a86a876_secure}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}

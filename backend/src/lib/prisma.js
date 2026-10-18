@@ -56,9 +56,21 @@ const prisma = base.$extends({
   },
 })
 
+/* Bounded: with MongoDB unreachable the driver spends 30 s on server
+   selection before failing, and /api/health must answer long before that. */
+const PING_TIMEOUT_MS = 3000
+
 async function testPrismaConnection() {
-  await base.$runCommandRaw({ ping: 1 })
-  return true
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('database ping timed out')), PING_TIMEOUT_MS)
+  })
+  try {
+    await Promise.race([base.$runCommandRaw({ ping: 1 }), timeout])
+    return true
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 async function disconnectPrisma() {

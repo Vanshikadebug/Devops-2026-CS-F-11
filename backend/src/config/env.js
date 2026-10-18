@@ -64,7 +64,12 @@ function databaseUrl() {
   const password = encodeURIComponent(db.password)
   const name = encodeURIComponent(db.name)
   const credentials = password ? `${user}:${password}@` : ''
-  return `mongodb://${credentials}${db.host}:${db.port}/${name}?authSource=admin&directConnection=true`
+  // serverSelectionTimeoutMS: fail in 5 s when MongoDB is down instead of the
+  // driver's default 30 s, so requests and health checks don't hang. Tests use
+  // 1 s -- below the health ping limit -- so no query outlives a test run
+  // when there is no database (CI).
+  const selectMs = isTest ? 1000 : 5000
+  return `mongodb://${credentials}${db.host}:${db.port}/${name}?authSource=admin&directConnection=true&serverSelectionTimeoutMS=${selectMs}`
 }
 
 const config = {
