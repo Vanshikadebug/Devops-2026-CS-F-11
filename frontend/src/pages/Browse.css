@@ -193,3 +193,91 @@
   .browse__bar { flex-direction: column; align-items: stretch; }
   .browse__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Grid / list toggle ----------------------------------------------------- */
+.browse__view { display: flex; gap: var(--s4); }
+.browse__view button {
+  border: 0;
+  background-color: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.browse__view button.is-active { color: var(--ink); }
+
+/* Index list ------------------------------------------------------------- */
+.ilist { list-style: none; border-top: 1px solid var(--ink); }
+
+.ilist__row {
+  border-bottom: 1px solid var(--line);
+  animation: browse-card 0.7s var(--ease) both;
+}
+
+.ilist__link {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) 8rem 6rem 10rem;
+  align-items: baseline;
+  gap: var(--gutter);
+  padding: 0.9rem 0;
+  color: var(--ink);
+  transition: opacity var(--t), padding var(--t);
+}
+
+/* Hovering one row dims the rest, so the eye lands on it. */
+.ilist.is-hovering .ilist__row:not(.is-hover) .ilist__link { opacity: 0.35; }
+.ilist__row.is-hover .ilist__link { padding-left: var(--s4); }
+
+.ilist__no { color: var(--muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+
+.ilist__name {
+  overflow: hidden;
+  font-size: clamp(1.4rem, 2.8vw, 2.6rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ilist__meta {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ilist__place { display: inline-flex; align-items: center; gap: 0.4rem; }
+.ilist__place i {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+}
+.ilist__place i.is-on { border-color: var(--accent); background: var(--accent); }
+
+/* Floating preview, positioned by JS at the pointer. */
+.ilist__preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 600;
+  width: 220px;
+  aspect-ratio: 4 / 5;
+  margin: -150px 0 0 24px;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--photo);
+  opacity: 0;
+  scale: 0.85;
+  transition: opacity var(--t), scale var(--t);
+}
+.ilist__preview.is-on { opacity: 1; scale: 1; }
+.ilist__preview img { width: 100%; height: 100%; object-fit: cover; }
+
+@media (hover: none) { .ilist__preview { display: none; } }
+
+@media (max-width: 760px) {
+  .ilist__link { grid-template-columns: 2rem minmax(0, 1fr); }
+  .ilist__meta { display: none; }
+}

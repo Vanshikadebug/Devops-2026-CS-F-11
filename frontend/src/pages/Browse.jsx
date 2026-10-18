@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useConfig } from '../app/ConfigProvider'
 import { api } from '../lib/api'
 import ItemCard from '../components/ItemCard'
+import { assetUrl } from '../lib/origin'
 import './Browse.css'
 
 /* The full listing page. Every filter option -- categories, conditions,
@@ -27,20 +28,23 @@ export default function Browse() {
 
   const get = (key) => params.get(key) || ''
   const page = Number(get('page')) || 1
+  const view = get('view') === 'list' ? 'list' : 'grid'
+
+  // Only the filters reach the API, so toggling the view does not refetch.
+  const query = new URLSearchParams()
+  for (const key of ['search', 'category', 'condition', 'city', 'college', 'status', 'sort']) {
+    if (params.get(key)) query.set(key, params.get(key))
+  }
+  query.set('page', String(page))
+  query.set('limit', '24')
+  const queryKey = query.toString()
 
   useEffect(() => {
     const controller = new AbortController()
     setLoading(true)
 
-    const query = new URLSearchParams()
-    for (const key of ['search', 'category', 'condition', 'city', 'college', 'status', 'sort']) {
-      if (params.get(key)) query.set(key, params.get(key))
-    }
-    query.set('page', String(page))
-    query.set('limit', '24')
-
     api
-      .get(`/items?${query}`, { signal: controller.signal })
+      .get(`/items?${queryKey}`, { signal: controller.signal })
       .then((res) => {
         setItems(res.data)
         setPagination(res.pagination)
@@ -54,14 +58,14 @@ export default function Browse() {
       })
 
     return () => controller.abort()
-  }, [params, page])
+  }, [queryKey])
 
   function setParam(key, value) {
     const next = new URLSearchParams(params)
     if (value) next.set(key, value)
     else next.delete(key)
-    // Any filter change invalidates the current page number.
-    if (key !== 'page') next.delete('page')
+    // Any filter change invalidates the current page number; the view does not.
+    if (key !== 'page' && key !== 'view') next.delete('page')
     setParams(next, { replace: true })
   }
 
@@ -103,6 +107,20 @@ export default function Browse() {
             />
             <button type="submit" className="label ulink">Search →</button>
           </form>
+
+          <div className="browse__view" role="group" aria-label="Layout">
+            {['grid', 'list'].map((v) => (
+              <button
+                key={v}
+                type="button"
+                className={`label ulink ${view === v ? 'is-active' : ''}`}
+                aria-pressed={view === v}
+                onClick={() => setParam('view', v === 'grid' ? '' : v)}
+              >
+                {v === 'grid' ? 'Grid' : 'List'}
+              </button>
+            ))}
+          </div>
 
           <label className="browse__sort">
             <span className="label">Sort</span>
@@ -181,6 +199,7 @@ export default function Browse() {
             </p>
           ) : (
             <>
+              {view === 'list' ? <ItemList items={items} offset={(page - 1) * 24} /> : (
               <div className="item-grid browse__grid">
                 {items.map((item, i) => (
                   <div key={item.id} className="browse__cell" style={{ '--i': i % 12 }}>
@@ -188,6 +207,7 @@ export default function Browse() {
                   </div>
                 ))}
               </div>
+              )}
 
               {pagination && pagination.totalPages > 1 && (
                 <nav className="browse__pager" aria-label="Pagination">
@@ -227,5 +247,64 @@ function FilterChip({ active, onClick, children }) {
     >
       {children}
     </button>
+  )
+}
+
+/**
+ * Index list: one big row per listing. On pointer devices a photo of the
+ * hovered row trails the cursor (eased with requestAnimationFrame).
+ */
+function ItemList({ items, offset }) {
+  const preview = useRef(null)
+  const [hovered, setHovered] = useState(null)
+
+  useEffect(() => {
+    const el = preview.current
+    if (!el || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return undefined
+    let x = 0, y = 0, cx = 0, cy = 0, raf
+    const move = (e) => { x = e.clientX; y = e.clientY }
+    const loop = () => {
+      cx += (x - cx) * 0.16
+      cy += (y - cy) * 0.16
+      el.style.transform = `translate3d(${cx}px, ${cy}px, 0)`
+      raf = requestAnimationFrame(loop)
+    }
+    window.addEventListener('mousemove', move, { passive: true })
+    loop()
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('mousemove', move)
+    }
+  }, [])
+
+  return (
+    <>
+      <ol className={`ilist ${hovered ? 'is-hovering' : ''}`}>
+        {items.map((item, i) => (
+          <li key={item.id} className={`ilist__row ${hovered?.id === item.id ? 'is-hover' : ''}`}>
+            <Link
+              to={`/items/${item.id}`}
+              className="ilist__link"
+              data-cursor="View item"
+              onMouseEnter={() => setHovered(item)}
+              onMouseLeave={() => setHovered(null)}
+            >
+              <span className="ilist__no">{String(offset + i + 1).padStart(2, '0')}</span>
+              <span className="ilist__name">{item.name}</span>
+              <span className="ilist__meta">{item.category}</span>
+              <span className="ilist__meta">{item.condition}</span>
+              <span className="ilist__meta ilist__place">
+                <i className={item.status === 'Available' ? 'is-on' : ''} aria-hidden="true" />
+                {item.college_name || item.city_name || item.location}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+
+      <div ref={preview} className={`ilist__preview ${hovered?.image_url ? 'is-on' : ''}`} aria-hidden="true">
+        {hovered?.image_url && <img src={assetUrl(hovered.image_url)} alt="" />}
+      </div>
+    </>
   )
 }
