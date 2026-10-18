@@ -48,19 +48,28 @@ function bool(key, fallback) {
 
 const db = {
   host: optional('DB_HOST', 'localhost'),
-  port: number('DB_PORT', 3306),
-  user: optional('DB_USER', 'root'),
-  password: optional('DB_PASSWORD', ''),
+  port: number('DB_PORT', 27017),
+  user: optional('DB_USER', 'admin'),
+  password: optional('DB_PASSWORD', 'password'),
   name: optional('DB_NAME', 'reusehub'),
 }
 
+/* MongoDB. Prisma needs a replica set (it wraps writes in transactions);
+   docker-compose runs a single-node one. directConnection=true lets a client
+   outside the Docker network reach it via localhost even though the set
+   advertises its member as "mongodb:27017". */
 function databaseUrl() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL
   const user = encodeURIComponent(db.user)
   const password = encodeURIComponent(db.password)
   const name = encodeURIComponent(db.name)
-  const credentials = password ? `${user}:${password}` : user
-  return `mysql://${credentials}@${db.host}:${db.port}/${name}`
+  const credentials = password ? `${user}:${password}@` : ''
+  // serverSelectionTimeoutMS: fail in 5 s when MongoDB is down instead of the
+  // driver's default 30 s, so requests and health checks don't hang. Tests use
+  // 1 s -- below the health ping limit -- so no query outlives a test run
+  // when there is no database (CI).
+  const selectMs = isTest ? 1000 : 5000
+  return `mongodb://${credentials}${db.host}:${db.port}/${name}?authSource=admin&directConnection=true&serverSelectionTimeoutMS=${selectMs}`
 }
 
 const config = {

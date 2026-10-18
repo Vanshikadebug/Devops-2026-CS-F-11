@@ -1,348 +1,121 @@
-/* =========================================================
-   REUSEHUB MINIMAL NAVBAR
-   ========================================================= */
-
 .nav {
-  position: relative;
-
-  width: 100%;
-
-  height: 64px;
-
-  background: #ffffff;
-
-  border-bottom: 1px solid #eeeeee;
-
-  z-index: 100;
+  position: sticky;
+  top: 0;
+  z-index: 700;
+  background: var(--bg);
+  color: var(--ink);
+  transition: background-color var(--t-slow);
 }
-
 
 .nav__inner {
-  width: calc(100% - 70px);
-
-  max-width: 1400px;
-
-  height: 100%;
-
-  margin: 0 auto;
-
   display: flex;
-
   align-items: center;
-
-  gap: 30px;
+  gap: var(--s6);
+  height: var(--nav-h);
+  padding: 0 var(--gutter);
 }
-
-
-/* =========================================================
-   BRAND
-   ========================================================= */
 
 .nav__brand {
-  flex: 0 0 auto;
-
-  color: #171717;
-
-  text-decoration: none;
+  display: inline-flex;
+  color: var(--accent);
+  transition: transform var(--t);
 }
-
-
-.nav__brand-name {
-  font-size: 18px;
-
-  font-weight: 700;
-
-  letter-spacing: -0.4px;
-}
-
-
-.nav__brand:hover {
-  color: #bd5b5d;
-
-  opacity: 1;
-}
-
-
-/* =========================================================
-   LINKS
-   ========================================================= */
+.nav__brand:hover { transform: rotate(-8deg); }
 
 .nav__links {
   display: flex;
-
   align-items: center;
-
-  gap: 4px;
-
+  gap: var(--s6);
   margin-left: auto;
+  font-size: 0.9375rem;
 }
 
-
-.nav__links a {
-  padding: 7px 8px;
-
-  color: #222222;
-
-  font-size: 15px;
-
-  text-decoration: none;
-
-  white-space: nowrap;
+.nav__plain {
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  cursor: pointer;
 }
 
-
-.nav__links a:hover {
-  color: #bd5b5d;
-
-  opacity: 1;
+.nav__cta {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--ink);
+  transition: background-color var(--t), color var(--t);
 }
-
-
-.nav__links a.is-active {
-  font-weight: 600;
-}
-
-
-/* =========================================================
-   SEARCH
-   ========================================================= */
-
-.nav__search {
-  display: flex;
-
-  align-items: center;
-
-  width: 280px;
-
-  height: 34px;
-
-  border-radius: 20px;
-
-  background: #f4f4f4;
-
-  overflow: hidden;
-}
-
+.nav__cta:hover,
+.nav__cta.active { background: var(--ink); color: var(--bg); }
 
 .nav__search input {
-  flex: 1;
-
-  min-width: 0;
-
-  height: 100%;
-
-  padding: 0 14px;
-
-  border: none;
-
+  width: 6.5rem;
+  padding: 0.2rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font-size: inherit;
+  transition: width var(--t), border-color var(--t);
+}
+.nav__search input::placeholder { color: var(--muted); }
+.nav__search input:focus {
+  width: 12rem;
   outline: none;
-
-  background: transparent;
-
-  color: #222222;
-
-  font-size: 13px;
+  border-color: var(--ink);
 }
 
-
-.nav__search input::placeholder {
-  color: #999999;
-}
-
-
-.nav__search button {
+.nav__end {
   display: flex;
-
   align-items: center;
+  gap: var(--s4);
+}
 
-  justify-content: center;
+.nav__themes { display: flex; gap: 4px; }
 
-  width: 42px;
+.nav__dot {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform var(--t-fast);
+}
+.nav__dot:hover { transform: scale(1.25); }
+.nav__dot--mono { background: #111; border-color: #111; }
+.nav__dot--dark { background: #f1ede8; }
+.nav__dot--red { background: #ff2a00; border-color: #ff2a00; }
+.nav__dot[aria-checked='true'] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--ink); }
 
-  height: 100%;
-
-  border: none;
-
-  background: transparent;
-
-  color: #666666;
-
+.nav__menu {
+  display: none;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 0.9375rem;
   cursor: pointer;
 }
 
-
-.nav__search button:hover {
-  color: #bd5b5d;
-}
-
-
-/* =========================================================
-   RIGHT
-   ========================================================= */
-
-.nav__right {
-  display: flex;
-
-  align-items: center;
-
-  gap: 18px;
-
-  flex: 0 0 auto;
-}
-
-
-.nav__logout,
-.nav__signin {
-  border: none;
-
-  background: transparent;
-
-  color: #171717;
-
-  font-size: 15px;
-
-  text-decoration: none;
-
-  cursor: pointer;
-}
-
-
-.nav__logout:hover,
-.nav__signin:hover {
-  color: #bd5b5d;
-
-  opacity: 1;
-}
-
-
-.nav__list-btn,
-.nav__join {
-  display: inline-flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  height: 34px;
-
-  padding: 0 17px;
-
-  border-radius: 18px;
-
-  background: #111111;
-
-  color: #ffffff;
-
-  font-size: 13px;
-
-  font-weight: 500;
-
-  text-decoration: none;
-}
-
-
-.nav__list-btn:hover,
-.nav__join:hover {
-  background: #bd5b5d;
-
-  color: #ffffff;
-
-  opacity: 1;
-}
-
-
-/* =========================================================
-   TABLET
-   ========================================================= */
-
-@media (max-width: 1000px) {
-
-  .nav__inner {
-    width: calc(100% - 35px);
-
-    gap: 18px;
-  }
-
-  .nav__search {
-    width: 210px;
-  }
-
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 760px) {
-
-  .nav {
-    height: auto;
-
-    min-height: 64px;
-  }
-
-
-  .nav__inner {
-    width: calc(100% - 28px);
-
-    padding: 12px 0;
-
-    flex-wrap: wrap;
-
-    gap: 10px;
-  }
-
-
-  .nav__brand {
-    order: 1;
-  }
-
-
-  .nav__right {
-    order: 2;
-
-    margin-left: auto;
-  }
-
+@media (max-width: 860px) {
+  .nav__end { margin-left: auto; }
+  .nav__menu { display: block; }
 
   .nav__links {
-    order: 4;
-
-    width: 100%;
-
-    margin-left: 0;
-
-    justify-content: center;
-
-    border-top: 1px solid #eeeeee;
-
-    padding-top: 8px;
+    position: fixed;
+    inset: var(--nav-h) 0 0 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s4);
+    margin: 0;
+    padding: var(--s6) var(--gutter);
+    background: var(--bg);
+    font-size: clamp(2rem, 9vw, 3rem);
+    font-weight: 500;
+    letter-spacing: -0.04em;
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path var(--t-slow);
   }
-
-
-  .nav__search {
-    order: 3;
-
-    width: 100%;
-
-    height: 38px;
-  }
-
-
-  .nav__logout,
-  .nav__signin {
-    font-size: 13px;
-  }
-
-
-  .nav__list-btn,
-  .nav__join {
-    height: 32px;
-
-    padding: 0 13px;
-
-    font-size: 12px;
-  }
-
+  .nav--open .nav__links { clip-path: inset(0); }
+  .nav__search input,
+  .nav__search input:focus { width: 100%; font-size: 1.25rem; }
+  .nav__search { width: 100%; }
 }

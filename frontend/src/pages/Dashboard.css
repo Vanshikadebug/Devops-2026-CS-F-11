@@ -1,175 +1,164 @@
-/* ---------------------------------------------------------------
-   Dashboard -- the logged-in user's home base.
+/* Dashboard — editorial header, count-up figures, activity bars. */
 
-   The grid definitions here all use auto-fit + minmax rather than a
-   fixed column count. That means the layout responds to the SPACE
-   AVAILABLE rather than to a list of device widths: the same rule
-   gives three columns on a laptop, two on a tablet and one on a
-   phone, with no media queries to keep in sync.
---------------------------------------------------------------- */
+.udash { padding-top: var(--s6); padding-bottom: var(--s16); }
 
-.dashboard__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-5); /* Bumped gap */
-  margin-bottom: var(--space-6);
-}
-
-.dashboard__title {
-  font-size: 2rem; /* Bumped from 1.75rem */
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 var(--space-2); /* Bumped margin */
-}
-
-.dashboard__subtitle {
-  font-size: 1.05rem; /* Slightly larger text */
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.dashboard__cta {
-  text-decoration: none;
-  /* Stops the button shrinking when the heading wraps. */
-  flex-shrink: 0;
-}
-
-.dashboard__status {
-  color: var(--text-muted);
-  font-size: 1rem; /* Bumped from 0.9rem */
-  min-height: 1.5rem; /* Bumped from 1.2rem */
-  margin-bottom: var(--space-4);
-}
-
-/* --- Sections --------------------------------------------------- */
-.dashboard__section {
-  margin-bottom: var(--space-12); /* Bumped from 10 to give sections more breathing room */
-}
-
-.dashboard__section-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4); /* Bumped gap */
-}
-
-.dashboard__section-title {
-  font-size: 1.25rem; /* Bumped from 1.1rem */
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 var(--space-4);
-}
-
-.dashboard__section-head .dashboard__section-title {
-  margin-bottom: var(--space-4);
-}
-
-.dashboard__see-all {
-  font-size: 1rem; /* Bumped from 0.9rem */
-  font-weight: 600;
-  color: var(--green-700);
-  text-decoration: none;
-}
-
-.dashboard__see-all:hover {
-  text-decoration: underline;
-}
-
-/* --- Account details -------------------------------------------
-   Marked up as a <dl>: a description list is the correct element for
-   label/value pairs, which is why the CSS has to undo its default
-   indentation. Using divs would look the same and tell a screen
-   reader nothing about which value belongs to which label.
---------------------------------------------------------------- */
-.account-card {
+.udash__head {
   display: grid;
-  /* Bumped minmax to 240px for slightly larger cards before they wrap */
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-5) var(--space-6);
-  margin: 0;
-  padding: var(--space-6); /* Bumped from 5 */
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: var(--s4) var(--gutter);
+  padding-bottom: var(--s4);
+  border-bottom: 2px solid var(--ink);
 }
+.udash__head > .label { grid-column: 1 / -1; grid-row: 1; }
+.udash__head > .udash__title { grid-column: 1; grid-row: 2; }
+.udash__head > .udash__actions { grid-column: 2; grid-row: 2; }
 
-.account-card__row dt {
-  font-size: 0.9rem; /* Bumped from 0.8rem */
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  margin-bottom: var(--space-2); /* Bumped from 1 */
-}
-
-.account-card__row dd {
-  margin: 0;
-  font-size: 1.05rem; /* Made the value text slightly larger */
-  color: var(--text-primary);
-  /* An email address has no spaces, so a long one would otherwise
-     push the card wider than its container on a narrow screen. */
-  overflow-wrap: anywhere;
-}
-
-/* --- The stat grid ---------------------------------------------- */
-.dashboard__stats {
-  display: grid;
-  /* Bumped minmax to 220px to make stat columns wider */
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-5); /* Bumped from 4 */
-}
-
-@media (max-width: 640px) {
-  .dashboard__header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .dashboard__title {
-    font-size: 1.65rem; /* Bumped from 1.5rem */
-  }
-}
-
-/* --- NEW ADDITIONS ------------------------------------------- */
-
-/* 1. Stat Card: A dedicated component for the items inside .dashboard__stats */
-.stat-card {
-  padding: var(--space-5);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.stat-card__label {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.stat-card__value {
-  font-size: 2.25rem;
+.udash__title {
+  font-size: clamp(2.8rem, 8vw, 7.5rem);
   font-weight: 700;
-  color: var(--text-primary);
+  letter-spacing: -0.065em;
+  line-height: 0.88;
+  animation: dash-rise 0.9s var(--ease) both;
+}
+.udash__title span {
+  display: block;
+  margin-top: 0.35em;
+  color: var(--muted);
+  font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+@keyframes dash-rise {
+  from { opacity: 0; transform: translateY(30px); }
+}
+
+.udash__actions { display: flex; align-items: center; gap: var(--s6); }
+
+.udash__refresh {
+  border: 0;
+  background-color: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.udash__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* Figures -------------------------------------------------------------- */
+.udash__figures {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 2fr);
+  gap: var(--gutter);
+  align-items: end;
+  padding: var(--s10) 0 var(--s12);
+}
+
+.udash__hero { display: block; color: var(--ink); }
+.udash__hero:hover .udash__heronum { color: var(--accent); }
+
+.udash__heronum {
+  display: block;
+  margin-top: var(--s2);
+  font-size: clamp(5rem, 13vw, 12rem);
+  font-weight: 700;
+  letter-spacing: -0.07em;
+  line-height: 0.8;
+  transition: color var(--t);
+}
+
+.udash__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s6) var(--gutter);
+}
+
+.udash__stat { padding-top: var(--s2); border-top: 1px solid var(--line); }
+.udash__statlink { display: block; color: inherit; }
+.udash__statlink:hover dd { color: var(--accent); }
+
+.udash__stat dt {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.udash__stat dd {
+  margin-top: 0.3rem;
+  color: var(--ink);
+  font-size: clamp(1.8rem, 3.4vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
   line-height: 1;
+  transition: color var(--t);
 }
 
-/* 2. Empty State: Perfect for sections where the user hasn't posted/requested anything yet */
-.dashboard__empty {
-  padding: var(--space-10) var(--space-4);
-  text-align: center;
-  background: var(--gray-50);
-  border: 2px dashed var(--border-color);
-  border-radius: var(--radius-lg);
-  color: var(--text-secondary);
-  font-size: 1.05rem;
+.udash__alert {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+@keyframes live-pulse { 50% { opacity: 0.25; transform: scale(0.7); } }
+
+/* Charts, account, recent ----------------------------------------------- */
+.udash__charts,
+.udash__account {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s10) var(--gutter);
+  padding-bottom: var(--s16);
+}
+
+.udash__chart { margin: 0; min-width: 0; }
+
+.udash__caption {
+  display: block;
+  margin-bottom: var(--s4);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--ink);
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.udash__facts > div {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: var(--s4);
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8125rem;
+}
+.udash__facts dt { color: var(--muted); }
+.udash__facts dd { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+
+.udash__recenthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.udash__recenthead .udash__caption { flex: 1; }
+.udash__recenthead .label { padding-top: var(--s2); border-top: 1px solid var(--ink); margin-bottom: var(--s4); }
+
+@media (max-width: 900px) {
+  .udash__head { grid-template-columns: 1fr; }
+  .udash__head > .udash__actions { grid-column: 1; grid-row: 3; }
+  .udash__figures,
+  .udash__charts,
+  .udash__account { grid-template-columns: 1fr; }
+  .udash__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

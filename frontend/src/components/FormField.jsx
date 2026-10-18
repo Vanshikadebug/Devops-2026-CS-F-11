@@ -1,5 +1,4 @@
 import { useId } from 'react'
-import './FormField.css'
 
 function FormField({
   label,

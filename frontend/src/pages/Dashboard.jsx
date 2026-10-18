@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import ItemCard from '../components/ItemCard'
-import StatCard from '../components/StatCard'
 import CampusCard from '../components/CampusCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
-import Button from '../components/Button'
+import { CountUp, RankedBars } from '../components/Charts'
 import { useAuth } from '../app/authContext'
 import { dashboardService } from '../lib/dashboardService'
 import './Dashboard.css'
@@ -51,39 +50,41 @@ function Dashboard() {
   const stats = data?.stats
   const recentItems = data?.recentItems ?? []
 
-  return (
-    <div className="container page dashboard">
-      <header className="dashboard__header">
-        <div>
-          <h1 className="dashboard__title">
-            {firstName ? `Welcome back, ${firstName}` : 'Your dashboard'}
-          </h1>
-          <p className="dashboard__subtitle">
-            Everything you have listed, and everyone waiting to hear from you.
-          </p>
-        </div>
+  const itemBars = stats ? [
+    { label: 'Available', count: stats.items.available },
+    { label: 'Reserved', count: stats.items.reserved },
+    { label: 'Given away', count: stats.items.unavailable },
+  ] : []
 
-        {/* NEW ADDITION: Grouped the CTA with a new Refresh button leveraging the existing retry logic */}
-        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+  const requestBars = stats ? [
+    { label: 'Received', count: stats.requestsReceived.total },
+    { label: 'Awaiting you', count: stats.requestsReceived.pending },
+    { label: 'Sent', count: stats.requestsSent.total },
+    { label: 'Accepted for you', count: stats.requestsSent.accepted },
+  ] : []
+
+  return (
+    <div className="udash shell">
+      <header className="udash__head">
+        <p className="label">Dashboard</p>
+        <h1 className="udash__title">
+          {firstName ? <>Hello, {firstName}.</> : 'Your dashboard.'}
+          <span>Everything you listed, and everyone waiting on you.</span>
+        </h1>
+        <div className="udash__actions">
           {status === 'ready' && (
-            <button 
-              onClick={retry} 
-              className="btn btn--ghost" 
-              aria-label="Refresh dashboard"
-            >
+            <button type="button" className="label ulink udash__refresh" onClick={retry}>
               ↻ Refresh
             </button>
           )}
-          <Link to="/items/new" className="dashboard__cta">
-            <Button>+ Add an item</Button>
-          </Link>
+          <Link to="/items/new" className="btn btn--primary">List an item +</Link>
         </div>
       </header>
 
       {/* aria-live: a screen reader announces the change when the
           numbers arrive, instead of leaving a blind user in silence
           wondering whether the page is still loading. */}
-      <div className="dashboard__status" aria-live="polite">
+      <div className="udash__status" aria-live="polite">
         {status === 'loading' && 'Loading your dashboard…'}
         {status === 'error' && 'Could not load your dashboard'}
       </div>
@@ -105,115 +106,66 @@ function Dashboard() {
 
       {status === 'ready' && stats && (
         <>
-          {/* --- Account details ------------------------------------
-              Shown from data.user, which the server built from the
-              token. Nothing here was supplied by the browser. */}
-          <section className="dashboard__section" aria-labelledby="account-heading">
-            <h2 id="account-heading" className="dashboard__section-title">
-              Your account
-            </h2>
-
-            <dl className="account-card">
-              <div className="account-card__row">
-                <dt>Name</dt>
-                <dd>{data.user.name}</dd>
-              </div>
-              <div className="account-card__row">
-                <dt>Email</dt>
-                <dd>{data.user.email}</dd>
-              </div>
-              <div className="account-card__row">
-                <dt>Mobile</dt>
-                <dd>{data.user.mobile}</dd>
-              </div>
-              <div className="account-card__row">
-                <dt>Member since</dt>
-                {/* created_at arrives as 'YYYY-MM-DD HH:MM:SS'. Only
-                    the date part is shown, so no timezone conversion
-                    can shift it to the wrong day. */}
-                <dd>{data.user.created_at?.slice(0, 10)}</dd>
-              </div>
+          {/* --- The numbers ---------------------------------------- */}
+          <section className="udash__figures" aria-label="At a glance">
+            <Link to="/my-items" className="udash__hero" data-cursor="Your items">
+              <span className="label">Items listed</span>
+              <CountUp className="udash__heronum" value={stats.items.total} />
+            </Link>
+            <dl className="udash__stats">
+              <Figure label="Available" value={stats.items.available} />
+              <Figure label="Reserved" value={stats.items.reserved} />
+              <Figure label="Given away" value={stats.items.unavailable} />
+              <Figure
+                label="Awaiting your reply"
+                value={stats.requestsReceived.pending}
+                alert={stats.requestsReceived.pending > 0}
+                to="/requests"
+              />
+              <Figure label="Requests sent" value={stats.requestsSent.total} to="/requests" />
+              <Figure label="Accepted for you" value={stats.requestsSent.accepted} />
             </dl>
           </section>
 
-          {/* --- Campus ---------------------------------------------
-              Fed from the CONTEXT user, not from data.user. Both are
-              correct on first paint -- the dashboard response and
-              /auth/me build the same object from the same token. They
-              diverge the moment the campus is saved: applyUser
-              refreshes the context immediately, while data.user is a
-              snapshot taken before the write and would keep showing
-              the old college until the next full page load.
+          <section className="udash__charts" aria-label="Activity">
+            <figure className="udash__chart">
+              <figcaption className="udash__caption">Your listings by status</figcaption>
+              <RankedBars data={itemBars} total={stats.items.total} />
+            </figure>
+            <figure className="udash__chart">
+              <figcaption className="udash__caption">Requests</figcaption>
+              <RankedBars data={requestBars} total={Math.max(1, stats.requestsReceived.total + stats.requestsSent.total)} />
+            </figure>
+          </section>
 
-              The `??` fallback is for the instant before AuthProvider
-              finishes restoring a session on a hard refresh. */}
-          <CampusCard user={sessionUser ?? data.user} />
-
-          {/* --- The numbers ---------------------------------------- */}
-          <section className="dashboard__section" aria-labelledby="stats-heading">
-            <h2 id="stats-heading" className="dashboard__section-title">
-              At a glance
-            </h2>
-
-            <div className="dashboard__stats">
-              <StatCard
-                icon="📦"
-                label="Items listed"
-                value={stats.items.total}
-                hint={`${stats.items.available} available`}
-                to="/my-items"
-                tone="accent"
-              />
-              <StatCard
-                icon="🤝"
-                label="Items reserved"
-                value={stats.items.reserved}
-                hint="Promised to someone"
-              />
-              <StatCard
-                icon="✅"
-                label="Items given away"
-                value={stats.items.unavailable}
-                hint="No longer available"
-              />
-              <StatCard
-                icon="📨"
-                label="Requests received"
-                value={stats.requestsReceived.total}
-                hint={
-                  stats.requestsReceived.pending > 0
-                    ? `${stats.requestsReceived.pending} awaiting your reply`
-                    : 'Nothing waiting on you'
-                }
-                to="/requests"
-                tone={stats.requestsReceived.pending > 0 ? 'warn' : 'neutral'}
-              />
-              <StatCard
-                icon="📤"
-                label="Requests sent"
-                value={stats.requestsSent.total}
-                hint={`${stats.requestsSent.pending} still pending`}
-                to="/requests"
-              />
-              <StatCard
-                icon="🎁"
-                label="Requests accepted"
-                value={stats.requestsSent.accepted}
-                hint="Items coming your way"
-              />
+          {/* --- Account + campus ------------------------------------
+              Account details come from data.user, which the server
+              built from the token. The campus card is fed from the
+              CONTEXT user: applyUser refreshes it the moment a campus
+              is saved, while data.user is a snapshot from before the
+              write. The `??` covers the instant before AuthProvider
+              restores a session on a hard refresh. */}
+          <section className="udash__account" aria-labelledby="account-heading">
+            <div>
+              <h2 id="account-heading" className="udash__caption">Your account</h2>
+              <dl className="udash__facts">
+                <div><dt>Name</dt><dd>{data.user.name}</dd></div>
+                <div><dt>Email</dt><dd>{data.user.email}</dd></div>
+                <div><dt>Mobile</dt><dd>{data.user.mobile}</dd></div>
+                {/* Only the date part of 'YYYY-MM-DD HH:MM:SS', so no
+                    timezone conversion can shift it to the wrong day. */}
+                <div><dt>Member since</dt><dd>{data.user.created_at?.slice(0, 10)}</dd></div>
+              </dl>
             </div>
+            <CampusCard user={sessionUser ?? data.user} />
           </section>
 
           {/* --- Recent listings ------------------------------------ */}
-          <section className="dashboard__section" aria-labelledby="recent-heading">
-            <div className="dashboard__section-head">
-              <h2 id="recent-heading" className="dashboard__section-title">
-                Your recent listings
-              </h2>
+          <section className="udash__recent" aria-labelledby="recent-heading">
+            <div className="udash__recenthead">
+              <h2 id="recent-heading" className="udash__caption">Your recent listings</h2>
               {recentItems.length > 0 && (
-                <Link to="/my-items" className="dashboard__see-all">
-                  See all {stats.items.total} →
-                </Link>
+                <Link to="/my-items" className="label ulink">See all {stats.items.total} →</Link>
               )}
             </div>
 
@@ -234,24 +186,26 @@ function Dashboard() {
               </div>
             )}
           </section>
-
-          {/* NEW ADDITION: A subtle dashboard footer to cap off the page and provide a helpful tip */}
-          <footer 
-            style={{ 
-              marginTop: 'var(--space-10)', 
-              paddingTop: 'var(--space-6)', 
-              borderTop: '1px solid var(--border-color)', 
-              textAlign: 'center', 
-              color: 'var(--text-secondary)', 
-              fontSize: '0.9rem' 
-            }}
-          >
-            <p>💡 <strong>Pro tip:</strong> Items with clear photos and detailed descriptions are requested 3x faster by other students.</p>
-          </footer>
         </>
       )}
     </div>
   )
+}
+
+/** One stat in the figures row; links when there is somewhere to go. */
+function Figure({ label, value, alert = false, to }) {
+  const body = (
+    <>
+      <dt>
+        {alert && <i className="udash__alert" aria-label="needs attention" />}
+        {label}
+      </dt>
+      <dd><CountUp value={value} /></dd>
+    </>
+  )
+  return to
+    ? <div className="udash__stat"><Link to={to} className="udash__statlink">{body}</Link></div>
+    : <div className="udash__stat">{body}</div>
 }
 
 export default Dashboard

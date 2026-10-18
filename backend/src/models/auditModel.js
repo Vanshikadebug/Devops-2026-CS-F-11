@@ -2,7 +2,7 @@ const { Prisma } = require('@prisma/client')
 const { prisma } = require('../lib/prisma')
 const { clampLimitOffset } = require('../utils/pagination')
 const { formatDates } = require('../utils/sqlDateTime')
-const escapeLike = require('../utils/escapeLike')
+const textMatch = require('../utils/textMatch')
 
 /* Mirrors the enum in the schema. Kept here so a wrong value fails with
    a readable error before the write, rather than as MySQL's
@@ -98,13 +98,8 @@ async function list({ page, limit, offset }, filters = {}) {
   if (filters.targetType) where.target_type = filters.targetType
 
   if (filters.search) {
-    // escapeLike so wildcard characters in the query are matched
-    // literally instead of scanning the whole audit log.
-    const term = escapeLike(filters.search)
-    where.OR = [
-      { description: { contains: term } },
-      { admin_email: { contains: term } },
-    ]
+    const term = textMatch(filters.search)
+    where.OR = [{ description: term }, { admin_email: term }]
   }
 
   if (filters.from || filters.to) {

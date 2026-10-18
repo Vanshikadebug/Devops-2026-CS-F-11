@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useConfig } from '../app/ConfigProvider'
 import { api } from '../lib/api'
 import ItemCard from '../components/ItemCard'
-import { SearchPill, Pill, Spinner, EmptyState, Button } from '../components/ui'
+import { assetUrl } from '../lib/origin'
 import './Browse.css'
 
 /* The full listing page. Every filter option -- categories, conditions,
@@ -28,20 +28,23 @@ export default function Browse() {
 
   const get = (key) => params.get(key) || ''
   const page = Number(get('page')) || 1
+  const view = get('view') === 'list' ? 'list' : 'grid'
+
+  // Only the filters reach the API, so toggling the view does not refetch.
+  const query = new URLSearchParams()
+  for (const key of ['search', 'category', 'condition', 'city', 'college', 'status', 'sort']) {
+    if (params.get(key)) query.set(key, params.get(key))
+  }
+  query.set('page', String(page))
+  query.set('limit', '24')
+  const queryKey = query.toString()
 
   useEffect(() => {
     const controller = new AbortController()
     setLoading(true)
 
-    const query = new URLSearchParams()
-    for (const key of ['search', 'category', 'condition', 'city', 'college', 'status', 'sort']) {
-      if (params.get(key)) query.set(key, params.get(key))
-    }
-    query.set('page', String(page))
-    query.set('limit', '24')
-
     api
-      .get(`/items?${query}`, { signal: controller.signal })
+      .get(`/items?${queryKey}`, { signal: controller.signal })
       .then((res) => {
         setItems(res.data)
         setPagination(res.pagination)
@@ -55,14 +58,14 @@ export default function Browse() {
       })
 
     return () => controller.abort()
-  }, [params, page])
+  }, [queryKey])
 
   function setParam(key, value) {
     const next = new URLSearchParams(params)
     if (value) next.set(key, value)
     else next.delete(key)
-    // Any filter change invalidates the current page number.
-    if (key !== 'page') next.delete('page')
+    // Any filter change invalidates the current page number; the view does not.
+    if (key !== 'page' && key !== 'view') next.delete('page')
     setParams(next, { replace: true })
   }
 
@@ -76,139 +79,150 @@ export default function Browse() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const total = pagination?.total ?? items.length
+  const pad = (n) => String(n).padStart(2, '0')
+
   return (
-    <div className="page browse">
-      <div className="shell">
-        <header className="browse__head">
-          <div>
-            <h1>Browse listings</h1>
-            <p className="muted">
-              {loading ? 'Loading…' : `${pagination?.total ?? items.length} items available`}
-            </p>
+    <div className="browse shell">
+      <header className="browse__head">
+        <h1 className="browse__title">
+          Index<sup>{loading ? '··' : total}</sup>
+        </h1>
+        <hr className="browse__rule" />
+        <div className="browse__bar">
+          <form
+            className="browse__search"
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setParam('search', term.trim())
+            }}
+          >
+            <input
+              type="search"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              placeholder="Search the index…"
+              aria-label="Search listings"
+            />
+            <button type="submit" className="label ulink">Search →</button>
+          </form>
+
+          <div className="browse__view" role="group" aria-label="Layout">
+            {['grid', 'list'].map((v) => (
+              <button
+                key={v}
+                type="button"
+                className={`label ulink ${view === v ? 'is-active' : ''}`}
+                aria-pressed={view === v}
+                onClick={() => setParam('view', v === 'grid' ? '' : v)}
+              >
+                {v === 'grid' ? 'Grid' : 'List'}
+              </button>
+            ))}
           </div>
-          <SearchPill
-            value={term}
-            onChange={setTerm}
-            onSubmit={(v) => setParam('search', v.trim())}
-            placeholder="Search listings…"
-            size="lg"
-          />
-        </header>
 
-        <div className="browse__body">
-          <aside className="browse__filters card">
-            <div className="row row--between">
-              <h3>Filters</h3>
-              {activeFilters.length > 0 && (
-                <button
-                  type="button"
-                  className="browse__clear"
-                  onClick={() => {
-                    setParams({}, { replace: true })
-                    // `term` is seeded from the URL only on mount, so clearing
-                    // the params alone would unfilter the results while leaving
-                    // the old query sitting visibly in the search box.
-                    setTerm('')
-                  }}
-                >
-                  Clear all
-                </button>
-              )}
-            </div>
-
-            <FilterGroup label="Category">
-              {categories.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={get('category') === c.label}
-                  onClick={() => setParam('category', get('category') === c.label ? '' : c.label)}
-                >
-                  <span aria-hidden="true">{c.glyph || '📦'}</span> {c.label}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label="Condition">
-              {conditions.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={get('condition') === c.label}
-                  onClick={() => setParam('condition', get('condition') === c.label ? '' : c.label)}
-                >
-                  {c.label}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label="City">
-              {cities.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={get('city') === String(c.id)}
-                  onClick={() => setParam('city', get('city') === String(c.id) ? '' : String(c.id))}
-                >
-                  {c.name}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label="Sort">
-              {SORTS.map((s) => (
-                <FilterChip
-                  key={s.value}
-                  active={(get('sort') || 'newest') === s.value}
-                  onClick={() => setParam('sort', s.value)}
-                >
-                  {s.label}
-                </FilterChip>
-              ))}
-            </FilterGroup>
-          </aside>
-
-          <section className="browse__results">
-            {error && <div className="alert alert--error">{error}</div>}
-
-            {loading ? (
-              <Spinner />
-            ) : items.length === 0 ? (
-              <EmptyState title="No matches" glyph="🔍">
-                {activeFilters.length
-                  ? 'Try removing a filter.'
-                  : setting('empty_state_text')}
-              </EmptyState>
-            ) : (
-              <>
-                <div className="item-grid">
-                  {items.map((item) => (
-                    <ItemCard key={item.id} item={item} />
-                  ))}
-                </div>
-
-                {pagination && pagination.totalPages > 1 && (
-                  <nav className="browse__pager" aria-label="Pagination">
-                    <Button
-                      variant="quiet"
-                      size="sm"
-                      disabled={!pagination.hasPrev}
-                      onClick={() => goToPage(page - 1)}
-                    >
-                      Previous
-                    </Button>
-                    <Pill tone="sunk">Page {pagination.page} of {pagination.totalPages}</Pill>
-                    <Button
-                      variant="quiet"
-                      size="sm"
-                      disabled={!pagination.hasNext}
-                      onClick={() => goToPage(page + 1)}
-                    >
-                      Next
-                    </Button>
-                  </nav>
-                )}
-              </>
-            )}
-          </section>
+          <label className="browse__sort">
+            <span className="label">Sort</span>
+            <select value={get('sort') || 'newest'} onChange={(e) => setParam('sort', e.target.value)}>
+              {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </label>
         </div>
+      </header>
+
+      <div className="browse__body">
+        <aside className="browse__filters" aria-label="Filters">
+          <FilterGroup label="Category">
+            {categories.map((c) => (
+              <FilterChip
+                key={c.id}
+                active={get('category') === c.label}
+                onClick={() => setParam('category', get('category') === c.label ? '' : c.label)}
+              >
+                {c.label}
+              </FilterChip>
+            ))}
+          </FilterGroup>
+
+          <FilterGroup label="Condition">
+            {conditions.map((c) => (
+              <FilterChip
+                key={c.id}
+                active={get('condition') === c.label}
+                onClick={() => setParam('condition', get('condition') === c.label ? '' : c.label)}
+              >
+                {c.label}
+              </FilterChip>
+            ))}
+          </FilterGroup>
+
+          <FilterGroup label="City">
+            {cities.map((c) => (
+              <FilterChip
+                key={c.id}
+                active={get('city') === String(c.id)}
+                onClick={() => setParam('city', get('city') === String(c.id) ? '' : String(c.id))}
+              >
+                {c.name}
+              </FilterChip>
+            ))}
+          </FilterGroup>
+
+          {activeFilters.length > 0 && (
+            <button
+              type="button"
+              className="browse__clear label ulink is-active"
+              onClick={() => {
+                setParams({}, { replace: true })
+                // `term` is seeded from the URL only on mount, so clearing
+                // the params alone would unfilter the results while leaving
+                // the old query sitting visibly in the search box.
+                setTerm('')
+              }}
+            >
+              Clear all filters ×
+            </button>
+          )}
+        </aside>
+
+        <section className="browse__results" aria-busy={loading}>
+          {error && <p className="browse__note">{error}</p>}
+
+          {loading ? (
+            <div className="item-grid browse__grid">
+              {Array.from({ length: 6 }, (_, i) => <div key={i} className="skeleton" />)}
+            </div>
+          ) : items.length === 0 ? (
+            <p className="browse__note">
+              No matches. {activeFilters.length ? 'Try removing a filter.' : setting('empty_state_text')}
+            </p>
+          ) : (
+            <>
+              {view === 'list' ? <ItemList items={items} offset={(page - 1) * 24} /> : (
+              <div className="item-grid browse__grid">
+                {items.map((item, i) => (
+                  <div key={item.id} className="browse__cell" style={{ '--i': i % 12 }}>
+                    <ItemCard item={item} />
+                  </div>
+                ))}
+              </div>
+              )}
+
+              {pagination && pagination.totalPages > 1 && (
+                <nav className="browse__pager" aria-label="Pagination">
+                  <button type="button" className="ulink" disabled={!pagination.hasPrev} onClick={() => goToPage(page - 1)}>
+                    ← Previous
+                  </button>
+                  <span>{pad(pagination.page)} / {pad(pagination.totalPages)}</span>
+                  <button type="button" className="ulink" disabled={!pagination.hasNext} onClick={() => goToPage(page + 1)}>
+                    Next →
+                  </button>
+                </nav>
+              )}
+            </>
+          )}
+        </section>
       </div>
     </div>
   )
@@ -227,11 +241,70 @@ function FilterChip({ active, onClick, children }) {
   return (
     <button
       type="button"
-      className={`browse__chip ${active ? 'is-active' : ''}`}
+      className={`browse__chip ulink ${active ? 'is-active' : ''}`}
       onClick={onClick}
       aria-pressed={active}
     >
       {children}
     </button>
+  )
+}
+
+/**
+ * Index list: one big row per listing. On pointer devices a photo of the
+ * hovered row trails the cursor (eased with requestAnimationFrame).
+ */
+function ItemList({ items, offset }) {
+  const preview = useRef(null)
+  const [hovered, setHovered] = useState(null)
+
+  useEffect(() => {
+    const el = preview.current
+    if (!el || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return undefined
+    let x = 0, y = 0, cx = 0, cy = 0, raf
+    const move = (e) => { x = e.clientX; y = e.clientY }
+    const loop = () => {
+      cx += (x - cx) * 0.16
+      cy += (y - cy) * 0.16
+      el.style.transform = `translate3d(${cx}px, ${cy}px, 0)`
+      raf = requestAnimationFrame(loop)
+    }
+    window.addEventListener('mousemove', move, { passive: true })
+    loop()
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('mousemove', move)
+    }
+  }, [])
+
+  return (
+    <>
+      <ol className={`ilist ${hovered ? 'is-hovering' : ''}`}>
+        {items.map((item, i) => (
+          <li key={item.id} className={`ilist__row ${hovered?.id === item.id ? 'is-hover' : ''}`}>
+            <Link
+              to={`/items/${item.id}`}
+              className="ilist__link"
+              data-cursor="View item"
+              onMouseEnter={() => setHovered(item)}
+              onMouseLeave={() => setHovered(null)}
+            >
+              <span className="ilist__no">{String(offset + i + 1).padStart(2, '0')}</span>
+              <span className="ilist__name">{item.name}</span>
+              <span className="ilist__meta">{item.category}</span>
+              <span className="ilist__meta">{item.condition}</span>
+              <span className="ilist__meta ilist__place">
+                <i className={item.status === 'Available' ? 'is-on' : ''} aria-hidden="true" />
+                {item.college_name || item.city_name || item.location}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+
+      <div ref={preview} className={`ilist__preview ${hovered?.image_url ? 'is-on' : ''}`} aria-hidden="true">
+        {hovered?.image_url && <img src={assetUrl(hovered.image_url)} alt="" />}
+      </div>
+    </>
   )
 }

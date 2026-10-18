@@ -1,0 +1,90 @@
+/* Shared chart styles. Marks wear the accent; text stays in ink. */
+
+/* SVG chart ------------------------------------------------------------- */
+.lchart { position: relative; }
+.lchart svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+.lchart__grid { stroke: var(--line); stroke-width: 1; }
+.lchart__axis { stroke: var(--ink); stroke-width: 1; }
+.lchart__tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.lchart__value { fill: var(--ink); font-size: 12px; font-weight: 600; }
+
+.lchart__mark { fill: var(--accent); transition: opacity var(--t-fast); }
+.lchart:hover .lchart__mark:not(.is-hover) { opacity: 0.45; }
+.lchart__hit { fill: transparent; cursor: crosshair; }
+
+.lchart__tip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 10px));
+}
+.lchart__tip strong { font-size: 0.9375rem; }
+.lchart__tip span { opacity: 0.7; }
+
+/* Ranked bars ----------------------------------------------------------- */
+.bars { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+
+.bars__row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(90px, 0.32fr) 1fr;
+  align-items: center;
+  gap: var(--s3);
+  padding: 0.4rem 0;
+}
+
+.bars__label {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bars__track { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+
+/* 14px thick (cap 24), square at the baseline, 4px rounded data-end. */
+.bars__fill {
+  flex: none;
+  height: 14px;
+  min-width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent);
+  transition: opacity var(--t-fast);
+}
+.bars:hover .bars__row:not(.is-hover) .bars__fill { opacity: 0.45; }
+
+.bars__value { color: var(--ink); font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.lchart__tip--inline { left: 70%; top: 0; }
+
+/* Table view ------------------------------------------------------------ */
+.datatable-toggle { margin-top: var(--s10); }
+.datatable-toggle summary { cursor: pointer; list-style: none; display: inline-block; }
+.datatable-toggle summary::-webkit-details-marker { display: none; }
+
+.datatable {
+  width: 100%;
+  max-width: 480px;
+  margin-top: var(--s6);
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.datatable caption { padding-bottom: var(--s2); color: var(--ink); font-weight: 600; text-align: left; }
+.datatable th,
+.datatable td { padding: 0.35rem 0; border-bottom: 1px solid var(--line); text-align: left; color: var(--ink); }
+.datatable td:last-child,
+.datatable th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+
+.charts__empty { color: var(--muted); font-size: 0.875rem; }

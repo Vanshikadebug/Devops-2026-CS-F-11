@@ -1,23 +1,23 @@
 {
   "name": "reusehub-backend",
   "version": "1.0.0",
-  "description": "ReuseHub REST API - Node.js, Express, Prisma, MySQL, Redis",
+  "description": "ReuseHub REST API - Node.js, Express, Prisma, MongoDB, Redis",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "postinstall": "prisma generate",
-    "db:migrate": "node scripts/prisma.js migrate deploy",
-    "db:migrate:dev": "node scripts/prisma.js migrate dev",
+    "db:migrate": "node scripts/prisma.js db push --skip-generate",
     "db:generate": "node scripts/prisma.js generate",
     "db:seed": "node prisma/seed.js",
-    "db:reset": "node scripts/prisma.js migrate reset --force",
+    "db:reset": "node scripts/prisma.js db push --force-reset --skip-generate && node prisma/seed.js",
     "db:studio": "node scripts/prisma.js studio",
     "db:admin": "node scripts/create-admin.js",
     "test": "cross-env NODE_ENV=test jest --runInBand",
     "share": "node scripts/share.js",
-    "share:stop": "docker compose --profile share stop tunnel"
+    "share:stop": "docker compose --profile share stop tunnel",
+    "db:push": "node scripts/prisma.js db push"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"
@@ -25,7 +25,7 @@
   "keywords": [
     "express",
     "prisma",
-    "mysql",
+    "mongodb",
     "redis",
     "rest-api",
     "jwt"
@@ -36,11 +36,11 @@
     "node": ">=20"
   },
   "jest": {
-  "testEnvironment": "node",
-  "testMatch": [
-    "**/tests/**/*.test.js"
-  ]
-},
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  },
   "dependencies": {
     "@prisma/client": "^6.19.2",
     "bcryptjs": "^3.0.3",
@@ -53,7 +53,7 @@
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "prisma": "^6.19.2",
-    "reusehub": "file:.."
+    "prom-client": "^15.1.3"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",

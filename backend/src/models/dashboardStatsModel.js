@@ -38,24 +38,44 @@ async function windowCounts(model, days) {
   return { current, previous, delta: current - previous }
 }
 
+/** Colleges with the most listings: count per college_id, then names. */
+async function topColleges(limit) {
+  const counts = await prisma.item.groupBy({
+    by: ['college_id'],
+    where: { college_id: { not: null } },
+    _count: { _all: true },
+    orderBy: { _count: { college_id: 'desc' } },
+    take: limit,
+  })
+  const colleges = await prisma.college.findMany({
+    where: { id: { in: counts.map((c) => c.college_id) } },
+    select: { id: true, short_name: true },
+  })
+  const names = new Map(colleges.map((c) => [c.id, c.short_name]))
+  return counts.map((c) => ({ name: names.get(c.college_id), n: c._count._all }))
+}
+
 /** One row per day for the last `days` days, zero-filled. */
 async function dailySeries(days) {
   const since = dayStart(days - 1)
 
-  const [items, users] = await Promise.all([
-    prisma.$queryRaw`
-      SELECT DATE(created_at) AS day, COUNT(*) AS n
-        FROM items WHERE created_at >= ${since}
-       GROUP BY DATE(created_at)`,
-    prisma.$queryRaw`
-      SELECT DATE(created_at) AS day, COUNT(*) AS n
-        FROM users WHERE created_at >= ${since}
-       GROUP BY DATE(created_at)`,
-  ])
+  const recent = (model) =>
+    prisma[model].findMany({ where: { created_at: { gte: since } }, select: { created_at: true } })
+  const [items, users] = await Promise.all([recent('item'), recent('user')])
 
-  const key = (d) => new Date(d).toISOString().slice(0, 10)
-  const itemsBy = new Map(items.map((r) => [key(r.day), asNumber(r.n)]))
-  const usersBy = new Map(users.map((r) => [key(r.day), asNumber(r.n)]))
+  // Bucket by server-local calendar day (the same day dayStart() counts in).
+  const pad = (n) => String(n).padStart(2, '0')
+  const key = (d) => {
+    const x = new Date(d)
+    return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`
+  }
+  const tally = (rows) => {
+    const by = new Map()
+    for (const r of rows) by.set(key(r.created_at), (by.get(key(r.created_at)) ?? 0) + 1)
+    return by
+  }
+  const itemsBy = tally(items)
+  const usersBy = tally(users)
 
   // Built forwards from the window start so a day with no rows is a 0 rather
   // than a gap -- a chart that silently skips empty days misreports the trend.
@@ -102,10 +122,7 @@ async function build() {
 
     prisma.item.groupBy({ by: ['category'], _count: { _all: true }, orderBy: { _count: { category: 'desc' } }, take: 8 }),
 
-    prisma.$queryRaw`
-      SELECT c.short_name AS name, COUNT(i.id) AS n
-        FROM colleges c LEFT JOIN items i ON i.college_id = c.id
-       GROUP BY c.id ORDER BY n DESC LIMIT 5`,
+    topColleges(5),
 
     prisma.item.findMany({
       select: {

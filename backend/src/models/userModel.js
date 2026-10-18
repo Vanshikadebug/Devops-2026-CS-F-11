@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs')
 const { prisma } = require('../lib/prisma')
 const { clampLimitOffset } = require('../utils/pagination')
 const { formatDates } = require('../utils/sqlDateTime')
-const escapeLike = require('../utils/escapeLike')
+const textMatch = require('../utils/textMatch')
 const config = require('../config/env')
 
 const SAFE_SELECT = {
@@ -93,7 +93,7 @@ async function verifyPassword(plain, hash) {
 }
 
 async function touchLastLogin(id) {
-  await prisma.$executeRaw`UPDATE users SET last_login_at = NOW() WHERE id = ${id}`
+  await prisma.user.update({ where: { id }, data: { last_login_at: new Date() }, select: { id: true } })
 }
 
 const USER_SORTS = {
@@ -101,7 +101,7 @@ const USER_SORTS = {
   oldest: [{ created_at: 'asc' }, { id: 'asc' }],
   name: [{ name: 'asc' }, { id: 'asc' }],
   items: [{ items: { _count: 'desc' } }, { id: 'asc' }],
-  active: [{ last_login_at: { sort: 'desc', nulls: 'last' } }],
+  active: [{ last_login_at: 'desc' }],
 }
 
 /** The shared filter for listForAdmin and its count. */
@@ -112,12 +112,8 @@ function buildUserWhere(filters) {
   if (filters.status) where.status = filters.status
   if (filters.collegeId) where.college_id = filters.collegeId
   if (filters.search) {
-    const term = `%${escapeLike(filters.search)}%`
-    where.OR = [
-      { name: { contains: term } },
-      { email: { contains: term } },
-      { mobile: { contains: term } },
-    ]
+    const term = textMatch(filters.search)
+    where.OR = [{ name: term }, { email: term }, { mobile: term }]
   }
 
   return where

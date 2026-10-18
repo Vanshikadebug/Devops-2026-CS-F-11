@@ -1,0 +1,90 @@
+/* Live index — figures and charts. Marks wear the accent; text stays in ink. */
+
+.live { padding-top: var(--s24); }
+
+.live__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: var(--s2);
+  border-bottom: 2px solid var(--ink);
+}
+
+.live__pulse { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--muted); }
+.live__pulse i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+@keyframes live-pulse { 50% { opacity: 0.25; transform: scale(0.7); } }
+
+.live__loading { height: 60vh; }
+
+/* Hero figure + stat row ---------------------------------------------- */
+.live__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: var(--gutter);
+  align-items: end;
+  padding: var(--s8) 0 var(--s12);
+}
+
+.live__heronum {
+  display: block;
+  margin-top: var(--s2);
+  color: var(--ink);
+  font-size: clamp(5rem, 15vw, 14rem);
+  font-weight: 700;
+  letter-spacing: -0.07em;
+  line-height: 0.8;
+}
+
+.live__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--gutter);
+}
+
+.live__stat {
+  padding-top: var(--s2);
+  border-top: 1px solid var(--line);
+}
+.live__stat dt { color: var(--muted); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+.live__stat dd {
+  margin-top: 0.3rem;
+  color: var(--ink);
+  font-size: clamp(1.8rem, 3.4vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+/* Chart grid ------------------------------------------------------------ */
+.live__charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s12) var(--gutter);
+}
+
+.live__chart { margin: 0; min-width: 0; }
+.live__chart--wide { grid-column: 1 / -1; }
+
+.live__chart figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s4);
+  margin-bottom: var(--s4);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--ink);
+}
+.live__title { color: var(--ink); font-size: 0.9375rem; font-weight: 600; letter-spacing: -0.01em; }
+.live__sub { color: var(--muted); font-size: 0.75rem; }
+
+@media (max-width: 900px) {
+  .live__hero { grid-template-columns: 1fr; }
+  .live__stats { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: var(--s6); }
+  .live__charts { grid-template-columns: 1fr; }
+}

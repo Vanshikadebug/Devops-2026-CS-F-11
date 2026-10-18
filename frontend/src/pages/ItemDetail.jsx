@@ -186,16 +186,25 @@ function ItemDetail() {
       {/* A real link, not a history.back() button: it has a fixed
           destination, so it works when someone arrives from a shared
           URL with no history to go back to. */}
-      <Link to="/" className="item-detail__back">
-        ← Back to browse
-      </Link>
-
       <div className="item-detail__layout">
-        <div className="item-detail__media">
-          <ItemImage item={item} className="item-detail__image" />
+        {/* Hover to magnify: the zoom origin follows the pointer, so the
+            photo can be inspected for wear before requesting it. */}
+        <div
+          className="item-detail__media"
+          data-cursor={item.image_url ? 'Zoom' : undefined}
+          onMouseMove={(e) => {
+            const r = e.currentTarget.getBoundingClientRect()
+            e.currentTarget.style.setProperty('--zx', `${((e.clientX - r.left) / r.width) * 100}%`)
+            e.currentTarget.style.setProperty('--zy', `${((e.clientY - r.top) / r.height) * 100}%`)
+          }}
+        >
+          <ItemImage item={item} ratio="4 / 5" className="item-detail__image" />
         </div>
 
         <div className="item-detail__body">
+          <Link to="/" className="item-detail__back">
+            ← Return to index
+          </Link>
           <div className="item-detail__heading">
             <span className="item-detail__category">{item.category}</span>
             <span className={`badge badge--${statusVariant}`}>{item.status}</span>
