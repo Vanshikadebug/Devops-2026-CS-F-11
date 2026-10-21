@@ -168,6 +168,16 @@ a {
 .badge--info { color: var(--info-ink); }
 .badge--neutral { color: var(--muted); }
 
+/* Visible to screen readers only (hidden file inputs, status text). */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .muted { color: var(--muted); }
 .gradient-text { color: var(--accent); }
 .glass { background: var(--bg); border: 1px solid var(--line); }

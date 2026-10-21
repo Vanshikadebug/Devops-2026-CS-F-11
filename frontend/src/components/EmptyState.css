@@ -1,41 +1,36 @@
-/* ==========================================================================
-   EMPTY STATE — DARK LUXURY EDITION
-   ========================================================================== */
+/* Empty / error placeholder: a ruled band, big statement, one action. */
 
 .empty-state {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 4rem 2rem;
-  background: var(--surface-sunk);
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r-card);
-  min-height: 300px;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s12) 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--line);
 }
 
 .empty-state__icon {
-  font-size: 3rem;
-  margin-bottom: 1.5rem;
-  opacity: 0.5;
+  font-size: 2rem;
+  line-height: 1;
   filter: grayscale(1);
+  opacity: 0.55;
 }
 
 .empty-state__title {
-  margin: 0 0 0.5rem;
-  font-family: var(--font-display);
-  font-size: 1.25rem;
   color: var(--ink);
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1;
 }
 
-.empty-state__desc {
-  margin: 0 0 2rem;
+.empty-state__message {
+  max-width: 52ch;
   color: var(--muted);
-  max-width: 400px;
-  line-height: 1.6;
+  font-size: 0.9375rem;
 }
 
-.empty-state__action {
-  margin-top: 1rem;
-}
+.empty-state__action { margin-top: var(--s3); }
+
+.empty-state--error .empty-state__title { color: var(--bad-ink); }

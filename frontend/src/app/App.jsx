@@ -21,11 +21,15 @@ import AdminLayout from '../admin/AdminLayout'
 
 import '../styles/app.css'
 
-/** There is no point showing a login form to someone already logged in. */
+/** There is no point showing a login form to someone already logged in.
+    It must send them where Login would: this guard re-renders the moment
+    login succeeds, so a fixed "/" here beat Login's own redirect and every
+    "log in to continue" bounce landed on the home page instead. */
 function GuestOnly({ children }) {
   const { isAuthenticated, loading } = useAuth()
+  const location = useLocation()
   if (loading) return null
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) return <Navigate to={location.state?.from ?? '/dashboard'} replace />
   return children
 }
 
