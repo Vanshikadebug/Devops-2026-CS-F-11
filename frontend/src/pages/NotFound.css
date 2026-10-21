@@ -1,0 +1,72 @@
+/* 404 — the code as a full-width wordmark, the middle zero slowly turning. */
+
+.nf { padding-top: var(--s6); padding-bottom: var(--s16); }
+
+.nf__code {
+  display: flex;
+  justify-content: space-between;
+  font-size: clamp(9rem, 38vw, 34rem);
+  font-weight: 800;
+  letter-spacing: -0.07em;
+  line-height: 0.8;
+  animation: nf-rise 1s var(--ease) both;
+}
+
+/* The zero rolls like a dropped coin -- a nod to things getting lost. */
+.nf__zero {
+  display: inline-block;
+  color: var(--accent);
+  animation: nf-roll 6s var(--ease) infinite;
+}
+
+@keyframes nf-rise {
+  from { opacity: 0; transform: translateY(12%); }
+}
+
+@keyframes nf-roll {
+  0%, 15% { transform: rotate(0deg); }
+  50%, 65% { transform: rotate(-180deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+.nf__rule {
+  margin: var(--s3) 0 var(--s4);
+  border: 0;
+  border-top: 2px solid var(--ink);
+}
+
+.nf__body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--s8);
+}
+
+.nf__title {
+  color: var(--ink);
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.nf__text {
+  max-width: 48ch;
+  margin-top: var(--s3);
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.nf__text code {
+  padding: 0 0.3em;
+  background: var(--surface-sunk);
+  color: var(--ink);
+  font-size: 0.875em;
+  overflow-wrap: anywhere;
+}
+
+.nf__links { display: flex; align-items: center; gap: var(--s6); flex-shrink: 0; }
+
+@media (max-width: 760px) {
+  .nf__body { flex-direction: column; align-items: flex-start; }
+}

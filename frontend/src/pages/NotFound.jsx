@@ -1,60 +1,31 @@
-/**
- * ==============================================================================
- * 404 NOT FOUND VIEW COMPONENT (MANIA E-COMMERCE THEME)
- * ==============================================================================
- * 
- * @file NotFound.jsx
- * @description The fallback view rendered when a user attempts to navigate to a 
- * route that does not exist within the application. Utilizes the shared 
- * EmptyState component and dynamic configuration for branding.
- * 
- * ARCHITECTURAL NOTES:
- * - Employs defensive configuration retrieval via the ConfigProvider hook 
- *   to gracefully fall back to default platform naming ('ReuseHub').
- * - Adheres to rigorous JSDoc documentation standards to maximize maintainability 
- *   and professional code metrics.
- * ==============================================================================
- */
+import { Link, useLocation } from 'react-router-dom'
+import { useConfig } from '../app/ConfigProvider'
+import './NotFound.css'
 
-import React from 'react';
-import { useConfig } from '../app/ConfigProvider';
-import { ArrowButton, EmptyState } from '../components/ui';
-
-/**
- * NotFound Component
- * 
- * Renders an error layout informing the user of a broken or missing route, 
- * complete with a navigational action button returning them to the homepage.
- * 
- * @returns {React.JSX.Element} The rendered 404 error page.
- */
+/** Fallback for any route that does not exist. */
 export default function NotFound() {
-  // --- 1. Global Context & Configuration ---
-  const { setting } = useConfig();
-
-  // --- 2. Dynamic Fallback Variables ---
-  const siteName = setting('site_name', 'ReuseHub');
-  const primaryCallToActionLabel = `Back to ${siteName}`;
+  const { setting } = useConfig()
+  const { pathname } = useLocation()
 
   return (
-    <div className="page not-found-page" role="alert">
-      <div className="shell not-found-shell">
-        
-        {/* Reusable Empty State Wrapper for Error Presentation */}
-        <EmptyState
-          glyph="🧭"
-          title="That page does not exist"
-          action={
-            <ArrowButton to="/" size="lg">
-              {primaryCallToActionLabel}
-            </ArrowButton>
-          }
-        >
-          The link you followed may be out of date, or the requested listing 
-          may have been removed from the platform.
-        </EmptyState>
-        
+    <div className="nf shell">
+      <h1 className="nf__code" aria-label="Error 404">
+        <span>4</span><span className="nf__zero">0</span><span>4</span>
+      </h1>
+      <hr className="nf__rule" />
+      <div className="nf__body">
+        <div>
+          <p className="nf__title">That page does not exist.</p>
+          <p className="nf__text">
+            Nothing lives at <code>{pathname}</code>. The link may be out of date, or the
+            listing may have been removed.
+          </p>
+        </div>
+        <nav className="nf__links" aria-label="Where to go instead">
+          <Link to="/" className="btn btn--primary">Back to {setting('site_name', 'ReuseHub')}</Link>
+          <Link to="/items" className="label ulink">Browse the index →</Link>
+        </nav>
       </div>
     </div>
-  );
+  )
 }
