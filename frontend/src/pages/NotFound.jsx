@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useConfig } from '../app/ConfigProvider'
 import './NotFound.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 /** Fallback for any route that does not exist. */
 export default function NotFound() {
+  usePageTitle('Page not found')
   const { setting } = useConfig()
   const { pathname } = useLocation()
 

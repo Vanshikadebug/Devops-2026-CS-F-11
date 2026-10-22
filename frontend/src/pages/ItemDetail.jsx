@@ -10,6 +10,7 @@ import { itemService } from '../lib/itemService'
 import { requestService } from '../lib/requestService'
 import { STATUS_VARIANTS } from '../lib/display'
 import './ItemDetail.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 function ItemDetail() {
   const { id } = useParams()
@@ -17,6 +18,7 @@ function ItemDetail() {
   const { user, isAuthenticated } = useAuth()
 
   const [item, setItem] = useState(null)
+  usePageTitle(item?.name ?? 'Item')
   const [status, setStatus] = useState('loading') // loading | ready | error
   const [error, setError] = useState(null)
 

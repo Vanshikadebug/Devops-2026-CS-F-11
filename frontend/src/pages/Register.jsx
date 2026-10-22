@@ -5,6 +5,7 @@ import FormField from '../components/FormField'
 import Button from '../components/Button'
 import AuthAside from './AuthAside'
 import './AuthForm.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 function validate(form) {
   const errors = {}
@@ -44,6 +45,7 @@ function validate(form) {
 const EMPTY = { name: '', email: '', mobile: '', password: '', confirmPassword: '' }
 
 function Register() {
+  usePageTitle('Join')
   const auth = useAuth()
   const navigate = useNavigate()
 

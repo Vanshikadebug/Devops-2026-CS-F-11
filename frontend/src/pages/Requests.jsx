@@ -8,8 +8,10 @@ import Modal from '../components/Modal'
 import { requestService } from '../lib/requestService'
 import { STATUS_VARIANTS } from '../lib/display'
 import './Requests.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 function Requests() {
+  usePageTitle('Requests')
   const navigate = useNavigate()
 
   const [received, setReceived] = useState([])

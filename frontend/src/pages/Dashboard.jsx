@@ -8,8 +8,10 @@ import { CountUp, RankedBars } from '../components/Charts'
 import { useAuth } from '../app/authContext'
 import { dashboardService } from '../lib/dashboardService'
 import './Dashboard.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 function Dashboard() {
+  usePageTitle('Dashboard')
   // The context user: available immediately, used for the greeting so
   // the page is not anonymous while the request is in flight.
   const { user: sessionUser } = useAuth()

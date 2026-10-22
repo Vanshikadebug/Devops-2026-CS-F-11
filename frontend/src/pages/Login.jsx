@@ -5,8 +5,10 @@ import FormField from '../components/FormField'
 import Button from '../components/Button'
 import AuthAside from './AuthAside'
 import './AuthForm.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 function Login() {
+  usePageTitle('Log in')
   const auth = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
