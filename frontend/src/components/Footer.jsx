@@ -19,17 +19,17 @@ const HELP_LINKS = [
 
 const BENEFITS = [
   {
-    icon: '♻',
+    icon: 'ΓÖ╗',
     title: 'Reuse More',
     description: 'Give pre-loved items a second life.',
   },
   {
-    icon: '🌱',
+    icon: '≡ƒî▒',
     title: 'Waste Less',
     description: 'Make more sustainable choices.',
   },
   {
-    icon: '🤝',
+    icon: '≡ƒñ¥',
     title: 'Connect Locally',
     description: 'Help useful items find new owners.',
   },
@@ -41,7 +41,7 @@ function FooterBrand({ setting }) {
     'tagline',
     'Give useful things a second chance.'
   )
-  const glyph = setting('logo_glyph', '♻')
+  const glyph = setting('logo_glyph', 'ΓÖ╗')
 
   return (
     <div className="foot__brand">
@@ -115,7 +115,7 @@ function FooterContact({ setting }) {
           href={`mailto:${email}`}
           className="foot__contactlink"
         >
-          <span aria-hidden="true">✉</span>
+          <span aria-hidden="true">Γ£ë</span>
           <span>{email}</span>
         </a>
       )}
@@ -125,14 +125,14 @@ function FooterContact({ setting }) {
           href={`tel:${phone}`}
           className="foot__contactlink"
         >
-          <span aria-hidden="true">☎</span>
+          <span aria-hidden="true">ΓÿÄ</span>
           <span>{phone}</span>
         </a>
       )}
 
       {address && (
         <p className="foot__address">
-          <span aria-hidden="true">⌖</span>
+          <span aria-hidden="true">Γîû</span>
           <span>{address}</span>
         </p>
       )}
@@ -212,7 +212,7 @@ function FooterBottom({ setting }) {
   return (
     <div className="foot__bottom shell">
       <p className="muted">
-        © {currentYear} {siteName}. All rights reserved.
+        ┬⌐ {currentYear} {siteName}. All rights reserved.
       </p>
 
       <p className="foot__note muted">
@@ -228,7 +228,7 @@ function FooterBottom({ setting }) {
         })}
         aria-label="Return to homepage"
       >
-        Back to top ↑
+        Back to top Γåæ
       </Link>
     </div>
   )
