@@ -5,6 +5,7 @@ import { api } from '../lib/api'
 import ItemCard from '../components/ItemCard'
 import { assetUrl } from '../lib/origin'
 import './Browse.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 /* The full listing page. Every filter option -- categories, conditions,
    cities -- comes from /api/config, so adding a category in the admin panel
@@ -17,6 +18,7 @@ const SORTS = [
 ]
 
 export default function Browse() {
+  usePageTitle('Index')
   const { categories, conditions, cities, setting } = useConfig()
   const [params, setParams] = useSearchParams()
 

@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../app/authContext'
 import { useConfig } from '../app/ConfigProvider'
+import { requestService } from '../lib/requestService'
 
 import './Navbar.css'
 
@@ -32,6 +33,8 @@ export default function Navbar() {
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
 
+  const pending = usePendingRequests(user, location.pathname)
+
   // Close the mobile menu whenever the route changes.
   useEffect(() => setOpen(false), [location.pathname])
 
@@ -54,7 +57,17 @@ export default function Navbar() {
           <NavLink to="/items" end className={link}>Index</NavLink>
           {user && <NavLink to="/dashboard" className={link}>Dashboard</NavLink>}
           {user && <NavLink to="/my-items" className={link}>My items</NavLink>}
-          {user && <NavLink to="/requests" className={link}>Requests</NavLink>}
+          {user && (
+            <NavLink to="/requests" className={link}>
+              Requests
+              {pending > 0 && (
+                <>
+                  <span className="nav__badge" aria-hidden="true">{pending}</span>
+                  <span className="sr-only">, {pending} awaiting your reply</span>
+                </>
+              )}
+            </NavLink>
+          )}
 
           <form className="nav__search" onSubmit={handleSearch} role="search">
             <input
@@ -108,6 +121,27 @@ export default function Navbar() {
       </div>
     </header>
   )
+}
+
+/** How many requests on the user's items await a reply. Re-checked on every
+    route change (answering a request updates it on the next navigation). */
+function usePendingRequests(user, pathname) {
+  const [pending, setPending] = useState(0)
+
+  useEffect(() => {
+    if (!user) {
+      setPending(0)
+      return undefined
+    }
+    const controller = new AbortController()
+    requestService
+      .getReceived({ signal: controller.signal })
+      .then((rows) => setPending(rows.filter((r) => r.status === 'Pending').length))
+      .catch(() => {}) // a badge is a hint; a failed check must not break the navbar
+    return () => controller.abort()
+  }, [user, pathname])
+
+  return pending
 }
 
 /** Two linked loops — reuse, drawn the way the "++" mark is in the reference. */

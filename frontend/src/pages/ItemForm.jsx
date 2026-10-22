@@ -12,6 +12,7 @@ import { ITEM_STATUSES } from '../lib/display'
 import { ImageDrop } from '../components/ui'
 import { useConfig } from '../app/ConfigProvider'
 import './ItemForm.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 function validate(form, place) {
   const errors = {}
@@ -63,6 +64,7 @@ const EMPTY_PLACE = { cityId: null, areaId: null, collegeId: null }
 function ItemForm() {
   const { id } = useParams()
   const isEdit = Boolean(id)
+  usePageTitle(isEdit ? 'Edit listing' : 'List an item')
 
   const navigate = useNavigate()
   const { user } = useAuth()

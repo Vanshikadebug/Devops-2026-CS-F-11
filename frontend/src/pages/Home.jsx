@@ -23,6 +23,7 @@ import LiveIndex from '../components/LiveIndex'
 const ReuseOrbit = lazy(() => import('../components/ReuseOrbit'))
 
 import './Home.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 const YEAR = new Date().getFullYear()
 
@@ -36,6 +37,7 @@ function tileSize(index) {
 }
 
 export default function Home() {
+  usePageTitle()
   const { setting, categories } = useConfig()
   const [params, setParams] = useSearchParams()
 

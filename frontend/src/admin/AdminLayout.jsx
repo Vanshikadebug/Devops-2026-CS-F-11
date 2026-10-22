@@ -15,6 +15,7 @@ import AdminSettings from './pages/AdminSettings'
 import AdminAudit from './pages/AdminAudit'
 
 import './admin.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 /* Each section names the minimum role that may see it, mirroring the guards in
    routes/adminRoutes.js. This only hides links -- the server re-checks every
@@ -59,6 +60,7 @@ const GROUPS = [
 
 
 export default function AdminLayout() {
+  usePageTitle('Admin')
   const { user, logout } = useAuth()
   const { setting } = useConfig()
 

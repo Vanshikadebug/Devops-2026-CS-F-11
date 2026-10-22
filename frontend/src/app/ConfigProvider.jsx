@@ -58,10 +58,11 @@ export function ConfigProvider({ children }) {
     load()
   }, [load])
 
-  // Document title and meta description are content, so they follow settings.
+  // The meta description follows settings. The tab title is set per page by
+  // usePageTitle -- setting it here too would overwrite the page's title,
+  // because a parent's effects run after its children's.
   useEffect(() => {
-    const { meta_title: title, site_name: name, meta_description: desc } = config.settings
-    document.title = title || name || 'ReuseHub'
+    const { meta_description: desc } = config.settings
     if (desc) {
       let tag = document.querySelector('meta[name="description"]')
       if (!tag) {

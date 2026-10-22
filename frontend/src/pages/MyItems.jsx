@@ -8,8 +8,10 @@ import Modal from '../components/Modal'
 import { itemService } from '../lib/itemService'
 import { ITEM_STATUSES, STATUS_VARIANTS } from '../lib/display'
 import './MyItems.css'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 function MyItems() {
+  usePageTitle('Your listings')
   const navigate = useNavigate()
 
   const [items, setItems] = useState([])
