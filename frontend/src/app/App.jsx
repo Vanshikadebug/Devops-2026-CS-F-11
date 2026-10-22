@@ -47,6 +47,9 @@ export default function App() {
       <Cursor />
       {!bare && <ScrollProgress />}
       {!bare && <Ticker />}
+      {/* First focusable element: keyboard and screen-reader users jump
+          past the navbar instead of tabbing through it on every page. */}
+      {!bare && <a className="skip-link" href="#main">Skip to content</a>}
       {!bare && <Navbar />}
 
       {setting('maintenance_mode', false) && !bare && (
@@ -55,7 +58,7 @@ export default function App() {
         </div>
       )}
 
-      <main className={bare ? 'app__main app__main--bare' : 'app__main'}>
+      <main id="main" tabIndex={-1} className={bare ? 'app__main app__main--bare' : 'app__main'}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/items" element={<Browse />} />

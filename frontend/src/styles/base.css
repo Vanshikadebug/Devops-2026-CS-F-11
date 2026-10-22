@@ -168,6 +168,25 @@ a {
 .badge--info { color: var(--info-ink); }
 .badge--neutral { color: var(--muted); }
 
+/* Skip link: off screen until it receives keyboard focus. */
+.skip-link {
+  position: fixed;
+  top: var(--s2);
+  left: var(--s2);
+  z-index: 1100;
+  padding: 0.6rem 1rem;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform var(--t-fast);
+}
+.skip-link:focus { transform: none; }
+
+/* The skip target takes focus programmatically; no ring on the whole page. */
+#main:focus { outline: none; }
+
 /* Visible to screen readers only (hidden file inputs, status text). */
 .sr-only {
   position: absolute !important;
