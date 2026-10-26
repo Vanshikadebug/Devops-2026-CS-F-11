@@ -1,0 +1,114 @@
+{
+  "snapshot_id": "sha256:c1246f6d34db03216cd2373759dc5f40f9aac6cdd2e4c36ad872580a35590b55",
+  "format_version": 1,
+  "enola_version": "0.4.21",
+  "extractor_version": "v270",
+  "generated_at": "2026-10-22T03:07:07Z",
+  "duration": "1.2145176s",
+  "repo_path": "D:\\Devops-2026-CS-F-11",
+  "git": {
+    "ref": "yash",
+    "commit": "0513493766b2980dfbd0a8ca3bfd40e3af300997",
+    "dirty": true,
+    "remote": "github.com/vanshikadebug/devops-2026-cs-f-11"
+  },
+  "extractors": [
+    "manifests",
+    "mdintent",
+    "python",
+    "typescript"
+  ],
+  "explainers": [
+    "cycles",
+    "layers",
+    "crossrepo",
+    "coverage",
+    "unused-routes",
+    "domain",
+    "query-loops",
+    "dead-methods",
+    "entry-points",
+    "messaging-coverage",
+    "god-class",
+    "hotspots",
+    "dependency-depth",
+    "exported-surface",
+    "complexity-outliers",
+    "intent",
+    "constraints",
+    "vendored-candidates",
+    "import-closure",
+    "package-metrics",
+    "dead-code",
+    "performance"
+  ],
+  "renderers": [
+    "llm_context"
+  ],
+  "config_hash": "sha256:73d78ea79f51e19979d4c7d00bd9463ae684ebcb909116abad86675323c32c05",
+  "ignore_glob_hash": "sha256:7523cc6397a498e151125a682d28fbf6df20c6f51f6dfaf18fd8f5239a20d2d8",
+  "output_hashes": {
+    "facts.jsonl": "sha256:4d769f346b50ca0fe83ed457206b91abb3af2efa8ac0bd766373d64ba3d5142e",
+    "insights.json": "sha256:003ada95836eca93c0f5b2d4683a60c84139bcac8e86758344eac760541d71df",
+    "llm_context.md": "sha256:16d9910093a7373b807d6f413d9857ddd4b6add8e752947262d3d3bd33a50ccc"
+  },
+  "fact_count": 1917,
+  "insight_count": 111,
+  "quality": {
+    "files_seen": 238,
+    "files_parsed": 162,
+    "files_skipped": 0,
+    "dirs_skipped": 4,
+    "skipped_sample": [
+      ".git/ (glob: **/.git/**)",
+      "backend/node_modules/ (glob: **/node_modules/**)",
+      "frontend/dist/ (glob: **/dist/**)",
+      "frontend/node_modules/ (glob: **/node_modules/**)"
+    ],
+    "parse_errors": 0,
+    "heuristic_insights": 109,
+    "coverage": {
+      "services_total": 0,
+      "coverage_gaps": 0,
+      "unresolved_edges": 0,
+      "extractors_reporting": 1,
+      "extraction_unresolved": 54
+    },
+    "census": {
+      "files_walked": 238,
+      "parsed": 162,
+      "excluded_by_ignore": 0,
+      "excluded_by_kind": 72,
+      "excluded_kinds": {
+        "(no extension)": 3,
+        ".conf": 1,
+        ".css": 28,
+        ".dockerignore": 1,
+        ".env": 1,
+        ".example": 3,
+        ".gitattributes": 1,
+        ".gitignore": 2,
+        ".jpg": 7,
+        ".json": 5,
+        ".mp4": 1,
+        ".pdf": 7,
+        ".png": 1,
+        ".prisma": 1,
+        ".svg": 1,
+        ".txt": 3,
+        ".yml": 6
+      },
+      "skipped_with_cause": 4,
+      "top_skip_causes": [
+        {
+          "cause": "claimed by manifests, no facts emitted",
+          "count": 3
+        },
+        {
+          "cause": "claimed by typescript, no facts emitted",
+          "count": 1
+        }
+      ]
+    }
+  }
+}

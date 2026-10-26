@@ -1,0 +1,1316 @@
+{
+  "repo_path": "D:\\Devops-2026-CS-F-11",
+  "repo_label": "devops-2026-cs-f-11",
+  "generated_at": "2026-10-22T03:03:50Z",
+  "duration": "1.8130718s",
+  "extractors": [
+    "manifests",
+    "mdintent",
+    "python",
+    "typescript"
+  ],
+  "explainers": [
+    "cycles",
+    "layers",
+    "crossrepo",
+    "coverage",
+    "unused-routes",
+    "domain",
+    "query-loops",
+    "dead-methods",
+    "entry-points",
+    "messaging-coverage",
+    "god-class",
+    "hotspots",
+    "dependency-depth",
+    "exported-surface",
+    "complexity-outliers",
+    "intent",
+    "constraints",
+    "vendored-candidates",
+    "import-closure",
+    "package-metrics",
+    "dead-code",
+    "performance"
+  ],
+  "renderers": [
+    "llm_context"
+  ],
+  "file_hashes": [
+    {
+      "path": "backend/tests/textMatch.test.js",
+      "hash": "686f0169a54d486a047ba34cb248fcecb089a7fe242d17b8798fe07ed3add515",
+      "mod_time": "2026-10-07T15:59:52Z"
+    },
+    {
+      "path": "docker/nginx/default.conf",
+      "hash": "10e36e513436d6c7770bc146ef09f21bd44bbe92f9e1bb315452007720c405fa",
+      "mod_time": "2026-10-01T19:22:39Z"
+    },
+    {
+      "path": "frontend/src/app/AdminRoute.jsx",
+      "hash": "bce0bb6c028587097ac3dd65573de9889314cd1b4e8d97328811492a140d23aa",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/controllers/uploadController.js",
+      "hash": "0d1b376424a44f84405c2960b69e1bc69b7f62ed6edd4a29731ec834efb3800c",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/lib/prisma.js",
+      "hash": "ebc61002cffa7a7ad2581f87fcd74e46a0b0d528778cad83d855f02e1b7dd1f5",
+      "mod_time": "2026-10-07T16:46:30Z"
+    },
+    {
+      "path": "backend/src/routes/locationRoutes.js",
+      "hash": "45685479248d89728dbf3faf3ca2f971c9f894258d63b24fbbcc0b495e40a948",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/validators/adminValidators.js",
+      "hash": "f1f65238b75ece45c43b74144a15d97a7af42417035efbf3349957bb8885f0af",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "docker/grafana/provisioning/dashboards/reusehub.json",
+      "hash": "10dfb58fdd748fd8f834ed87760077939d9b71d04b97bcc2cef9b1e72ff306ed",
+      "mod_time": "2026-10-04T14:32:56Z"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "hash": "3ceabba77a3c5b55c452f3d2cd5e35dbc1977d7d4808120e6c2017a967306cff",
+      "mod_time": "2026-10-07T15:44:40Z"
+    },
+    {
+      "path": "frontend/src/components/LocationPicker.jsx",
+      "hash": "ee52c2fcd706bd1529e4ac6ab7a3cf984f780c8635284a8e24f936df2703769c",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/middleware/rateLimit.js",
+      "hash": "e9b818ee200e3e4ca412aeadef21b3310c9a866a784d88b4ed245f6461d4e512",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/taxonomyRoutes.js",
+      "hash": "22280a9f043a99ce6f79fa4a3fb5ce7ecb3fef5bfb737e8499d69dc05711f727",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/lib/display.js",
+      "hash": "d0a59c1542380c8dca60276ac544f277c3c2ff2695ec064faf7d35c7c8d14a9e",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/Requests.jsx",
+      "hash": "a6b87ab33a00b34beb91626e763c65b740817945ecab3cb58213ea2758f68d50",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "frontend/src/components/Experience.jsx",
+      "hash": "c1d89d51a314b090d22e7686e414abb589e45f1363faad12f277e1d3da86e3f3",
+      "mod_time": "2026-10-18T06:03:22Z"
+    },
+    {
+      "path": "frontend/src/styles/base.css",
+      "hash": "eaa08d522b705c82f064e45040d5f88253fdffe79871be842cd2a5e2f5337368",
+      "mod_time": "2026-10-22T03:03:43Z"
+    },
+    {
+      "path": "backend/scripts/share.js",
+      "hash": "edd2a8f09a7b44adcd363e9cdebdb5b640e4d33b4abe3e8753e9901fd25214dd",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/models/dashboardStatsModel.js",
+      "hash": "5b191dc7c81125983941b42083c59a9cb1c1694247fa65e275c46b63fff8c0eb",
+      "mod_time": "2026-10-07T15:41:29Z"
+    },
+    {
+      "path": "backend/tests/health.test.js",
+      "hash": "d3d0e0557b5bedf4fbd291bb01ff0a41fa05e9a597aed6dd8b6679b7726bbbc4",
+      "mod_time": "2026-10-07T16:47:55Z"
+    },
+    {
+      "path": "frontend/src/pages/Home.css",
+      "hash": "5c6b9879e0963b30031fe633d2b449cc37e7c3ff47027e8fc592fdec382937d9",
+      "mod_time": "2026-10-07T16:42:41Z"
+    },
+    {
+      "path": "frontend/src/pages/NotFound.css",
+      "hash": "2f12b3ab023598198e4329d45e8c69d0939d1a43482f3607b1c3834625f003da",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "backend/src/controllers/itemController.js",
+      "hash": "3a10a55b1a76bd049d14c5f2a826dadb43881b53e1b38400d187c0f8dd89f396",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/ItemImage.css",
+      "hash": "784f16d95674940c89a632a8f3bb6f1acb25780076ef77eea2b20fdd0c7a55cd",
+      "mod_time": "2026-10-07T15:13:27Z"
+    },
+    {
+      "path": "backend/tests-legacy/database.test.js",
+      "hash": "6d5c0ae16250bfffd142597b46dfcc4459ec0a203fc7c493c9cb617fe9b3ebd5",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/LiveIndex.css",
+      "hash": "41b15b57b2bc4078ea84d4eb9094694572236380ed6dae9c22cf67e0904a08d8",
+      "mod_time": "2026-10-18T05:56:42Z"
+    },
+    {
+      "path": "frontend/src/pages/ItemForm.css",
+      "hash": "db06f462678656a758044dde40d459d2d64fecec7f73d65035d25a81824221b9",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "frontend/vite.config.js",
+      "hash": "2d02246871d4ff7a7be47908f850b3d48eaa3f8850b5ae02a976cf770b37c006",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "README.md",
+      "hash": "c419c4f3b71fa7392736a9d2247787ffe4913abb58d8834494c984b0009ce43c",
+      "mod_time": "2026-10-07T16:15:03Z"
+    },
+    {
+      "path": "backend/src/middleware/maintenance.js",
+      "hash": "f9cac88452ef97b1a90bec903b5b017352e7004fd1f3b572153d0cbd0ca58bbe",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/.env.example",
+      "hash": "1161558cc30ee66cdf90420cb54e830dcd889b1cf82e55b97d1d8bd58b743f37",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/Navbar.css",
+      "hash": "ac930a93d319e4c737669db4154a2effe14a3afdee94fa7391fb28a342384a8d",
+      "mod_time": "2026-10-07T15:13:03Z"
+    },
+    {
+      "path": "backend/src/controllers/settingsController.js",
+      "hash": "7b4bbf9326c4da6e9308d1d6053e9b8930b3ec2fc36ac6d59fff185900df05cb",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/adminRoutes.js",
+      "hash": "497079b046e26c6437a4e7678dc81a5758f95af1cdda245bd10f6d64b07f748f",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/AdminItems.jsx",
+      "hash": "f8bfea79432f199bc040a50e02b108427dd0182f72feb5bc15dc74cb62e00807",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/Charts.css",
+      "hash": "1a2dd74e65fb353bf556839927b27fe5d63ab0bb55a20a70dd07747178803a77",
+      "mod_time": "2026-10-18T05:56:37Z"
+    },
+    {
+      "path": ".dockerignore",
+      "hash": "9cf1909fabd66d3b6e8567f0f3282bfabebd02d975b0bfffa3743f8e6327201c",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/scripts/create-admin.js",
+      "hash": "77a460b0e3b074b441dca257506084e67b80a0ef3a3200544d7fe7f8b8b0ea65",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/controllers/authController.js",
+      "hash": "bde7db5fe214708bf1c934cbf8d0aba573788fb2ef7e75c2878909de22cc7c57",
+      "mod_time": "2026-10-07T15:42:47Z"
+    },
+    {
+      "path": "backend/scripts/prisma.js",
+      "hash": "828655f72fa83d4339d026b95dc29828bf8d80c2a6e37c28190591edc360adc9",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/middleware/authorize.js",
+      "hash": "aca29528c9374b032f52358c7a87992f182e8fbd26289192bc2f44b4dcea7382",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/middleware/validate.js",
+      "hash": "d714697aceb83ca686650c64437a952ef581ebdfa15ecdb9b0fe78c1557bb493",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/models/taxonomyModel.js",
+      "hash": "ceefc29b072ee2f6ad3dfff32655afb9e73ea7adb151c7b9b42b3af2820d80cb",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/authRoutes.js",
+      "hash": "5151716f20ef392894df8302d0562f0c65a184062b98f2fc4fbd29d4c8bdab1b",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/.oxlintrc.json",
+      "hash": "9a11085b48d1ea2c1cdd18c3438a669abcc635f5586019e5df87161369af70ef",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/public/images/items/ATTRIBUTION.md",
+      "hash": "01623a2047d2178894806e9c88a986ec0c6714cf3602e34d1d1523e1f8a56e75",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "weekly_reports/Devops-2026-CS-F-11_Weekly_Progress_Report_Form-3_2026-09-26.pdf",
+      "hash": "7f5951c4b642c5c71f1735fc2c91024f9ef98a22130826e11e72b940e027b792",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": ".env",
+      "hash": "7d5f8c77831788301e03ea91a69e4c942ad1d480843327e9c8bf9c54166b9710",
+      "mod_time": "2026-10-04T14:37:17Z"
+    },
+    {
+      "path": ".gitattributes",
+      "hash": "ba17c5dfcc588c306649a5c3e4b0b8c35df56955c23260a4d9072ca63f251469",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/AdminAudit.jsx",
+      "hash": "aff15e69e6c9e3b3efc97a929b6100502082136bfaf7785653371753640f3506",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/Login.jsx",
+      "hash": "5e2f55afeef58b749c114d645c446a35f28b93136a9f038e51a4527f768cb966",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": ".env.example",
+      "hash": "808cc12f22ae15ef09c48d1c701b1dd772bb041a425acc9084b1a496da1e1789",
+      "mod_time": "2026-10-07T16:04:12Z"
+    },
+    {
+      "path": "backend/src/controllers/taxonomyController.js",
+      "hash": "6589df69338a171dd8c89932a12c64a3d386d028625baa26ba034fe6ac0d8871",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/models/auditModel.js",
+      "hash": "136b03b222c1ce7555200457233830ce51b23d0456e9877f98d0e3e2efdc6195",
+      "mod_time": "2026-10-07T15:42:16Z"
+    },
+    {
+      "path": "frontend/public/images/items/drawing-instrument-box.jpg",
+      "hash": "09855464376175c501e23ef18633f97b78e4c53143ee1172b8b9abecb630f21b",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/lib/locationStorage.js",
+      "hash": "076733f1505f72fdc2f2377eaff9c35a2aa0ca11750791ae975418fbeecfcdd4",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "weekly_reports/Devops-2026-CS-F-11_Weekly_Progress_Report_Form-3_2026-09-21.pdf",
+      "hash": "ba65a6d88ef582b68f46b230a1067d7a2d883a7a7bbf8ea5f8aea6b45edc837b",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/prisma/schema.prisma",
+      "hash": "4066090dfd047ef72b12f3166b998d987e6977cb76fd595b81f919c13dce66aa",
+      "mod_time": "2026-10-07T15:39:40Z"
+    },
+    {
+      "path": "backend/prisma/seed.js",
+      "hash": "b3b533c8c80d6c0e958d1ffdcd4672f85cded8d48df6ae135109225eb2b3877a",
+      "mod_time": "2026-10-07T15:43:13Z"
+    },
+    {
+      "path": "backend/src/middleware/protect.js",
+      "hash": "1280706376905e30abc50965d2462e7a98fda7d8111354a46efff771a153428c",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/models/requestModel.js",
+      "hash": "9f148fee440bdc5390cd3d5927c8a8d1e5712ed5561329648d3d4fb36e4b662b",
+      "mod_time": "2026-10-07T15:42:37Z"
+    },
+    {
+      "path": "frontend/src/pages/ItemDetail.css",
+      "hash": "f175f815a625809866f30671cbe56fc522582f0452374b85fa5d6158a1eb4b95",
+      "mod_time": "2026-10-18T06:03:22Z"
+    },
+    {
+      "path": "backend/src/controllers/adminLocationController.js",
+      "hash": "3ccc84568b4ce82862b8f3f5283e28bf67a666825e96aecfa8ddb96dc2a1e62a",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/models/itemModel.js",
+      "hash": "5137d75c5fca71e335e9a0d1c7c620ba753c6a9b9bec8d077ee91ae7106fd239",
+      "mod_time": "2026-10-07T15:42:16Z"
+    },
+    {
+      "path": "backend/src/utils/textMatch.js",
+      "hash": "ea538925aa12ea10227f5e7526445d95890412e61f3710799cfc3bc31bb06da3",
+      "mod_time": "2026-10-07T15:59:07Z"
+    },
+    {
+      "path": "frontend/.gitignore",
+      "hash": "d50ab07e11fa4bf3b1c7c3312e1d7baeab56cca756832ccf40476823ad2a38b7",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/AdminLayout.jsx",
+      "hash": "96df4c0e101fd8c2d7a6a7c9f08d4bac1bd6ab7d86271291a682e7cbccae5213",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "frontend/src/app/ProtectedRoute.jsx",
+      "hash": "97ad5436c31e0ccddf131f3d02c33ad5f1145876493312188f5adb0a4132399b",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/ItemImage.jsx",
+      "hash": "f7f23db624fc9abc99836cdfd69a1210b33e57468563ce0236f102d43a82dfd5",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/HeroSection.jsx",
+      "hash": "9ac6a4d99c67209b4fac07e4bce24d135420d9b34556b37094a70fda33c48560",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/nodemon.json",
+      "hash": "b6ccd1ea2bd407804768f99503c11f208b794809d4a403e8459d5792a3406deb",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/utils/asyncHandler.js",
+      "hash": "6dac206cc3fb94899ce7d88c91c0329cdef527c994f18e4fabccbf38246ef65e",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/items.test.js",
+      "hash": "6ee0fd8dcb6bff998e53ba81d59b3c57fc5970036efc4c694aca1e68a762a709",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "docker/grafana/provisioning/dashboards/mongodb.json",
+      "hash": "c99feb3affedc9ba886a8b8e9e47e1b569902f53fad6b18be34491d28fa68c91",
+      "mod_time": "2026-10-07T16:01:04Z"
+    },
+    {
+      "path": "jenkins-test.txt",
+      "hash": "9a234f59220ed964584eee5c45508a2465902743e038ca6fe46772f8d97b2538",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "frontend/src/components/ItemCard.css",
+      "hash": "9c65a0138e23776d5ecbaf98853d9546ee0abc2cea7ad56f53348bc3a9b509c8",
+      "mod_time": "2026-10-07T15:13:19Z"
+    },
+    {
+      "path": "backend/tests-legacy/adminUsers.test.js",
+      "hash": "c7b17dda1aa209adcce9431c967568bde3e0569b7fe9db0dece796681257e1ee",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/README.md",
+      "hash": "6ce47e7516dd8983b35494a26f4cee21653ea8ef7364c978cb3be081a7e6215c",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/LoadingSpinner.css",
+      "hash": "eec51fc03c8f66005694fc57a4d9cee8a055a4a32163a18b5e8be17e2ccd27ea",
+      "mod_time": "2026-10-02T03:16:53Z"
+    },
+    {
+      "path": "frontend/src/components/ui/ui.css",
+      "hash": "2bd3f39058dfda1275f6e3a18100fc627608ed5d607f01c7612cd3c4fd045024",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "package.json",
+      "hash": "812eb8b0928d03e7aa06f3bc2f40b985b28d4f430ebccbd7acba50d0161165aa",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/middleware/errorHandler.js",
+      "hash": "ff3f82c5b4edd50aa1a41fac32e4e90eddc68dc6f3d48d238ebeaeaad7e9bd8b",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/package.json",
+      "hash": "35ad350192b3f17a8ac219614ea3c9d11efd46b09a345642557b141da51de89c",
+      "mod_time": "2026-10-07T15:44:40Z"
+    },
+    {
+      "path": "frontend/public/images/items/led-desk-lamp.jpg",
+      "hash": "ef9daa22cf87e4405af6ca713ed6fd95fc02377d45bee5291b925c60ab9833fb",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/Charts.jsx",
+      "hash": "032a2f21c432fee25e354053cfa47baee8b7556dc813017613abd4ce589af8d5",
+      "mod_time": "2026-10-18T05:57:06Z"
+    },
+    {
+      "path": "backend/src/models/settingsModel.js",
+      "hash": "ac7175b4edc58f3f21becc0c3fac85de2044ed3ccdfc29c2b96e79ac95871ccd",
+      "mod_time": "2026-10-07T15:43:13Z"
+    },
+    {
+      "path": "frontend/public/images/items/assorted-notebooks.jpg",
+      "hash": "57bacaf067132b4ca9f8df9d8bb13b46679667f72afc4a366a6d27de5540c71a",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/hooks/usePageTitle.js",
+      "hash": "6c81eeffdd23bc87f521cdcaa6e22782053ed437eaa0baa88f92ecded149a711",
+      "mod_time": "2026-10-22T03:02:45Z"
+    },
+    {
+      "path": "frontend/src/pages/Home.jsx",
+      "hash": "8ed973325e6e408a518c14a372e1f1547d436e3abd2b0baf1cbdbaec34d589ee",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "frontend/src/pages/LatestListings.jsx",
+      "hash": "d5a4c9cd5fbb63d510dbc695d5ad2529da275e4b23d249da809267a5dc235fca",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/Register.jsx",
+      "hash": "e12813c9a9e1734e5b64152852282989b9ad1eaf8a9e5c58ae37368041d1be95",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "Devops-2026-CS-F-11_Final_Report_2026-09-03.pdf",
+      "hash": "c961372cfcb0713358b198a08c5c857b537d4ec60af37e34ce0859752eec1e6e",
+      "mod_time": "2026-10-01T19:08:05Z"
+    },
+    {
+      "path": "backend/src/server.js",
+      "hash": "870a0cbf2e58f1fa31dce83543770b1ceae68d30aeb6e803d6e80d5217fe7c6a",
+      "mod_time": "2026-10-07T15:42:47Z"
+    },
+    {
+      "path": "backend/src/utils/pagination.js",
+      "hash": "9bec93d38688078515fcb729ae8a5e3982c849e32545ed91374a64afa5137ae3",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/itemWrites.test.js",
+      "hash": "23ae512f43d4365613c6d7eda2f1374c87c5f0690f434f3e8f6f9a65769888f2",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/EmptyState.css",
+      "hash": "89b9860df46d1671aaf81d5e78211f97697ce1fbc90c601cd37ccb796f8696ed",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "frontend/src/components/Experience.css",
+      "hash": "2b4669ddcd9152c1c803f1b20b6623d085a9242675d088c248c24817f462ce61",
+      "mod_time": "2026-10-18T06:03:22Z"
+    },
+    {
+      "path": "backend/tests-legacy/dashboard.test.js",
+      "hash": "2c0418eae71e90dbf27ed9eb6ce8d301e3e0eb20cdb9e0c99a14561937ced1d7",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests/metrics.test.js",
+      "hash": "e56f4aa2e31635b9b9617da7769b69bba5b8c6f3dfc3f2397cd9303187c7980c",
+      "mod_time": "2026-10-01T19:21:41Z"
+    },
+    {
+      "path": "frontend/src/components/LoadingSpinner.jsx",
+      "hash": "c3a6c903dcd01f783cc680cc9ad14da9f18f1ca201beec59ca2300660072aad8",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/lib/dashboardService.js",
+      "hash": "c70bb1fae429772e545ecc9f8f759dde3e190bb4534d3e12fe086d1482ccfcf4",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "weekly_reports/Devops-2026-CS-F-11_Weekly_Progress_Report_Form-3_2026-10-11.pdf",
+      "hash": "d924d16be2e3f802953496e205e527bfd26beeb41d0e5bd6d0b94e665e523c04",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "backend/src/validators/itemValidators.js",
+      "hash": "a37f64596da223752776969ea70e85f358e9432eb8ce7d70f406ce22bf40f3ea",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/Dashboard.jsx",
+      "hash": "10c07bb60521e449c45a69f260223df60f78dd37f159f9625972fe9d8e931ae7",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "TEAMWORK.md",
+      "hash": "320b05139223cf7d4d207c2bfe82bc15fd238e784c2748c52b19b2ae01f21b75",
+      "mod_time": "2026-10-01T18:58:20Z"
+    },
+    {
+      "path": "backend/src/controllers/reportController.js",
+      "hash": "b109766d775e0650181a77b8ef4dc63341a9c34abb7ddbb45c8d5d2d72b74fa1",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/middleware/checkItemOwnership.js",
+      "hash": "cae9015d7d545bec0630290963aa18bcad4948a0267715984c478d825fedc01b",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "docker-compose.yml",
+      "hash": "e1767b470483bcd99ba9b27d6b39dfdebb30bdc2f58590f2cd8ab59bb24e3cf4",
+      "mod_time": "2026-10-07T16:47:56Z"
+    },
+    {
+      "path": "frontend/src/app/App.jsx",
+      "hash": "70558455173226f944b386dd9ff1cd557465a4e0bc8c8c59d54add3dcf3c3992",
+      "mod_time": "2026-10-22T03:03:43Z"
+    },
+    {
+      "path": "backend/src/config/env.js",
+      "hash": "c17b89e3e609e17669f53db70d8e544ceb2f3b4fa6b65e497d1326168721714a",
+      "mod_time": "2026-10-07T16:59:27Z"
+    },
+    {
+      "path": "backend/src/lib/cache.js",
+      "hash": "39cfe34ced4659f04afcd765733ec7a89f5b121a2a256761c329d160ffb419e0",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/AdminCategories.jsx",
+      "hash": "1cb90985bf4a5de618702f43bb8fa2ddfaf96a4f395bd4a19ec590c89be0436c",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/AdminReports.jsx",
+      "hash": "d5c73cf16e0efe621d92aa6c1a9d48dd9927f7757dbf75939f095c8fd71578da",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/Dashboard.jsx",
+      "hash": "56cf9912a789a8cd5e737d4e534c435e21d59853a091e90e0a3d21ef5fd056f0",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/Footer.css",
+      "hash": "452d51c0664da0da9fe209b7ea4fbe6380b873c85670c10cf01e0069c41c0adb",
+      "mod_time": "2026-10-07T15:27:33Z"
+    },
+    {
+      "path": "frontend/src/lib/itemService.js",
+      "hash": "2e9959a769c0fd926d3b3adc47172711acc3a9c75062c56144a4e7702c5d6f5f",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/lib/origin.js",
+      "hash": "382dfdc033bea6b52bdef61f82f9d22aa74f411d4c8ee8dbdbc2fb441bbfd8db",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/itemRoutes.js",
+      "hash": "e7898b7f03d38c89af2729d4060361c58cc80b1461969881f410fe6250dfcd88",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/utils/sqlDateTime.js",
+      "hash": "0da4e209716b4873bba2be69d5f11127a2578d401817df4ca2e0f0ed4fce2a58",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/AdminUsers.jsx",
+      "hash": "e8a49bff388f56cb5a01e1681d223547c76f1c1cee7f04002d53fd948befdc32",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/README.md",
+      "hash": "38ef06b5eea3d5e7e7be213aafd050d20dd976dcca0d397ec36e2355d409998d",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/adminItems.test.js",
+      "hash": "e17c9b0217d06fd8b60f94b886794a7ecde991a77583ef352e7ded7e11899879",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/userCollege.test.js",
+      "hash": "ff157951f08ed3b47ad4abbef9fa23f8363dd8c874845e963ba4ac4728a8997b",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/AdminSettings.jsx",
+      "hash": "33e0d2935631e83d335d67db597c4ca1663d5fc1f1f4c4408af05bc5c443ccb7",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/controllers/configController.js",
+      "hash": "4e11be7e652c3c53234f8c5de7691b8b0a5a7a7766cd4283cd7a0fb01014d3e7",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "docker/grafana/provisioning/dashboards/dashboards.yml",
+      "hash": "277fd4f400cff5913c73c8c10e68997516d1d87201b9a85c1bad61520a6c3775",
+      "mod_time": "2026-10-01T19:23:16Z"
+    },
+    {
+      "path": "frontend/src/components/Modal.jsx",
+      "hash": "1d7f1a3ae63a27c18b8fe8c8dee7c6a5cb6d6c6307cc1861956c194cc66972b0",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/lib/locationService.js",
+      "hash": "324eed0de04c7f470c45e199052372f09ef7dd3930b23dd4e512a40de513cb8d",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/controllers/userController.js",
+      "hash": "11f57a9d98760db16b34ec4443c44c5667a17653f8785ce067656256ccc496a5",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/statsRoutes.js",
+      "hash": "98ffbcda8d9a964aeb1566ffe30c14be322ed2b9a2a679de5a6ca78fa2852b6f",
+      "mod_time": "2026-10-07T16:37:01Z"
+    },
+    {
+      "path": "backend/src/routes/userRoutes.js",
+      "hash": "4c8bbe53f6d52c07659ec780f8b603232aedd095cd460b3ef06c6d35c2b6ab6f",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/utils/rawRows.js",
+      "hash": "c5d92889983dae1eb977b8d795f59c4c7be847ec78c6f337ff1b0a55edc20cb0",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/validators/requestValidators.js",
+      "hash": "b49629afda1cde7f59e1b7c778feb364d79912d7db6e7d4bebbdb7bfbc92abce",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/Navbar.jsx",
+      "hash": "6fed63358095e53cd0f303089fca88c819762d66c0c78770789b90951d5cd956",
+      "mod_time": "2026-10-07T15:13:03Z"
+    },
+    {
+      "path": "frontend/src/components/ui/ImageDrop.jsx",
+      "hash": "dee47f78cf00ca7ff90d49556bf13b2a303825644f4dca0416774399071192d5",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": ".gitignore",
+      "hash": "50ed9b74668679516663c33b07c7a2f28319d43668a462c6eb2655c59e5a5206",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/package-lock.json",
+      "hash": "5645f557780b6b744d70f238abadc0a9d9bdd9bcbca320d7818819ad21ddb93b",
+      "mod_time": "2026-10-07T15:44:36Z"
+    },
+    {
+      "path": "frontend/src/lib/tokenStorage.js",
+      "hash": "ecc4de7e8f84ff7bd47fbeff9f4d7d1d17c8e4c9980b2837d92081a9edbdb4ac",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/styles/legacy.css",
+      "hash": "e79dbbf673f3e3fcc91b439c6ae49218938c3616bbfed3795b50012aaf9c0210",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/middleware/metrics.js",
+      "hash": "e20c2754173595074dc0f9844b5afb1e7501bf0fc13d59f2521092545419b674",
+      "mod_time": "2026-10-01T19:20:56Z"
+    },
+    {
+      "path": "frontend/src/admin/components/Shared.jsx",
+      "hash": "971b8c42fb9d67a308b6540b49ab5acfdadd5262191c255e6bad718cc92ddda9",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/app.js",
+      "hash": "ec59342c5c2e1a817b4e366c20c95cfc5a9b868cf275baec1fe8fb417ae986b2",
+      "mod_time": "2026-10-07T16:37:01Z"
+    },
+    {
+      "path": "backend/tests-legacy/requests.test.js",
+      "hash": "99d329a9cd648449c380ec4e730f511a4b1d42078eb96c089593ac2e804a740d",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/app/AuthProvider.jsx",
+      "hash": "9621f013821a9a4e3feaa991e1262f392ab73f4c5664289192c625fd903b6f4a",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/lib/authService.js",
+      "hash": "43f5cd6259ffa32e54308e1b0902e98c45b032f2187d158e6471f8b7493cb1b6",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/middleware/optionalAuth.js",
+      "hash": "95eb449c460bd9c51bb12ec688a41ba337078f5f3b47676023a5d28b7aeb9591",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/auth.test.js",
+      "hash": "6dcab67f6bca4c499799130713f25cb54bd1b5670fe43a7f7c619d34366d43f9",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/locations.test.js",
+      "hash": "349fbd322cfb169aa2c0b84fef866fddc0a688d826738197b3c6d6bdd0505ee3",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/AdminLocations.jsx",
+      "hash": "33332a01d190e0031ec7e712fd12147c60685a73af9d379da8863ada597510c3",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/main.jsx",
+      "hash": "8cf69da1b807a3b269b71c1c86b1b9f6bf5ec3ed1bc1793cac86d7732c3f7b92",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/MyItems.css",
+      "hash": "e118315f113ba3fcb0db3d7c9e5b2980e3060c2c18e48b1a5fe24306aa453c45",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "frontend/src/admin/useAdminResource.js",
+      "hash": "5a245045cf6c3bd8c2b7eb65cecb352c4fc8da928dc24f5102ab19507e000206",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/LiveIndex.jsx",
+      "hash": "7a01c8b4b25211057dd4590908e44868e2f8cffa0aa9b32a5bc4d691acda99cc",
+      "mod_time": "2026-10-18T05:57:06Z"
+    },
+    {
+      "path": "weekly_reports/Devops-2026-CS-F-11_Weekly_Progress_Report_Form-3_2026-10-04.pdf",
+      "hash": "8c42136bb85d820ba60be876e4edb9a4227b3635a36e1d6b06c6365a0bb50304",
+      "mod_time": "2026-10-07T16:16:15Z"
+    },
+    {
+      "path": "backend/src/models/reportModel.js",
+      "hash": "997d52861ccca8bec67e345e12ecf10e87dbb2ae930a07847491474150615142",
+      "mod_time": "2026-10-07T15:42:37Z"
+    },
+    {
+      "path": "backend/src/utils/token.js",
+      "hash": "0c0b8d37fbbf640ae4e193724e87f41fdc452da1c76560c98268311dfadec354",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/adminReports.test.js",
+      "hash": "a075e666739385479081300c5ad1d7ceda81ee5bd698168116f434bae605f280",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/itemFilters.test.js",
+      "hash": "feb33990f8574b2a7e71e9d9f68c51c3202d635ed65c5ddbfe9eb4cb9ac9471a",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/controllers/contentController.js",
+      "hash": "6e073e12a131144d5d055d86555c22d6a9d5ed9d0d524b0618d8b8e67cd8ea4a",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/configRoutes.js",
+      "hash": "55f1e7a8e2f02398448cc0f198e1a9a8e6722eb5f71a6be90ae339e99c55cee7",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/dashboardRoutes.js",
+      "hash": "59587bd02820ddc0bf899fa5d889982dc3ca73eb1deb98f628db2b22bfa72bf5",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/health.test.js",
+      "hash": "409c8f5ac953d3c3fe9e10946d284532cb5158ea6544dcbfbf6c773ea5c38f17",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/Button.jsx",
+      "hash": "10a49caa403da9e8b145819ae111d72782a289b27b236f66448473154b7c7be9",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/ui/index.jsx",
+      "hash": "bb17a285876606315c716161841752c3d0f54a5449e977e59736e46bf5442afa",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/Dockerfile",
+      "hash": "e422e354dfd092f6e76191039bcd11a646f7032a2505247e507b37600fa0ae09",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/lib/api.js",
+      "hash": "383205f0b4e9275a80e693a6a93895d95cbff739985857c18df83543c44e5ba8",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "package-lock.json",
+      "hash": "14231195b5b8d4a6fcf5cc64eea85ba3ab09b2c7dec77143b587095b2e522575",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": ".claude/launch.json",
+      "hash": "c171dff27fe4d2ea27796dd6e6bccd2a586d4e38c03fe414ffc6d081bfdc8a4a",
+      "mod_time": "2026-10-07T15:29:19Z"
+    },
+    {
+      "path": "backend/src/models/statsModel.js",
+      "hash": "268ffd8697b7ed5b9656ea7cd8273aca7cb13e1bd01f15ddfa40c16b297077c1",
+      "mod_time": "2026-10-07T16:37:01Z"
+    },
+    {
+      "path": "commit-check.txt",
+      "hash": "db4a9a0ea3b8f41b5db4c84dc9618668738b2b839bee14aa50dffebd4224b097",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "frontend/public/favicon.svg",
+      "hash": "61bc9a161de58248288e6905425d7180f0624c2865007b97d763fdac12043a66",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/AdminContent.jsx",
+      "hash": "d093d47d69f9e5e50579a55cb2d9500b8262d104b743c9b3bc2eb6ad0034bba8",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/ItemCard.jsx",
+      "hash": "62add1e9cc6b5619dc2589e5ed7dbeee01fe6dd619c887274207a1a0b4b9f1e7",
+      "mod_time": "2026-10-07T15:13:18Z"
+    },
+    {
+      "path": "frontend/src/hooks/useDebouncedValue.js",
+      "hash": "7dfbf09c71344ae107712ad5ff725566f77621cd5c78e3ce4264750abb7d0e0d",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/ItemForm.jsx",
+      "hash": "344d7be6d1645877c869d277829f33fb1180f48d173b503ed775eb86cbdf7401",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "backend/scripts/smoke.js",
+      "hash": "c18db2595d619a3e21b7b7fb972bd3420bec1b71f0b0156d0499ad665f6dd376",
+      "mod_time": "2026-10-07T16:45:06Z"
+    },
+    {
+      "path": "backend/src/lib/redis.js",
+      "hash": "4717a3cc04d5906e4240deb2cbf5c2a0dd1af508e0a98d328341113e7150aeeb",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/requestRoutes.js",
+      "hash": "30aab055b70f6d8a3fcf29e4c98cf31e31d1ef020fe4cdf046e4f18f61786cd8",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "generate_report.py",
+      "hash": "7e3a385e2a0dad36157683d89260d34de5111a16df0e5db26f4584eb1ac1f49e",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/uploadRoutes.js",
+      "hash": "eeb4058cd47f9474adfc05cd8d7d2e50f524179de9d3ac914317d3a8ae69e717",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/public/images/items/android-tablet.jpg",
+      "hash": "b0299563fe76218719dcc8272ee0b014c5479c0164de5bb19ff92cd0e988de67",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/public/images/items/folding-study-chair.jpg",
+      "hash": "0ae938ae27ccf65c9cf32258b7748ddadd5e76727ba5b079b766c3f0512e11b6",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/Modal.css",
+      "hash": "8a35deba3a553bc36f1215f8a8452aee146c39bdecf215759eeb124b5a60918b",
+      "mod_time": "2026-10-02T03:18:06Z"
+    },
+    {
+      "path": "frontend/src/pages/Browse.css",
+      "hash": "9fdaccd41ce76314597ae1c5a019085bb95620f3374f929882b20e37b50e6176",
+      "mod_time": "2026-10-18T06:02:33Z"
+    },
+    {
+      "path": "backend/Dockerfile",
+      "hash": "f0e7bcd4d50f12a495eab4c8c1583f831c902667869aaf05d9df7ab8d26cab50",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/validators/authValidators.js",
+      "hash": "c40573e151dc600a20cd4848f70b862b54e1e20c67dcebfd00a3c549c1be34ef",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/Dashboard.css",
+      "hash": "6251ccc05dfcf28956d5a2a5c58f3b1b361e2007da11a46fa00db786c597b1f5",
+      "mod_time": "2026-10-18T06:01:03Z"
+    },
+    {
+      "path": "JENKINS_SETUP.md",
+      "hash": "b86f29586a34b9bdbd973242984ffaf73bbb1172d747b689e1a1ca12c34a0019",
+      "mod_time": "2026-10-07T16:15:36Z"
+    },
+    {
+      "path": "backend/src/validators/reportValidators.js",
+      "hash": "d9ca807a6dc06182b75f5552915ce1125558a9d6413bf7692ce35aa883ce5461",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "feedback/feedback.txt",
+      "hash": "cd525fbb134e6f6c7fec193a01e89cec277053b7c7beadcdad9881ae07a50823",
+      "mod_time": "2026-10-22T03:01:33Z"
+    },
+    {
+      "path": "frontend/public/images/items/casio-fx991es-calculator.jpg",
+      "hash": "e1ade9d7b9339d3fc44224a30db9f226a1994021b8dba67e5d1d73912000ca63",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/public/images/items/cotton-kurta-set.jpg",
+      "hash": "230fb50f58fb691fd444e14a6e70df3599fc874ed9d2c4b797b999f628175e8b",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/FormField.jsx",
+      "hash": "68e1d84a263f49064faf8bec15c9e5c1834261edc866a78ff9f9b89fb4effa2f",
+      "mod_time": "2026-10-07T16:02:14Z"
+    },
+    {
+      "path": "frontend/src/hooks/useLocationSelection.js",
+      "hash": "ebb9f3da9f7b0dabfbca20a4c5ed01c8792a237b2882640a9b8bc1ff22d7fbf0",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/controllers/locationController.js",
+      "hash": "d375578b13ca7e1e49253dd9ccd51f115c2c9a40949603eb9b29ebfe14e6c1a1",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/models/contentModel.js",
+      "hash": "c2ff9a617a8a20115b65d6bc33875ad8609b8b739909ad5956fd67d6da7f90f1",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/routes/reportRoutes.js",
+      "hash": "05d022ae1646f2d26f711c728338cb05f9d61d92fef5761da19f00c3c76fac60",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/tests-legacy/reports.test.js",
+      "hash": "83133d8e38a27a3de550dad9d2b60f0d709cdbdcfd4f148336f91fd4785b74fe",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/AuthAside.jsx",
+      "hash": "68c93b738cfcbcdf8a43a323f28e4eb4be83847b07208cfafd2192e7e8528422",
+      "mod_time": "2026-10-07T16:02:31Z"
+    },
+    {
+      "path": "frontend/src/pages/Requests.css",
+      "hash": "2ed66352b19b55480f3f7e18bc0eb4f2fe589d104772990aed8ebc3ca49fc1b3",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "Jenkinsfile",
+      "hash": "41b97a49731742541ff17f05c46d2a86a77ad5227974447d38185943b4576d34",
+      "mod_time": "2026-10-07T16:12:33Z"
+    },
+    {
+      "path": "backend/.env.example",
+      "hash": "01081ca123a466ee2c8055e389d36cb85166ecb0fc7a19251887bc165f92c48d",
+      "mod_time": "2026-10-07T16:47:56Z"
+    },
+    {
+      "path": "frontend/src/components/LocationPicker.css",
+      "hash": "ef40383ca875fceabb9bf4f966bbc0a27cf88508d439e4db089c9cbd05ecb5d1",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "frontend/src/components/ReuseOrbit.jsx",
+      "hash": "260c467777d67d2416aee48779bd23c44b70f4aa26a0ca59c01bc9861eb5b8de",
+      "mod_time": "2026-10-07T16:43:26Z"
+    },
+    {
+      "path": "frontend/src/pages/AuthForm.css",
+      "hash": "00af8352d114429454e739819a3f85af3d05622270e3d6ab0282569379945a19",
+      "mod_time": "2026-10-07T16:02:33Z"
+    },
+    {
+      "path": "backend/src/controllers/dashboardController.js",
+      "hash": "fa3e3fbd4e261b1a96c02c3da918c3363006cbb0034eea3874925e8bcd533e68",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/models/userModel.js",
+      "hash": "7e4e69dd9b1b0df1817dd24a645465f00848e5885fee3348e3cbcca838f695fa",
+      "mod_time": "2026-10-07T15:42:16Z"
+    },
+    {
+      "path": "docker/prometheus/prometheus.yml",
+      "hash": "512df8125f6e6aa0c4699b7aa6cb7e66326f72ce8ca6dccb485b1983ef67aa55",
+      "mod_time": "2026-10-07T15:45:16Z"
+    },
+    {
+      "path": "frontend/src/admin/admin.css",
+      "hash": "44e5433d4cfa4ed498cec45e80e9718ddad831fe9f9e63314a7cf50a3aabcb08",
+      "mod_time": "2026-10-07T15:28:32Z"
+    },
+    {
+      "path": "frontend/src/components/CampusCard.css",
+      "hash": "3ec48547fed2ced335b0d4354a18f11095e1ea79b7e009b0f189642123250edb",
+      "mod_time": "2026-10-18T06:00:05Z"
+    },
+    {
+      "path": "frontend/src/components/Footer.jsx",
+      "hash": "d50428dfe05355fbb6f941f640b2468b246f1d03aaa0b9d3c0a4014f3226b8b6",
+      "mod_time": "2026-10-07T15:27:33Z"
+    },
+    {
+      "path": "frontend/src/pages/ItemDetail.jsx",
+      "hash": "3e19d1dc9869e7026aa87f79632ef37e68c054ee0b7bf7d52659e904dd4616f4",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "backend/src/controllers/adminController.js",
+      "hash": "8be947d73f686e42facae5f1a86667bb36f89b6df9687e9833b3972a577f21b4",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "docker/grafana/provisioning/datasources/prometheus.yml",
+      "hash": "1e6f61206a1e791f6060b085cd11dd7264f24118db6879e6a04a69543ff5377a",
+      "mod_time": "2026-10-07T15:45:16Z"
+    },
+    {
+      "path": "frontend/src/app/authContext.js",
+      "hash": "2a2e58027d8b27fef9b4c11aa86ee95496e28a844f2430ba1665c8c346da52e1",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "backend/src/controllers/requestController.js",
+      "hash": "6643cfac63e3048a4c9cebbc90fabba58e3cd47fa4a73dd56b784cbe6c3292ea",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/styles/tokens.css",
+      "hash": "78f607ad8e6f1b7902b21d0886aa64f0e0c5b22b259fd211db41e8dfad8b2944",
+      "mod_time": "2026-10-07T15:11:21Z"
+    },
+    {
+      "path": "weekly_reports/Devops-2026-CS-F-11_Weekly_Progress_Report_Form-3_2026-10-18.pdf",
+      "hash": "035e967c719d413706fe649d2d7b93306e90fee0da26e3eab110caf32b3238b0",
+      "mod_time": "2026-10-21T08:47:04Z"
+    },
+    {
+      "path": "backend/tests-legacy/pagination.test.js",
+      "hash": "048bc20b91c31e4f7b1e17019cf9f565bff6832e82f0c31c9d513e2101383fc7",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "commit_graph.png",
+      "hash": "6538bea79689cae1fcbff2ca839b3b77b8dee2cef2c85939661f2d4e161d8396",
+      "mod_time": "2026-10-01T19:08:05Z"
+    },
+    {
+      "path": "frontend/index.html",
+      "hash": "e041f51207515d9ed364a7e8ee04d9b0fa0d31a9a220f678a1352da43bdb71e5",
+      "mod_time": "2026-10-07T15:27:42Z"
+    },
+    {
+      "path": "frontend/src/app/ConfigProvider.jsx",
+      "hash": "9439f414935b6a17c28d79864a051bd698a691607ce6994328681c5f3f7a41f6",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "frontend/src/components/CampusCard.jsx",
+      "hash": "c2335ebfc14be580300c74ac08def745c88025a65cbb39d0520ed6ad1d68d8c6",
+      "mod_time": "2026-10-18T06:00:05Z"
+    },
+    {
+      "path": "frontend/src/pages/Browse.jsx",
+      "hash": "c46d8ca35ed3c8722972ba48b44faa97af2fa8437e0da3767bfe15684f355837",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "frontend/src/styles/app.css",
+      "hash": "dde63d1210357f858dcbff701780df154d587b542eb602f31cabbe99c0dab208",
+      "mod_time": "2026-10-07T16:41:50Z"
+    },
+    {
+      "path": "DevOps_July_August_Report.pdf",
+      "hash": "d90ff0ca25fd33670315440d12d496324c4fd994a3f294e2e65422503c65de68",
+      "mod_time": "2026-10-01T19:08:05Z"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "hash": "58061caee6440980cc15b2b7693ff714b7e79c2ee04e9d47110a2089f84ab46f",
+      "mod_time": "2026-10-07T16:05:31Z"
+    },
+    {
+      "path": "backend/package.json",
+      "hash": "9bac6e12f41cfe3c2e7ff1252291ea516dc3cb8a822a0d04268c09df6bee35fb",
+      "mod_time": "2026-10-07T15:44:36Z"
+    },
+    {
+      "path": "backend/src/middleware/notFound.js",
+      "hash": "95ac2cae293a4dc709cc601950700ce806325e69443f8f8efd4023e94efebaea",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/Button.css",
+      "hash": "9a114e5fb835687f52ff8ab542e3807600d31834103c35a244879910d50246b8",
+      "mod_time": "2026-10-07T15:28:53Z"
+    },
+    {
+      "path": "frontend/src/pages/NotFound.jsx",
+      "hash": "2e97039e83801fd074425d7df12adcae1d6160c06775a45cdab7b87c754e78e4",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "frontend/src/admin/pages/AdminConditions.jsx",
+      "hash": "c275dfe146a899f45bc9b5b092e54a06a9160f211ed6bed7ef8a7721cbd9c8b9",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/lib/requestService.js",
+      "hash": "3ffc1b7bdff9fdace401a4b442c2acf9edb14ceda2d37b3bee460ec2d22db3df",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": ".github/workflows/auto_weekly_report.yml",
+      "hash": "af8c43f74d20c4ac41c358f2cd5eb8e0189b57a39646fbe0cd4aa7662d4bd92f",
+      "mod_time": "2026-10-01T19:17:37Z"
+    },
+    {
+      "path": "backend/src/models/locationModel.js",
+      "hash": "3104605df78a53188557b2844a41b4ffbc169cebf6c1c72d549f7b9f7adb7804",
+      "mod_time": "2026-10-07T15:42:16Z"
+    },
+    {
+      "path": "backend/src/utils/ApiError.js",
+      "hash": "c370ec51bfe3efee1655c98d3e0e2fa3203020500dda17faf7318bc204257036",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/components/EmptyState.jsx",
+      "hash": "a67cafcfad12324d64cab38f16e481d26605f57f11ea4f0d7ae5a90b0d303762",
+      "mod_time": "2026-10-01T18:53:46Z"
+    },
+    {
+      "path": "frontend/src/pages/MyItems.jsx",
+      "hash": "54362a0aa4c1f5eeae1b64f8e29a5d56bb097abc79696f7244d0eded5dfde1fc",
+      "mod_time": "2026-10-22T03:02:50Z"
+    },
+    {
+      "path": "outfit-hellohello.mp4",
+      "hash": "6eb349f7bf8737f7f6210ebdf4fbe508d6c560a5f4c8cd07a22fd4ea298b74dd",
+      "mod_time": "2026-10-02T02:59:47Z"
+    }
+  ],
+  "fact_count": 1915,
+  "insight_count": 111,
+  "enola_version": "0.4.21",
+  "snapshot_id": "sha256:5feb403ffac4b2b0715a312ef82e49c639a5fa3134b387ea2b21a971963692d3",
+  "git": {
+    "ref": "yash",
+    "commit": "92e6cf5b45288b078ef8126d43fa60dc623a0464",
+    "dirty": true,
+    "remote": "github.com/vanshikadebug/devops-2026-cs-f-11"
+  },
+  "config_hash": "sha256:73d78ea79f51e19979d4c7d00bd9463ae684ebcb909116abad86675323c32c05",
+  "extractor_version": "v270",
+  "files_seen": 238,
+  "files_parsed": 162,
+  "source_bytes": 790400,
+  "dirs_skipped": 4,
+  "skipped_sample": [
+    ".git/ (glob: **/.git/**)",
+    "backend/node_modules/ (glob: **/node_modules/**)",
+    "frontend/dist/ (glob: **/dist/**)",
+    "frontend/node_modules/ (glob: **/node_modules/**)"
+  ],
+  "ignore_glob_hash": "sha256:7523cc6397a498e151125a682d28fbf6df20c6f51f6dfaf18fd8f5239a20d2d8",
+  "heuristic_insights": 109,
+  "coverage": {
+    "services_total": 0,
+    "coverage_gaps": 0,
+    "unresolved_edges": 0,
+    "extractors_reporting": 1,
+    "extraction_unresolved": 54
+  },
+  "census": {
+    "files_walked": 238,
+    "parsed": 162,
+    "excluded_by_ignore": 0,
+    "excluded_by_kind": 72,
+    "excluded_kinds": {
+      "(no extension)": 3,
+      ".conf": 1,
+      ".css": 28,
+      ".dockerignore": 1,
+      ".env": 1,
+      ".example": 3,
+      ".gitattributes": 1,
+      ".gitignore": 2,
+      ".jpg": 7,
+      ".json": 5,
+      ".mp4": 1,
+      ".pdf": 7,
+      ".png": 1,
+      ".prisma": 1,
+      ".svg": 1,
+      ".txt": 3,
+      ".yml": 6
+    },
+    "skipped_with_cause": 4,
+    "top_skip_causes": [
+      {
+        "cause": "claimed by manifests, no facts emitted",
+        "count": 3
+      },
+      {
+        "cause": "claimed by typescript, no facts emitted",
+        "count": 1
+      }
+    ]
+  },
+  "output_hashes": {
+    "facts.jsonl": "sha256:889b744d052c0366af80e242f1673ce733696d6d95c96f4b7790c3bef1934a12",
+    "insights.json": "sha256:7aee179a9d00de807f965fef16c4f58a254a48f72e1bb584cc5c245170b5e3cc",
+    "llm_context.md": "sha256:ba5cedc6503abd6ec28927024173ea85d4301bf6a31229bea47f847c4a38a8ea"
+  },
+  "unseen": {
+    "files_excluded_by_ignore": 0,
+    "dirs_excluded_by_ignore": 4,
+    "outside_graph": {
+      "imports": 143
+    },
+    "outside_graph_prefixes": {
+      "fs": 1,
+      "react-dom": 1
+    },
+    "dead_exemptions": 0,
+    "dynamic_feature_classes": 0
+  }
+}
