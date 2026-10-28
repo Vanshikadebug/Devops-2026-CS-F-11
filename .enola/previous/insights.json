@@ -1,0 +1,2817 @@
+[
+  {
+    "title": "Cyclic dependency detected (2 modules)",
+    "source": "cycles",
+    "description": "The following modules form a dependency cycle: backend/src/models -\u003e backend/src/utils -\u003e backend/src/models. This can cause initialization issues, make refactoring harder, and indicates tight coupling.",
+    "confidence": 1,
+    "evidence": [
+      {
+        "fact": "backend/src/models",
+        "detail": "module \"backend/src/models\" is part of the cycle",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "fact": "backend/src/utils",
+        "detail": "module \"backend/src/utils\" is part of the cycle",
+        "fact_id": "5104e3ed4dcf06651cb97d427cb37aa9"
+      }
+    ],
+    "suggested_actions": [
+      "Introduce an interface to break the cycle",
+      "Extract shared types to a separate package",
+      "Consider merging tightly coupled modules"
+    ]
+  },
+  {
+    "title": "Highly coupled module cluster (9 modules)",
+    "source": "cycles",
+    "description": "9 modules reference each other mutually. In an autoloaded codebase (e.g. Rails) this is expected — constant references between directories resolve lazily, so this is not a load-order cycle. Treat it as an overall coupling-density signal, not a defect to break.",
+    "confidence": 1,
+    "evidence": [
+      {
+        "fact": "frontend/src",
+        "detail": "module \"frontend/src\" is part of the cluster",
+        "fact_id": "59fa3270b05b095d62c2d1a2d67e9292"
+      },
+      {
+        "fact": "frontend/src/admin",
+        "detail": "module \"frontend/src/admin\" is part of the cluster",
+        "fact_id": "77bea882e0f41e7464af33009e907d8c"
+      },
+      {
+        "fact": "frontend/src/admin/components",
+        "detail": "module \"frontend/src/admin/components\" is part of the cluster",
+        "fact_id": "b157ee874495513a0da82637720343ab"
+      },
+      {
+        "fact": "frontend/src/admin/pages",
+        "detail": "module \"frontend/src/admin/pages\" is part of the cluster",
+        "fact_id": "ef469534510e1e2ea8553c5e346c2951"
+      },
+      {
+        "fact": "frontend/src/app",
+        "detail": "module \"frontend/src/app\" is part of the cluster",
+        "fact_id": "c691d85f70298a70d97b4d5dde96d7ce"
+      },
+      {
+        "fact": "frontend/src/components",
+        "detail": "module \"frontend/src/components\" is part of the cluster",
+        "fact_id": "358f99782a3f81f3eb9e386a4910e1e6"
+      },
+      {
+        "fact": "frontend/src/components/ui",
+        "detail": "module \"frontend/src/components/ui\" is part of the cluster",
+        "fact_id": "feb119bde902571c7c776f46565ae61a"
+      },
+      {
+        "fact": "frontend/src/hooks",
+        "detail": "module \"frontend/src/hooks\" is part of the cluster",
+        "fact_id": "627fd9ffe791613737101d1311e3029b"
+      },
+      {
+        "fact": "frontend/src/pages",
+        "detail": "module \"frontend/src/pages\" is part of the cluster",
+        "fact_id": "9c745b6b00c6a46beaf134bcc4fe1678"
+      }
+    ],
+    "suggested_actions": [
+      "Look for a few high-traffic modules whose extraction would thin the cluster",
+      "Prefer narrowing individual module responsibilities over a single big refactor"
+    ]
+  },
+  {
+    "title": "frontend/src/admin/pages calls 26 outbound endpoint(s)",
+    "source": "domain",
+    "description": "frontend/src/admin/pages issues HTTP calls to 26 distinct endpoint(s) that no route in this repository serves, so they go to a third party or a sibling service. This is the dependency that breaks when the other side changes, and it is not visible from this repository's own routes.",
+    "confidence": 0.9,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminAudit.jsx",
+        "fact": "/admin/audit",
+        "detail": "GET called from here",
+        "line": 27,
+        "fact_id": "a7f40fe7c0e4faf194dd4f923af3a8e8"
+      },
+      {
+        "file": "frontend/src/admin/pages/Dashboard.jsx",
+        "fact": "/admin/dashboard",
+        "detail": "GET called from here",
+        "line": 21,
+        "fact_id": "0bf2d53cce96a45ec0656cf6d67818e3"
+      },
+      {
+        "file": "frontend/src/admin/pages/AdminItems.jsx",
+        "fact": "/admin/items",
+        "detail": "GET called from here",
+        "line": 25,
+        "fact_id": "eb776676d44a2af4735774bb001c649c"
+      },
+      {
+        "file": "frontend/src/admin/pages/AdminLocations.jsx",
+        "fact": "/admin/locations/areas",
+        "detail": "GET called from here",
+        "line": 28,
+        "fact_id": "929720092370fde4d05c2731b8e28ab6"
+      },
+      {
+        "file": "frontend/src/admin/pages/AdminLocations.jsx",
+        "fact": "/admin/locations/cities",
+        "detail": "GET called from here",
+        "line": 27,
+        "fact_id": "85cf4a4cfb82392c2193aaf755efa036"
+      },
+      {
+        "file": "frontend/src/admin/pages/AdminLocations.jsx",
+        "fact": "/admin/locations/colleges",
+        "detail": "GET called from here",
+        "line": 29,
+        "fact_id": "513cc3add431aab30a40bbd661d5631b"
+      },
+      {
+        "file": "frontend/src/admin/pages/AdminReports.jsx",
+        "fact": "/admin/reports",
+        "detail": "GET called from here",
+        "line": 23,
+        "fact_id": "716e7812151b8544762c7958792e27d1"
+      },
+      {
+        "file": "frontend/src/admin/pages/AdminSettings.jsx",
+        "fact": "/admin/settings",
+        "detail": "GET called from here",
+        "line": 37,
+        "fact_id": "bcf36f930b4481d6aac83e9cee6f6a95"
+      }
+    ]
+  },
+  {
+    "title": "frontend/src/lib calls 19 outbound endpoint(s)",
+    "source": "domain",
+    "description": "frontend/src/lib issues HTTP calls to 19 distinct endpoint(s) that no route in this repository serves, so they go to a third party or a sibling service. This is the dependency that breaks when the other side changes, and it is not visible from this repository's own routes.",
+    "confidence": 0.9,
+    "evidence": [
+      {
+        "file": "frontend/src/lib/authService.js",
+        "fact": "/auth/me",
+        "detail": "GET called from here",
+        "line": 17,
+        "fact_id": "f665dcc5c5479e760c758259422885da"
+      },
+      {
+        "file": "frontend/src/lib/dashboardService.js",
+        "fact": "/dashboard",
+        "detail": "GET called from here",
+        "line": 4,
+        "fact_id": "d2a0807d53f3158d36cd5ae7b2ad6a9c"
+      },
+      {
+        "file": "frontend/src/lib/itemService.js",
+        "fact": "/items",
+        "detail": "GET called from here",
+        "line": 12,
+        "fact_id": "79987c79d5b234b4a96534cb1a34e350"
+      },
+      {
+        "file": "frontend/src/lib/itemService.js",
+        "fact": "/items/mine",
+        "detail": "GET called from here",
+        "line": 32,
+        "fact_id": "e42ffb033242fa68754d76c956ee26e9"
+      },
+      {
+        "file": "frontend/src/lib/itemService.js",
+        "fact": "/items/{}",
+        "detail": "GET called from here",
+        "line": 18,
+        "fact_id": "70fab116723156ebef376bec46762db8"
+      },
+      {
+        "file": "frontend/src/lib/locationService.js",
+        "fact": "/locations/cities",
+        "detail": "GET called from here",
+        "line": 4,
+        "fact_id": "d23b82d7ad065ee6183185e97bfd95af"
+      },
+      {
+        "file": "frontend/src/lib/locationService.js",
+        "fact": "/locations/cities/{}/areas",
+        "detail": "GET called from here",
+        "line": 9,
+        "fact_id": "080b32576f93a5ba82cae00db4f1d06d"
+      },
+      {
+        "file": "frontend/src/lib/locationService.js",
+        "fact": "/locations/colleges",
+        "detail": "GET called from here",
+        "line": 19,
+        "fact_id": "eb68ba1f6c1ce9b7c1eb822bcdc1cf79"
+      }
+    ]
+  },
+  {
+    "title": "frontend/src/components calls 2 outbound endpoint(s)",
+    "source": "domain",
+    "description": "frontend/src/components issues HTTP calls to 2 distinct endpoint(s) that no route in this repository serves, so they go to a third party or a sibling service. This is the dependency that breaks when the other side changes, and it is not visible from this repository's own routes.",
+    "confidence": 0.9,
+    "evidence": [
+      {
+        "file": "frontend/src/components/Experience.jsx",
+        "fact": "/items",
+        "detail": "GET called from here",
+        "line": 46,
+        "fact_id": "827feae0532a746cc4dc43227d85b6af"
+      },
+      {
+        "file": "frontend/src/components/LiveIndex.jsx",
+        "fact": "/stats",
+        "detail": "GET called from here",
+        "line": 24,
+        "fact_id": "7429e51b6a60ac6c6f16417e8fb5df78"
+      }
+    ]
+  },
+  {
+    "title": "High fan-in symbol: frontend/src/app.useConfig (21 dependents)",
+    "source": "god-class",
+    "description": "\"frontend/src/app.useConfig\" is depended upon by 21 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "confidence": 0.95,
+    "evidence": [
+      {
+        "file": "frontend/src/app/ConfigProvider.jsx",
+        "symbol": "frontend/src/app.useConfig",
+        "detail": "21 symbols depend on this",
+        "line": 97,
+        "fact_id": "7649c0b27d33e5abb0afc3de15ef746a"
+      },
+      {
+        "symbol": "frontend/src/admin.AdminLayout",
+        "detail": "depends on frontend/src/app.useConfig",
+        "fact_id": "4dd360001a376d2c1258aa2a05a3674d"
+      },
+      {
+        "symbol": "frontend/src/admin.useAdminResource",
+        "detail": "depends on frontend/src/app.useConfig",
+        "fact_id": "b8290ae70fe788d60c740e7fc3c2d50e"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminLocations",
+        "detail": "depends on frontend/src/app.useConfig",
+        "fact_id": "6f8edbae35ec57655a53e8211c6ec00f"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminSettings",
+        "detail": "depends on frontend/src/app.useConfig",
+        "fact_id": "9b8c0655eead2a13210794041f15e7fe"
+      },
+      {
+        "symbol": "frontend/src/app.App",
+        "detail": "depends on frontend/src/app.useConfig",
+        "fact_id": "f99b5db10ebf3b8a1b4adbce273d8d0c"
+      },
+      {
+        "symbol": "frontend/src/components.Footer",
+        "detail": "depends on frontend/src/app.useConfig",
+        "fact_id": "5dcf2b59fc8e39ba1f4301b8283e95de"
+      },
+      {
+        "symbol": "frontend/src/components.ItemImage",
+        "detail": "depends on frontend/src/app.useConfig",
+        "fact_id": "894855426667ceaef9a8d9bae4f7c198"
+      },
+      {
+        "symbol": "frontend/src/components.Navbar",
+        "detail": "depends on frontend/src/app.useConfig",
+        "fact_id": "09edbd4ead5f2e712b2cc1877e67e7a3"
+      }
+    ],
+    "suggested_actions": [
+      "Split the symbol along distinct responsibilities its callers use",
+      "Introduce narrower interfaces so callers depend only on what they need",
+      "Stabilize its public contract to limit churn for dependents"
+    ]
+  },
+  {
+    "title": "High fan-in symbol: frontend/src/app.useAuth (13 dependents)",
+    "source": "god-class",
+    "description": "\"frontend/src/app.useAuth\" is depended upon by 13 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "confidence": 0.95,
+    "evidence": [
+      {
+        "file": "frontend/src/app/authContext.js",
+        "symbol": "frontend/src/app.useAuth",
+        "detail": "13 symbols depend on this",
+        "line": 5,
+        "fact_id": "fc80e29f673e6934883b0536d537b43f"
+      },
+      {
+        "symbol": "frontend/src/admin.AdminLayout",
+        "detail": "depends on frontend/src/app.useAuth",
+        "fact_id": "4dd360001a376d2c1258aa2a05a3674d"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminUsers",
+        "detail": "depends on frontend/src/app.useAuth",
+        "fact_id": "826ecc03a71c5a7792b21fc1a706fc1a"
+      },
+      {
+        "symbol": "frontend/src/app.AdminRoute",
+        "detail": "depends on frontend/src/app.useAuth",
+        "fact_id": "7dfc7e472ea4eed1492f9ded15cb48ee"
+      },
+      {
+        "symbol": "frontend/src/app.GuestOnly",
+        "detail": "depends on frontend/src/app.useAuth",
+        "fact_id": "b1044d1e0059f66053cee178661ef76f"
+      },
+      {
+        "symbol": "frontend/src/app.ProtectedRoute",
+        "detail": "depends on frontend/src/app.useAuth",
+        "fact_id": "f21abbb7aa786c0162dd031cba7d2a15"
+      },
+      {
+        "symbol": "frontend/src/components.CampusCard",
+        "detail": "depends on frontend/src/app.useAuth",
+        "fact_id": "3c8c5e07db5729c6c46725db4187c5b0"
+      },
+      {
+        "symbol": "frontend/src/components.Navbar",
+        "detail": "depends on frontend/src/app.useAuth",
+        "fact_id": "09edbd4ead5f2e712b2cc1877e67e7a3"
+      },
+      {
+        "symbol": "frontend/src/hooks.useLocationSelection",
+        "detail": "depends on frontend/src/app.useAuth",
+        "fact_id": "7f2f2a892a56c59b08b4a2878f4f7e08"
+      }
+    ],
+    "suggested_actions": [
+      "Split the symbol along distinct responsibilities its callers use",
+      "Introduce narrower interfaces so callers depend only on what they need",
+      "Stabilize its public contract to limit churn for dependents"
+    ]
+  },
+  {
+    "title": "High fan-in symbol: frontend/src/hooks.usePageTitle (11 dependents)",
+    "source": "god-class",
+    "description": "\"frontend/src/hooks.usePageTitle\" is depended upon by 11 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "confidence": 0.95,
+    "evidence": [
+      {
+        "file": "frontend/src/hooks/usePageTitle.js",
+        "symbol": "frontend/src/hooks.usePageTitle",
+        "detail": "11 symbols depend on this",
+        "line": 10,
+        "fact_id": "a27d31387b91a340bf3ffddfdacf758e"
+      },
+      {
+        "symbol": "frontend/src/admin.AdminLayout",
+        "detail": "depends on frontend/src/hooks.usePageTitle",
+        "fact_id": "4dd360001a376d2c1258aa2a05a3674d"
+      },
+      {
+        "symbol": "frontend/src/pages.Browse",
+        "detail": "depends on frontend/src/hooks.usePageTitle",
+        "fact_id": "f3b7902999ce7aab1bb9209586438755"
+      },
+      {
+        "symbol": "frontend/src/pages.Dashboard",
+        "detail": "depends on frontend/src/hooks.usePageTitle",
+        "fact_id": "cddfaf81f19bbc38bb0af68bd11dc061"
+      },
+      {
+        "symbol": "frontend/src/pages.Home",
+        "detail": "depends on frontend/src/hooks.usePageTitle",
+        "fact_id": "547199a4a31fed64667150e443026d31"
+      },
+      {
+        "symbol": "frontend/src/pages.ItemDetail",
+        "detail": "depends on frontend/src/hooks.usePageTitle",
+        "fact_id": "6490ffad12936b748d07c6068cb9d2a5"
+      },
+      {
+        "symbol": "frontend/src/pages.ItemForm",
+        "detail": "depends on frontend/src/hooks.usePageTitle",
+        "fact_id": "95e795a0f0a1a05d1cbdafa76fddb133"
+      },
+      {
+        "symbol": "frontend/src/pages.Login",
+        "detail": "depends on frontend/src/hooks.usePageTitle",
+        "fact_id": "a1e06bb39072f9746f568adeccb315c2"
+      },
+      {
+        "symbol": "frontend/src/pages.MyItems",
+        "detail": "depends on frontend/src/hooks.usePageTitle",
+        "fact_id": "dd2e357f2474f8acd8b962fc116f0668"
+      }
+    ],
+    "suggested_actions": [
+      "Split the symbol along distinct responsibilities its callers use",
+      "Introduce narrower interfaces so callers depend only on what they need",
+      "Stabilize its public contract to limit churn for dependents"
+    ]
+  },
+  {
+    "title": "High fan-in symbol: backend/src/models.findById (8 dependents)",
+    "source": "god-class",
+    "description": "\"backend/src/models.findById\" is depended upon by 8 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "confidence": 0.95,
+    "evidence": [
+      {
+        "file": "backend/src/models/itemModel.js",
+        "symbol": "backend/src/models.findById",
+        "detail": "8 symbols depend on this",
+        "line": 141,
+        "fact_id": "9c57c6d460ca66c1b737b0b802d22029"
+      },
+      {
+        "symbol": "backend/src/models.accept",
+        "detail": "depends on backend/src/models.findById",
+        "fact_id": "6ce9a3f3687709e939058bf192002b2e"
+      },
+      {
+        "symbol": "backend/src/models.create",
+        "detail": "depends on backend/src/models.findById"
+      },
+      {
+        "symbol": "backend/src/models.reject",
+        "detail": "depends on backend/src/models.findById",
+        "fact_id": "3f70cc6e4ce4d81c627eae236ae2c292"
+      },
+      {
+        "symbol": "backend/src/models.reopen",
+        "detail": "depends on backend/src/models.findById",
+        "fact_id": "8c52b1ba1882b68d0d05188099b9a40d"
+      },
+      {
+        "symbol": "backend/src/models.review",
+        "detail": "depends on backend/src/models.findById",
+        "fact_id": "46d8e401f62fdb2072182114555bc954"
+      },
+      {
+        "symbol": "backend/src/models.update",
+        "detail": "depends on backend/src/models.findById",
+        "fact_id": "0eaf4b97d6fbd07cf4d32abd730f41cc"
+      },
+      {
+        "symbol": "backend/src/models.updateCollege",
+        "detail": "depends on backend/src/models.findById"
+      },
+      {
+        "symbol": "backend/src/models.updateStatus",
+        "detail": "depends on backend/src/models.findById",
+        "fact_id": "668c5762c730f6d5677548081a404df7"
+      }
+    ],
+    "suggested_actions": [
+      "Split the symbol along distinct responsibilities its callers use",
+      "Introduce narrower interfaces so callers depend only on what they need",
+      "Stabilize its public contract to limit churn for dependents"
+    ]
+  },
+  {
+    "title": "Call-graph hotspot: backend/src/models.findById (fan-in 8, fan-out 6)",
+    "source": "hotspots",
+    "description": "\"backend/src/models.findById\" is a pinch point: 8 symbols call into it and it calls out to 6 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "backend/src/models/itemModel.js",
+        "symbol": "backend/src/models.findById",
+        "detail": "fan-in 8 × fan-out 6 = score 48",
+        "line": 141,
+        "fact_id": "9c57c6d460ca66c1b737b0b802d22029"
+      },
+      {
+        "symbol": "backend/src/models.accept",
+        "detail": "calls into backend/src/models.findById",
+        "fact_id": "6ce9a3f3687709e939058bf192002b2e"
+      },
+      {
+        "symbol": "backend/src/models.create",
+        "detail": "calls into backend/src/models.findById"
+      },
+      {
+        "symbol": "backend/src/models.reject",
+        "detail": "calls into backend/src/models.findById",
+        "fact_id": "3f70cc6e4ce4d81c627eae236ae2c292"
+      },
+      {
+        "symbol": "backend/src/models.reopen",
+        "detail": "calls into backend/src/models.findById",
+        "fact_id": "8c52b1ba1882b68d0d05188099b9a40d"
+      },
+      {
+        "symbol": "backend/src/models.review",
+        "detail": "calls into backend/src/models.findById",
+        "fact_id": "46d8e401f62fdb2072182114555bc954"
+      },
+      {
+        "symbol": "backend/src/models",
+        "detail": "called by backend/src/models.findById",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "symbol": "backend/src/models.mapItem",
+        "detail": "called by backend/src/models.findById",
+        "fact_id": "f722142624f15ce1fff24bbc7a88797e"
+      },
+      {
+        "symbol": "backend/src/models.mapReport",
+        "detail": "called by backend/src/models.findById",
+        "fact_id": "72aeaffd0d08ee62cb0ea24b7c60ff05"
+      },
+      {
+        "symbol": "backend/src/models.mapRequest",
+        "detail": "called by backend/src/models.findById",
+        "fact_id": "4ff4cc008c95af07fd61069bb17ff7ec"
+      },
+      {
+        "symbol": "backend/src/models.mapUser",
+        "detail": "called by backend/src/models.findById",
+        "fact_id": "3521318ee9cb193d654c22c9386b7c2e"
+      }
+    ],
+    "suggested_actions": [
+      "Add focused tests around this chokepoint before refactoring",
+      "Consider decomposing it so call paths don't all funnel through one symbol",
+      "Verify it isn't doing orchestration that belongs in callers"
+    ]
+  },
+  {
+    "title": "Call-graph hotspot: frontend/src/hooks.usePageTitle (fan-in 11, fan-out 4)",
+    "source": "hotspots",
+    "description": "\"frontend/src/hooks.usePageTitle\" is a pinch point: 11 symbols call into it and it calls out to 4 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/hooks/usePageTitle.js",
+        "symbol": "frontend/src/hooks.usePageTitle",
+        "detail": "fan-in 11 × fan-out 4 = score 44",
+        "line": 10,
+        "fact_id": "a27d31387b91a340bf3ffddfdacf758e"
+      },
+      {
+        "symbol": "frontend/src/admin.AdminLayout",
+        "detail": "calls into frontend/src/hooks.usePageTitle",
+        "fact_id": "4dd360001a376d2c1258aa2a05a3674d"
+      },
+      {
+        "symbol": "frontend/src/pages.Browse",
+        "detail": "calls into frontend/src/hooks.usePageTitle",
+        "fact_id": "f3b7902999ce7aab1bb9209586438755"
+      },
+      {
+        "symbol": "frontend/src/pages.Dashboard",
+        "detail": "calls into frontend/src/hooks.usePageTitle",
+        "fact_id": "cddfaf81f19bbc38bb0af68bd11dc061"
+      },
+      {
+        "symbol": "frontend/src/pages.Home",
+        "detail": "calls into frontend/src/hooks.usePageTitle",
+        "fact_id": "547199a4a31fed64667150e443026d31"
+      },
+      {
+        "symbol": "frontend/src/pages.ItemDetail",
+        "detail": "calls into frontend/src/hooks.usePageTitle",
+        "fact_id": "6490ffad12936b748d07c6068cb9d2a5"
+      },
+      {
+        "symbol": "frontend/src/app.useConfig",
+        "detail": "called by frontend/src/hooks.usePageTitle",
+        "fact_id": "7649c0b27d33e5abb0afc3de15ef746a"
+      },
+      {
+        "symbol": "frontend/src/hooks",
+        "detail": "called by frontend/src/hooks.usePageTitle",
+        "fact_id": "627fd9ffe791613737101d1311e3029b"
+      },
+      {
+        "symbol": "frontend/src/hooks.setting",
+        "detail": "called by frontend/src/hooks.usePageTitle"
+      },
+      {
+        "symbol": "frontend/src/hooks.useEffect",
+        "detail": "called by frontend/src/hooks.usePageTitle"
+      }
+    ],
+    "suggested_actions": [
+      "Add focused tests around this chokepoint before refactoring",
+      "Consider decomposing it so call paths don't all funnel through one symbol",
+      "Verify it isn't doing orchestration that belongs in callers"
+    ]
+  },
+  {
+    "title": "Call-graph hotspot: frontend/src/admin.useAdminResource (fan-in 3, fan-out 14)",
+    "source": "hotspots",
+    "description": "\"frontend/src/admin.useAdminResource\" is a pinch point: 3 symbols call into it and it calls out to 14 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/useAdminResource.js",
+        "symbol": "frontend/src/admin.useAdminResource",
+        "detail": "fan-in 3 × fan-out 14 = score 42",
+        "line": 5,
+        "fact_id": "b8290ae70fe788d60c740e7fc3c2d50e"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminCategories",
+        "detail": "calls into frontend/src/admin.useAdminResource",
+        "fact_id": "21c13109ff46c2e27e4bdf3507acf7c4"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminConditions",
+        "detail": "calls into frontend/src/admin.useAdminResource",
+        "fact_id": "366deba09218027e3efc36faa765b88f"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminContent",
+        "detail": "calls into frontend/src/admin.useAdminResource",
+        "fact_id": "904ed4c400f3ee4afceb6b659c3f2601"
+      },
+      {
+        "symbol": "frontend/src/admin",
+        "detail": "called by frontend/src/admin.useAdminResource",
+        "fact_id": "77bea882e0f41e7464af33009e907d8c"
+      },
+      {
+        "symbol": "frontend/src/admin.fn",
+        "detail": "called by frontend/src/admin.useAdminResource"
+      },
+      {
+        "symbol": "frontend/src/admin.load",
+        "detail": "called by frontend/src/admin.useAdminResource"
+      },
+      {
+        "symbol": "frontend/src/admin.reloadConfig",
+        "detail": "called by frontend/src/admin.useAdminResource"
+      },
+      {
+        "symbol": "frontend/src/admin.setBusy",
+        "detail": "called by frontend/src/admin.useAdminResource"
+      }
+    ],
+    "suggested_actions": [
+      "Add focused tests around this chokepoint before refactoring",
+      "Consider decomposing it so call paths don't all funnel through one symbol",
+      "Verify it isn't doing orchestration that belongs in callers"
+    ]
+  },
+  {
+    "title": "Call-graph hotspot: backend/src/models.uniqueSlug (fan-in 5, fan-out 5)",
+    "source": "hotspots",
+    "description": "\"backend/src/models.uniqueSlug\" is a pinch point: 5 symbols call into it and it calls out to 5 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.uniqueSlug",
+        "detail": "fan-in 5 × fan-out 5 = score 25",
+        "line": 131,
+        "fact_id": "0a7742e5d8279ba376f35b6c03f15d8d"
+      },
+      {
+        "symbol": "backend/src/models.createArea",
+        "detail": "calls into backend/src/models.uniqueSlug",
+        "fact_id": "56aff58ead70fcce1d4fef14ad0e3162"
+      },
+      {
+        "symbol": "backend/src/models.createCategory",
+        "detail": "calls into backend/src/models.uniqueSlug",
+        "fact_id": "959dc43da463771ee3fa091714a98b3b"
+      },
+      {
+        "symbol": "backend/src/models.createCity",
+        "detail": "calls into backend/src/models.uniqueSlug",
+        "fact_id": "41ea961ddf696e12ca9e5d935154ebd0"
+      },
+      {
+        "symbol": "backend/src/models.createCollege",
+        "detail": "calls into backend/src/models.uniqueSlug",
+        "fact_id": "517ec0f90377b1bc1164df175f20b7ee"
+      },
+      {
+        "symbol": "backend/src/models.createCondition",
+        "detail": "calls into backend/src/models.uniqueSlug",
+        "fact_id": "a905cd0525ba96d9a46e4c670131f25e"
+      },
+      {
+        "symbol": "backend/src/models",
+        "detail": "called by backend/src/models.uniqueSlug",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "symbol": "backend/src/models.Boolean",
+        "detail": "called by backend/src/models.uniqueSlug"
+      },
+      {
+        "symbol": "backend/src/models.isTaken",
+        "detail": "called by backend/src/models.uniqueSlug"
+      },
+      {
+        "symbol": "backend/src/models.slugify",
+        "detail": "called by backend/src/models.uniqueSlug"
+      },
+      {
+        "symbol": "backend/src/models.taken",
+        "detail": "called by backend/src/models.uniqueSlug"
+      }
+    ],
+    "suggested_actions": [
+      "Add focused tests around this chokepoint before refactoring",
+      "Consider decomposing it so call paths don't all funnel through one symbol",
+      "Verify it isn't doing orchestration that belongs in callers"
+    ]
+  },
+  {
+    "title": "Call-graph hotspot: backend/src/models.findByIdForAdmin (fan-in 3, fan-out 3)",
+    "source": "hotspots",
+    "description": "\"backend/src/models.findByIdForAdmin\" is a pinch point: 3 symbols call into it and it calls out to 3 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "backend/src/models/itemModel.js",
+        "symbol": "backend/src/models.findByIdForAdmin",
+        "detail": "fan-in 3 × fan-out 3 = score 9",
+        "line": 285,
+        "fact_id": "3920419a849760bd85536f84626b720f"
+      },
+      {
+        "symbol": "backend/src/models.setModeration",
+        "detail": "calls into backend/src/models.findByIdForAdmin",
+        "fact_id": "a5ea7589394836e85a0e7deff1a51879"
+      },
+      {
+        "symbol": "backend/src/models.setRole",
+        "detail": "calls into backend/src/models.findByIdForAdmin",
+        "fact_id": "d92d1d09fe17ef97145a6106aa048ef3"
+      },
+      {
+        "symbol": "backend/src/models.setStatus",
+        "detail": "calls into backend/src/models.findByIdForAdmin",
+        "fact_id": "96849a204e8b1b3243ec4139cf6371d2"
+      },
+      {
+        "symbol": "backend/src/models",
+        "detail": "called by backend/src/models.findByIdForAdmin",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "symbol": "backend/src/models.mapItem",
+        "detail": "called by backend/src/models.findByIdForAdmin",
+        "fact_id": "f722142624f15ce1fff24bbc7a88797e"
+      },
+      {
+        "symbol": "backend/src/models.mapUser",
+        "detail": "called by backend/src/models.findByIdForAdmin",
+        "fact_id": "3521318ee9cb193d654c22c9386b7c2e"
+      }
+    ],
+    "suggested_actions": [
+      "Add focused tests around this chokepoint before refactoring",
+      "Consider decomposing it so call paths don't all funnel through one symbol",
+      "Verify it isn't doing orchestration that belongs in callers"
+    ]
+  },
+  {
+    "title": "Deep dependency chain: backend/src (depth 8)",
+    "source": "dependency-depth",
+    "description": "Module \"backend/src\" has a longest dependency chain of 8 modules: backend/src -\u003e backend/src/routes -\u003e backend/src/controllers -\u003e backend/src/middleware -\u003e backend/src/models -\u003e backend/src/utils -\u003e backend/src/lib -\u003e backend/src/config. Deep chains slow comprehension and widen rebuild/retest impact when a module near the bottom changes.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "fact": "backend/src",
+        "fact_id": "fe6df7dba67d9c575029e36fcb8428e6"
+      },
+      {
+        "fact": "backend/src/routes",
+        "fact_id": "a28eac19d2eec578f1314dc6b428655a"
+      },
+      {
+        "fact": "backend/src/controllers",
+        "fact_id": "de8b9ccbfbd129aa133aa9d49bacccb7"
+      },
+      {
+        "fact": "backend/src/middleware",
+        "fact_id": "1af0a9e26efa2c1fd3f4574857dec8ca"
+      },
+      {
+        "fact": "backend/src/models",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "fact": "backend/src/utils",
+        "fact_id": "5104e3ed4dcf06651cb97d427cb37aa9"
+      },
+      {
+        "fact": "backend/src/lib",
+        "fact_id": "637f808a4d59f9e44f43f4adf700bf97"
+      },
+      {
+        "fact": "backend/src/config",
+        "fact_id": "992306452dcad78ac5d4e9aa953cff6e"
+      }
+    ],
+    "suggested_actions": [
+      "Flatten the chain by depending on shared abstractions instead of deep transitive modules",
+      "Check whether intermediate modules are pass-through layers that can be removed",
+      "Introduce interfaces to decouple the deepest modules from their consumers"
+    ]
+  },
+  {
+    "title": "Deep dependency chain: backend/src/routes (depth 7)",
+    "source": "dependency-depth",
+    "description": "Module \"backend/src/routes\" has a longest dependency chain of 7 modules: backend/src/routes -\u003e backend/src/controllers -\u003e backend/src/middleware -\u003e backend/src/models -\u003e backend/src/utils -\u003e backend/src/lib -\u003e backend/src/config. Deep chains slow comprehension and widen rebuild/retest impact when a module near the bottom changes.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "fact": "backend/src/routes",
+        "fact_id": "a28eac19d2eec578f1314dc6b428655a"
+      },
+      {
+        "fact": "backend/src/controllers",
+        "fact_id": "de8b9ccbfbd129aa133aa9d49bacccb7"
+      },
+      {
+        "fact": "backend/src/middleware",
+        "fact_id": "1af0a9e26efa2c1fd3f4574857dec8ca"
+      },
+      {
+        "fact": "backend/src/models",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "fact": "backend/src/utils",
+        "fact_id": "5104e3ed4dcf06651cb97d427cb37aa9"
+      },
+      {
+        "fact": "backend/src/lib",
+        "fact_id": "637f808a4d59f9e44f43f4adf700bf97"
+      },
+      {
+        "fact": "backend/src/config",
+        "fact_id": "992306452dcad78ac5d4e9aa953cff6e"
+      }
+    ],
+    "suggested_actions": [
+      "Flatten the chain by depending on shared abstractions instead of deep transitive modules",
+      "Check whether intermediate modules are pass-through layers that can be removed",
+      "Introduce interfaces to decouple the deepest modules from their consumers"
+    ]
+  },
+  {
+    "title": "Deep dependency chain: backend/src/controllers (depth 6)",
+    "source": "dependency-depth",
+    "description": "Module \"backend/src/controllers\" has a longest dependency chain of 6 modules: backend/src/controllers -\u003e backend/src/middleware -\u003e backend/src/models -\u003e backend/src/utils -\u003e backend/src/lib -\u003e backend/src/config. Deep chains slow comprehension and widen rebuild/retest impact when a module near the bottom changes.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "fact": "backend/src/controllers",
+        "fact_id": "de8b9ccbfbd129aa133aa9d49bacccb7"
+      },
+      {
+        "fact": "backend/src/middleware",
+        "fact_id": "1af0a9e26efa2c1fd3f4574857dec8ca"
+      },
+      {
+        "fact": "backend/src/models",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "fact": "backend/src/utils",
+        "fact_id": "5104e3ed4dcf06651cb97d427cb37aa9"
+      },
+      {
+        "fact": "backend/src/lib",
+        "fact_id": "637f808a4d59f9e44f43f4adf700bf97"
+      },
+      {
+        "fact": "backend/src/config",
+        "fact_id": "992306452dcad78ac5d4e9aa953cff6e"
+      }
+    ],
+    "suggested_actions": [
+      "Flatten the chain by depending on shared abstractions instead of deep transitive modules",
+      "Check whether intermediate modules are pass-through layers that can be removed",
+      "Introduce interfaces to decouple the deepest modules from their consumers"
+    ]
+  },
+  {
+    "title": "Deep dependency chain: backend/prisma (depth 5)",
+    "source": "dependency-depth",
+    "description": "Module \"backend/prisma\" has a longest dependency chain of 5 modules: backend/prisma -\u003e backend/src/models -\u003e backend/src/utils -\u003e backend/src/lib -\u003e backend/src/config. Deep chains slow comprehension and widen rebuild/retest impact when a module near the bottom changes.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "fact": "backend/prisma",
+        "fact_id": "8e835566b05c8639c9c9a2bacc83e745"
+      },
+      {
+        "fact": "backend/src/models",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "fact": "backend/src/utils",
+        "fact_id": "5104e3ed4dcf06651cb97d427cb37aa9"
+      },
+      {
+        "fact": "backend/src/lib",
+        "fact_id": "637f808a4d59f9e44f43f4adf700bf97"
+      },
+      {
+        "fact": "backend/src/config",
+        "fact_id": "992306452dcad78ac5d4e9aa953cff6e"
+      }
+    ],
+    "suggested_actions": [
+      "Flatten the chain by depending on shared abstractions instead of deep transitive modules",
+      "Check whether intermediate modules are pass-through layers that can be removed",
+      "Introduce interfaces to decouple the deepest modules from their consumers"
+    ]
+  },
+  {
+    "title": "Deep dependency chain: backend/scripts (depth 5)",
+    "source": "dependency-depth",
+    "description": "Module \"backend/scripts\" has a longest dependency chain of 5 modules: backend/scripts -\u003e backend/src/models -\u003e backend/src/utils -\u003e backend/src/lib -\u003e backend/src/config. Deep chains slow comprehension and widen rebuild/retest impact when a module near the bottom changes.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "fact": "backend/scripts",
+        "fact_id": "a90ee8eedfa9edaa7bafa75e65be4be4"
+      },
+      {
+        "fact": "backend/src/models",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "fact": "backend/src/utils",
+        "fact_id": "5104e3ed4dcf06651cb97d427cb37aa9"
+      },
+      {
+        "fact": "backend/src/lib",
+        "fact_id": "637f808a4d59f9e44f43f4adf700bf97"
+      },
+      {
+        "fact": "backend/src/config",
+        "fact_id": "992306452dcad78ac5d4e9aa953cff6e"
+      }
+    ],
+    "suggested_actions": [
+      "Flatten the chain by depending on shared abstractions instead of deep transitive modules",
+      "Check whether intermediate modules are pass-through layers that can be removed",
+      "Introduce interfaces to decouple the deepest modules from their consumers"
+    ]
+  },
+  {
+    "title": "Deep dependency chain: backend/src/middleware (depth 5)",
+    "source": "dependency-depth",
+    "description": "Module \"backend/src/middleware\" has a longest dependency chain of 5 modules: backend/src/middleware -\u003e backend/src/models -\u003e backend/src/utils -\u003e backend/src/lib -\u003e backend/src/config. Deep chains slow comprehension and widen rebuild/retest impact when a module near the bottom changes.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "fact": "backend/src/middleware",
+        "fact_id": "1af0a9e26efa2c1fd3f4574857dec8ca"
+      },
+      {
+        "fact": "backend/src/models",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "fact": "backend/src/utils",
+        "fact_id": "5104e3ed4dcf06651cb97d427cb37aa9"
+      },
+      {
+        "fact": "backend/src/lib",
+        "fact_id": "637f808a4d59f9e44f43f4adf700bf97"
+      },
+      {
+        "fact": "backend/src/config",
+        "fact_id": "992306452dcad78ac5d4e9aa953cff6e"
+      }
+    ],
+    "suggested_actions": [
+      "Flatten the chain by depending on shared abstractions instead of deep transitive modules",
+      "Check whether intermediate modules are pass-through layers that can be removed",
+      "Introduce interfaces to decouple the deepest modules from their consumers"
+    ]
+  },
+  {
+    "title": "Deep dependency chain: backend/src/validators (depth 5)",
+    "source": "dependency-depth",
+    "description": "Module \"backend/src/validators\" has a longest dependency chain of 5 modules: backend/src/validators -\u003e backend/src/models -\u003e backend/src/utils -\u003e backend/src/lib -\u003e backend/src/config. Deep chains slow comprehension and widen rebuild/retest impact when a module near the bottom changes.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "fact": "backend/src/validators",
+        "fact_id": "1bb90b59106ba088d6ada36d84e08b07"
+      },
+      {
+        "fact": "backend/src/models",
+        "fact_id": "f7a781ab3038d758ebe3ce845761d61f"
+      },
+      {
+        "fact": "backend/src/utils",
+        "fact_id": "5104e3ed4dcf06651cb97d427cb37aa9"
+      },
+      {
+        "fact": "backend/src/lib",
+        "fact_id": "637f808a4d59f9e44f43f4adf700bf97"
+      },
+      {
+        "fact": "backend/src/config",
+        "fact_id": "992306452dcad78ac5d4e9aa953cff6e"
+      }
+    ],
+    "suggested_actions": [
+      "Flatten the chain by depending on shared abstractions instead of deep transitive modules",
+      "Check whether intermediate modules are pass-through layers that can be removed",
+      "Introduce interfaces to decouple the deepest modules from their consumers"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/pages.ItemForm (63)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/pages.ItemForm\" has a cyclomatic complexity of 63 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/pages/ItemForm.jsx",
+        "symbol": "frontend/src/pages.ItemForm",
+        "detail": "cyclomatic complexity 63 at line 64",
+        "line": 64,
+        "fact_id": "95e795a0f0a1a05d1cbdafa76fddb133"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/pages.ItemDetail (58)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/pages.ItemDetail\" has a cyclomatic complexity of 58 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/pages/ItemDetail.jsx",
+        "symbol": "frontend/src/pages.ItemDetail",
+        "detail": "cyclomatic complexity 58 at line 15",
+        "line": 15,
+        "fact_id": "6490ffad12936b748d07c6068cb9d2a5"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/pages.Requests (44)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/pages.Requests\" has a cyclomatic complexity of 44 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/pages/Requests.jsx",
+        "symbol": "frontend/src/pages.Requests",
+        "detail": "cyclomatic complexity 44 at line 13",
+        "line": 13,
+        "fact_id": "ce2d56fbabe3ccdaa3b925675b5d3d21"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/components/ui.ImageDrop (37)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/components/ui.ImageDrop\" has a cyclomatic complexity of 37 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/components/ui/ImageDrop.jsx",
+        "symbol": "frontend/src/components/ui.ImageDrop",
+        "detail": "cyclomatic complexity 37 at line 19",
+        "line": 19,
+        "fact_id": "e06de729ee92a3572f882887d6c84902"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/pages.MyItems (37)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/pages.MyItems\" has a cyclomatic complexity of 37 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/pages/MyItems.jsx",
+        "symbol": "frontend/src/pages.MyItems",
+        "detail": "cyclomatic complexity 37 at line 13",
+        "line": 13,
+        "fact_id": "dd2e357f2474f8acd8b962fc116f0668"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/pages.Browse (36)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/pages.Browse\" has a cyclomatic complexity of 36 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/pages/Browse.jsx",
+        "symbol": "frontend/src/pages.Browse",
+        "detail": "cyclomatic complexity 36 at line 20",
+        "line": 20,
+        "fact_id": "f3b7902999ce7aab1bb9209586438755"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/admin/pages.AdminLocations (31)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/admin/pages.AdminLocations\" has a cyclomatic complexity of 31 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminLocations.jsx",
+        "symbol": "frontend/src/admin/pages.AdminLocations",
+        "detail": "cyclomatic complexity 31 at line 9",
+        "line": 9,
+        "fact_id": "6f8edbae35ec57655a53e8211c6ec00f"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/admin/pages.AdminUsers (31)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/admin/pages.AdminUsers\" has a cyclomatic complexity of 31 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminUsers.jsx",
+        "symbol": "frontend/src/admin/pages.AdminUsers",
+        "detail": "cyclomatic complexity 31 at line 11",
+        "line": 11,
+        "fact_id": "826ecc03a71c5a7792b21fc1a706fc1a"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/pages.Home (28)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/pages.Home\" has a cyclomatic complexity of 28 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/pages/Home.jsx",
+        "symbol": "frontend/src/pages.Home",
+        "detail": "cyclomatic complexity 28 at line 39",
+        "line": 39,
+        "fact_id": "547199a4a31fed64667150e443026d31"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/admin/pages.AdminSettings (23)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/admin/pages.AdminSettings\" has a cyclomatic complexity of 23 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminSettings.jsx",
+        "symbol": "frontend/src/admin/pages.AdminSettings",
+        "detail": "cyclomatic complexity 23 at line 25",
+        "line": 25,
+        "fact_id": "9b8c0655eead2a13210794041f15e7fe"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/components.LocationPicker (22)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/components.LocationPicker\" has a cyclomatic complexity of 22 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/components/LocationPicker.jsx",
+        "symbol": "frontend/src/components.LocationPicker",
+        "detail": "cyclomatic complexity 22 at line 5",
+        "line": 5,
+        "fact_id": "61e4b448e6ccc32d62878c5345a2cab4"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/admin/pages.AdminContent (21)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/admin/pages.AdminContent\" has a cyclomatic complexity of 21 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminContent.jsx",
+        "symbol": "frontend/src/admin/pages.AdminContent",
+        "detail": "cyclomatic complexity 21 at line 9",
+        "line": 9,
+        "fact_id": "904ed4c400f3ee4afceb6b659c3f2601"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/admin/pages.AdminCategories (19)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/admin/pages.AdminCategories\" has a cyclomatic complexity of 19 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminCategories.jsx",
+        "symbol": "frontend/src/admin/pages.AdminCategories",
+        "detail": "cyclomatic complexity 19 at line 13",
+        "line": 13,
+        "fact_id": "21c13109ff46c2e27e4bdf3507acf7c4"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/pages.Dashboard (19)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/pages.Dashboard\" has a cyclomatic complexity of 19 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/pages/Dashboard.jsx",
+        "symbol": "frontend/src/pages.Dashboard",
+        "detail": "cyclomatic complexity 19 at line 13",
+        "line": 13,
+        "fact_id": "cddfaf81f19bbc38bb0af68bd11dc061"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: frontend/src/pages.validate (19)",
+    "source": "complexity-outliers",
+    "description": "\"frontend/src/pages.validate\" has a cyclomatic complexity of 19 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "frontend/src/pages/ItemForm.jsx",
+        "symbol": "frontend/src/pages.validate",
+        "detail": "cyclomatic complexity 19 at line 17",
+        "line": 17,
+        "fact_id": "0e7a6e4ed3a868f3355c5755ce956c9b"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "Most depended-upon package: frontend/src/lib (Ca=7)",
+    "source": "package-metrics",
+    "description": "\"frontend/src/lib\" is depended upon by 7 other packages — a change-risk concentrator. Edits ripple across dependents, so keep its public contract stable.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "fact": "frontend/src/lib",
+        "detail": "Ca=7 I=0.00",
+        "fact_id": "848d89d01db3b19b063a3e497c9e29bc"
+      }
+    ],
+    "suggested_actions": [
+      "Stabilize the package's public contract; split it if it spans multiple responsibilities"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/lib.bustAll",
+    "source": "dead-code",
+    "description": "function \"backend/src/lib.bustAll\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/lib/cache.js",
+        "symbol": "backend/src/lib.bustAll",
+        "detail": "function · isolated · backend/src/lib/cache.js:38",
+        "line": 38,
+        "fact_id": "750ac8c99153ed6abd55a02b3e6540ba"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/lib.del",
+    "source": "dead-code",
+    "description": "function \"backend/src/lib.del\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/lib/redis.js",
+        "symbol": "backend/src/lib.del",
+        "detail": "function · isolated · backend/src/lib/redis.js:54",
+        "line": 54,
+        "fact_id": "2ec65ccf1f3b91cf2b07c408842c1353"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/lib.delByPrefix",
+    "source": "dead-code",
+    "description": "function \"backend/src/lib.delByPrefix\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/lib/redis.js",
+        "symbol": "backend/src/lib.delByPrefix",
+        "detail": "function · isolated · backend/src/lib/redis.js:65",
+        "line": 65,
+        "fact_id": "41caf8b572af6e20fb068625c25fc408"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/lib.drop",
+    "source": "dead-code",
+    "description": "function \"backend/src/lib.drop\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/lib/cache.js",
+        "symbol": "backend/src/lib.drop",
+        "detail": "function · isolated · backend/src/lib/cache.js:34",
+        "line": 34,
+        "fact_id": "cff32a5ef45314eb0b5feb1417a99a1b"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/lib.incrWithTtl",
+    "source": "dead-code",
+    "description": "function \"backend/src/lib.incrWithTtl\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/lib/redis.js",
+        "symbol": "backend/src/lib.incrWithTtl",
+        "detail": "function · isolated · backend/src/lib/redis.js:87",
+        "line": 87,
+        "fact_id": "a47f28b4a1f991703b1e8f0de9ff38cb"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/lib.isHealthy",
+    "source": "dead-code",
+    "description": "function \"backend/src/lib.isHealthy\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/lib/redis.js",
+        "symbol": "backend/src/lib.isHealthy",
+        "detail": "function · isolated · backend/src/lib/redis.js:33",
+        "line": 33,
+        "fact_id": "cd395d29361ba97ce7d05cc771490d45"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.areaDependants",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.areaDependants\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.areaDependants",
+        "detail": "function · isolated · backend/src/models/locationModel.js:269",
+        "line": 269,
+        "fact_id": "6b361bfe1eca343cb0a9d2d982b5d0bd"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.categoryUsage",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.categoryUsage\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/taxonomyModel.js",
+        "symbol": "backend/src/models.categoryUsage",
+        "detail": "function · isolated · backend/src/models/taxonomyModel.js:193",
+        "line": 193,
+        "fact_id": "b759f324384a4ad4e1cc068e2d20871f"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.cityDependants",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.cityDependants\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.cityDependants",
+        "detail": "function · isolated · backend/src/models/locationModel.js:188",
+        "line": 188,
+        "fact_id": "24d43a8068ccc70db975d23455f9755d"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.collegeDependants",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.collegeDependants\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.collegeDependants",
+        "detail": "function · isolated · backend/src/models/locationModel.js:369",
+        "line": 369,
+        "fact_id": "f24e4257873ceabc691d30dbc64d8bf4"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.conditionUsage",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.conditionUsage\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/taxonomyModel.js",
+        "symbol": "backend/src/models.conditionUsage",
+        "detail": "function · isolated · backend/src/models/taxonomyModel.js:246",
+        "line": 246,
+        "fact_id": "44bfa989f4656c770e883a1974d87cf1"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.countActiveForUser",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.countActiveForUser\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/itemModel.js",
+        "symbol": "backend/src/models.countActiveForUser",
+        "detail": "function · isolated · backend/src/models/itemModel.js:171",
+        "line": 171,
+        "fact_id": "115a213f5e58cdbbc5d724fc660ea957"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.countsByCategory",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.countsByCategory\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/itemModel.js",
+        "symbol": "backend/src/models.countsByCategory",
+        "detail": "function · isolated · backend/src/models/itemModel.js:323",
+        "line": 323,
+        "fact_id": "6c99d2b1542dcd9607fd651c70e1ed86"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.dashboard",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.dashboard\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/dashboardStatsModel.js",
+        "symbol": "backend/src/models.dashboard",
+        "detail": "function · isolated · backend/src/models/dashboardStatsModel.js:179",
+        "line": 179,
+        "fact_id": "dca1b8ce9bfdfc121e1b3a6f7d487475"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.distinctActions",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.distinctActions\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/auditModel.js",
+        "symbol": "backend/src/models.distinctActions",
+        "detail": "function · isolated · backend/src/models/auditModel.js:137",
+        "line": 137,
+        "fact_id": "70f3075759c7489614c6afa9047e5901"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.ensureDefaults",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.ensureDefaults\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/settingsModel.js",
+        "symbol": "backend/src/models.ensureDefaults",
+        "detail": "function · isolated · backend/src/models/settingsModel.js:205",
+        "line": 205,
+        "fact_id": "d396e64f1f755fe5670b5221286f0f1d"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.findAreas",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.findAreas\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.findAreas",
+        "detail": "function · isolated · backend/src/models/locationModel.js:32",
+        "line": 32,
+        "fact_id": "802f77884c83002f1abf959610d519d5"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.findCities",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.findCities\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.findCities",
+        "detail": "function · isolated · backend/src/models/locationModel.js:17",
+        "line": 17,
+        "fact_id": "fdd14d8ae48d2a247a62c4e82feac1a3"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.findColleges",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.findColleges\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.findColleges",
+        "detail": "function · isolated · backend/src/models/locationModel.js:48",
+        "line": 48,
+        "fact_id": "26a6bd8ed43375e1bf1aeae0c76369e0"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.findOwnerId",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.findOwnerId\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/itemModel.js",
+        "symbol": "backend/src/models.findOwnerId",
+        "detail": "function · isolated · backend/src/models/itemModel.js:249",
+        "line": 249,
+        "fact_id": "e1bcabfa20fb9b32aef96bf113d6cd54"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.findReceived",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.findReceived\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/requestModel.js",
+        "symbol": "backend/src/models.findReceived",
+        "detail": "function · isolated · backend/src/models/requestModel.js:76",
+        "line": 76,
+        "fact_id": "1cedee453fe1d7dd6bf7bbd00217d75a"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.findSent",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.findSent\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/requestModel.js",
+        "symbol": "backend/src/models.findSent",
+        "detail": "function · isolated · backend/src/models/requestModel.js:63",
+        "line": 63,
+        "fact_id": "55c164501bca63fc2fa7194e61bc3b4a"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.listNavLinksForAdmin",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.listNavLinksForAdmin\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/contentModel.js",
+        "symbol": "backend/src/models.listNavLinksForAdmin",
+        "detail": "function · isolated · backend/src/models/contentModel.js:56",
+        "line": 56,
+        "fact_id": "8c17dac1271bf70d5a4db2b9a8c787b3"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.listSocialLinksForAdmin",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.listSocialLinksForAdmin\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/contentModel.js",
+        "symbol": "backend/src/models.listSocialLinksForAdmin",
+        "detail": "function · isolated · backend/src/models/contentModel.js:115",
+        "line": 115,
+        "fact_id": "746413ec375a12f9ecc2053a09c5ee51"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.moderationCounts",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.moderationCounts\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/itemModel.js",
+        "symbol": "backend/src/models.moderationCounts",
+        "detail": "function · isolated · backend/src/models/itemModel.js:312",
+        "line": 312,
+        "fact_id": "0fa4c32f267ec6bf8019e5612c8c3701"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.openCountFor",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.openCountFor\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/reportModel.js",
+        "symbol": "backend/src/models.openCountFor",
+        "detail": "function · isolated · backend/src/models/reportModel.js:157",
+        "line": 157,
+        "fact_id": "e158efbe215e97a9b3d5fd08abf751a8"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.removeArea",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.removeArea\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.removeArea",
+        "detail": "function · isolated · backend/src/models/locationModel.js:278",
+        "line": 278,
+        "fact_id": "df580bb710e13dedc466cbff329b91b6"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.removeCategory",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.removeCategory\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/taxonomyModel.js",
+        "symbol": "backend/src/models.removeCategory",
+        "detail": "function · isolated · backend/src/models/taxonomyModel.js:199",
+        "line": 199,
+        "fact_id": "ee605b6898e19bcf7372ca7f5757b926"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.removeCity",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.removeCity\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.removeCity",
+        "detail": "function · isolated · backend/src/models/locationModel.js:198",
+        "line": 198,
+        "fact_id": "1f1c3adc8d44bead0f243df81587fa2f"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.removeCollege",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.removeCollege\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.removeCollege",
+        "detail": "function · isolated · backend/src/models/locationModel.js:377",
+        "line": 377,
+        "fact_id": "de7bd516b490c2753b294065b0107287"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.removeCondition",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.removeCondition\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/taxonomyModel.js",
+        "symbol": "backend/src/models.removeCondition",
+        "detail": "function · isolated · backend/src/models/taxonomyModel.js:252",
+        "line": 252,
+        "fact_id": "82654f78ce61b27cd3d3bc96049a9925"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.removeNavLink",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.removeNavLink\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/contentModel.js",
+        "symbol": "backend/src/models.removeNavLink",
+        "detail": "function · isolated · backend/src/models/contentModel.js:94",
+        "line": 94,
+        "fact_id": "7d546517077d0e742ad19ce860b9c2ab"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.removeSocialLink",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.removeSocialLink\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/contentModel.js",
+        "symbol": "backend/src/models.removeSocialLink",
+        "detail": "function · isolated · backend/src/models/contentModel.js:153",
+        "line": 153,
+        "fact_id": "15128653c841c88de7856ca66117851e"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.roleAndStatusCounts",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.roleAndStatusCounts\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/userModel.js",
+        "symbol": "backend/src/models.roleAndStatusCounts",
+        "detail": "function · isolated · backend/src/models/userModel.js:181",
+        "line": 181,
+        "fact_id": "b52fd7deaddff4a0f2322787aafff921"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.statusCounts",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.statusCounts\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/reportModel.js",
+        "symbol": "backend/src/models.statusCounts",
+        "detail": "function · isolated · backend/src/models/reportModel.js:149",
+        "line": 149,
+        "fact_id": "5a29012159455d087fb308c132e86270"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.touchLastLogin",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.touchLastLogin\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/userModel.js",
+        "symbol": "backend/src/models.touchLastLogin",
+        "detail": "function · isolated · backend/src/models/userModel.js:95",
+        "line": 95,
+        "fact_id": "100c82c91930f9107a7769108fa34b5f"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.verifyPassword",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.verifyPassword\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/userModel.js",
+        "symbol": "backend/src/models.verifyPassword",
+        "detail": "function · isolated · backend/src/models/userModel.js:91",
+        "line": 91,
+        "fact_id": "0775eedc64ab706b9349429f07e208b1"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function frontend/src/lib.getAll",
+    "source": "dead-code",
+    "description": "function \"frontend/src/lib.getAll\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "frontend/src/lib/itemService.js",
+        "symbol": "frontend/src/lib.getAll",
+        "detail": "function · isolated · frontend/src/lib/itemService.js:3",
+        "line": 3,
+        "fact_id": "9f417351aedfef41e1abe7eb3e6b7ff7"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function frontend/src/lib.getById",
+    "source": "dead-code",
+    "description": "function \"frontend/src/lib.getById\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "frontend/src/lib/itemService.js",
+        "symbol": "frontend/src/lib.getById",
+        "detail": "function · isolated · frontend/src/lib/itemService.js:17",
+        "line": 17,
+        "fact_id": "88f08a848e54dcb5f6da164156fe87e7"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function frontend/src/lib.getCollege",
+    "source": "dead-code",
+    "description": "function \"frontend/src/lib.getCollege\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "frontend/src/lib/locationService.js",
+        "symbol": "frontend/src/lib.getCollege",
+        "detail": "function · isolated · frontend/src/lib/locationService.js:23",
+        "line": 23,
+        "fact_id": "63561eecbdbda90440204ae35bad53a8"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function frontend/src/lib.getCurrentUser",
+    "source": "dead-code",
+    "description": "function \"frontend/src/lib.getCurrentUser\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "frontend/src/lib/authService.js",
+        "symbol": "frontend/src/lib.getCurrentUser",
+        "detail": "function · isolated · frontend/src/lib/authService.js:16",
+        "line": 16,
+        "fact_id": "b5fade8f40982293a98bc4d42a1b3943"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function frontend/src/lib.getMine",
+    "source": "dead-code",
+    "description": "function \"frontend/src/lib.getMine\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "frontend/src/lib/itemService.js",
+        "symbol": "frontend/src/lib.getMine",
+        "detail": "function · isolated · frontend/src/lib/itemService.js:23",
+        "line": 23,
+        "fact_id": "42cb84cfbc0ea42ed69434a678ad096e"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function frontend/src/lib.saveMyCollege",
+    "source": "dead-code",
+    "description": "function \"frontend/src/lib.saveMyCollege\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "frontend/src/lib/locationService.js",
+        "symbol": "frontend/src/lib.saveMyCollege",
+        "detail": "function · isolated · frontend/src/lib/locationService.js:28",
+        "line": 28,
+        "fact_id": "38fde2d58801d8285e3a9690317c18ec"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function frontend/src/lib.updateStatus",
+    "source": "dead-code",
+    "description": "function \"frontend/src/lib.updateStatus\" is isolated — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "frontend/src/lib/itemService.js",
+        "symbol": "frontend/src/lib.updateStatus",
+        "detail": "function · isolated · frontend/src/lib/itemService.js:63",
+        "line": 63,
+        "fact_id": "e7521e430e11bd0efd20aafa3b787dd7"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.accept",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.accept\" is unreferenced — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/requestModel.js",
+        "symbol": "backend/src/models.accept",
+        "detail": "function · unreferenced · backend/src/models/requestModel.js:129",
+        "line": 129,
+        "fact_id": "6ce9a3f3687709e939058bf192002b2e"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.activeNavLinks",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.activeNavLinks\" is unreferenced — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/contentModel.js",
+        "symbol": "backend/src/models.activeNavLinks",
+        "detail": "function · unreferenced · backend/src/models/contentModel.js:51",
+        "line": 51,
+        "fact_id": "08bc3b3bdec90adc0c0546d9a9c1ee8f"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.activeSocialLinks",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.activeSocialLinks\" is unreferenced — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/contentModel.js",
+        "symbol": "backend/src/models.activeSocialLinks",
+        "detail": "function · unreferenced · backend/src/models/contentModel.js:110",
+        "line": 110,
+        "fact_id": "be9cd9a0edd80fe0d7dc0402aa2efc95"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.categoryLabels",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.categoryLabels\" is unreferenced — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/taxonomyModel.js",
+        "symbol": "backend/src/models.categoryLabels",
+        "detail": "function · unreferenced · backend/src/models/taxonomyModel.js:86",
+        "line": 86,
+        "fact_id": "6f36b9a825702dbae1b32c8dd85b05f8"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.conditionLabels",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.conditionLabels\" is unreferenced — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/taxonomyModel.js",
+        "symbol": "backend/src/models.conditionLabels",
+        "detail": "function · unreferenced · backend/src/models/taxonomyModel.js:90",
+        "line": 90,
+        "fact_id": "b4db4c61be3592344420292965a26b54"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Dead code candidate: function backend/src/models.create",
+    "source": "dead-code",
+    "description": "function \"backend/src/models.create\" is unreferenced — nothing in the snapshot graph references it (medium confidence). References are matched by short name and biased conservative, so verify against dynamic/reflective dispatch and consumers outside the snapshot before removing.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/itemModel.js",
+        "symbol": "backend/src/models.create",
+        "detail": "function · unreferenced · backend/src/models/itemModel.js:177",
+        "line": 177,
+        "fact_id": "64b00e8afcbfd1c4bdfdce4dd7d500f7"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm no dynamic/reflective or out-of-snapshot callers, then remove the symbol"
+    ]
+  },
+  {
+    "title": "Additional dead-code candidates: 116 more (see find_orphans)",
+    "source": "dead-code",
+    "description": "43 further high/medium-confidence orphan(s) were omitted from individual insights and 73 low-confidence orphan(s) (methods/types/consts/vars — usage not edge-tracked) were not surfaced individually. Use the find_orphans tool (output_mode=full) for the complete list.",
+    "confidence": 0.4,
+    "evidence": null,
+    "suggested_actions": [
+      "Run find_orphans with confidence=high and visibility=unexported for the safest cleanup set"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n³)): backend/prisma.seedLocations",
+    "source": "performance",
+    "description": "Loops nest 3 deep, so the body runs about O(n³) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "backend/prisma/seed.js",
+        "symbol": "backend/prisma.seedLocations",
+        "detail": "Loops nest 3 deep, so the body runs about O(n³) in the loop bounds.",
+        "line": 178,
+        "fact_id": "74d0b97ec3ed1492851ae32f13f0027d"
+      },
+      {
+        "symbol": "backend/prisma.seedLocations",
+        "detail": "loop_depth=3, loop_count=3, cyclomatic=4",
+        "fact_id": "74d0b97ec3ed1492851ae32f13f0027d"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (compounded, O(n³)): frontend/src/admin/pages.AdminUsers",
+    "source": "performance",
+    "description": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n³). Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.55,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminUsers.jsx",
+        "symbol": "frontend/src/admin/pages.AdminUsers",
+        "detail": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n³).",
+        "line": 11,
+        "fact_id": "826ecc03a71c5a7792b21fc1a706fc1a"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminUsers",
+        "detail": "frontend/src/lib.timeAgo (loop_depth=1)",
+        "fact_id": "826ecc03a71c5a7792b21fc1a706fc1a"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (call-in-loop, O(n)): backend/prisma.seedItems",
+    "source": "performance",
+    "description": "Calls prisma.item.create inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.9,
+    "evidence": [
+      {
+        "file": "backend/prisma/seed.js",
+        "symbol": "backend/prisma.seedItems",
+        "detail": "Calls prisma.item.create inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop.",
+        "line": 275,
+        "fact_id": "9ef60a44fa5e9bc8a71d3a9a55985278"
+      },
+      {
+        "symbol": "backend/prisma.seedItems",
+        "detail": "call_in_loop=prisma.item.create",
+        "fact_id": "9ef60a44fa5e9bc8a71d3a9a55985278"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (call-in-loop, O(n³)): backend/prisma.seedLocations",
+    "source": "performance",
+    "description": "Calls prisma.city.upsert, prisma.area.upsert, prisma.college.upsert inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/prisma/seed.js",
+        "symbol": "backend/prisma.seedLocations",
+        "detail": "Calls prisma.city.upsert, prisma.area.upsert, prisma.college.upsert inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop.",
+        "line": 178,
+        "fact_id": "74d0b97ec3ed1492851ae32f13f0027d"
+      },
+      {
+        "symbol": "backend/prisma.seedLocations",
+        "detail": "call_in_loop=prisma.city.upsert",
+        "fact_id": "74d0b97ec3ed1492851ae32f13f0027d"
+      },
+      {
+        "symbol": "backend/prisma.seedLocations",
+        "detail": "call_in_loop=prisma.area.upsert",
+        "fact_id": "74d0b97ec3ed1492851ae32f13f0027d"
+      },
+      {
+        "symbol": "backend/prisma.seedLocations",
+        "detail": "call_in_loop=prisma.college.upsert",
+        "fact_id": "74d0b97ec3ed1492851ae32f13f0027d"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): backend/src/lib.delByPrefix",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "backend/src/lib/redis.js",
+        "symbol": "backend/src/lib.delByPrefix",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 65,
+        "fact_id": "41caf8b572af6e20fb068625c25fc408"
+      },
+      {
+        "symbol": "backend/src/lib.delByPrefix",
+        "detail": "loop_depth=2, loop_count=2, cyclomatic=7",
+        "fact_id": "41caf8b572af6e20fb068625c25fc408"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): backend/src/models.findCities",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.findCities",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 17,
+        "fact_id": "fdd14d8ae48d2a247a62c4e82feac1a3"
+      },
+      {
+        "symbol": "backend/src/models.findCities",
+        "detail": "loop_depth=2, loop_count=2, cyclomatic=3",
+        "fact_id": "fdd14d8ae48d2a247a62c4e82feac1a3"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): backend/src/models.listAreasForAdmin",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.listAreasForAdmin",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 224,
+        "fact_id": "303e68a7a10875f51535ba927abc5082"
+      },
+      {
+        "symbol": "backend/src/models.listAreasForAdmin",
+        "detail": "loop_depth=2, loop_count=3, cyclomatic=7",
+        "fact_id": "303e68a7a10875f51535ba927abc5082"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): backend/src/models.listCitiesForAdmin",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "backend/src/models/locationModel.js",
+        "symbol": "backend/src/models.listCitiesForAdmin",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 144,
+        "fact_id": "9a722896fea9c9b28d5aaf0ca1d9d15a"
+      },
+      {
+        "symbol": "backend/src/models.listCitiesForAdmin",
+        "detail": "loop_depth=2, loop_count=3, cyclomatic=5",
+        "fact_id": "9a722896fea9c9b28d5aaf0ca1d9d15a"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): frontend/src/admin.AdminLayout",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/AdminLayout.jsx",
+        "symbol": "frontend/src/admin.AdminLayout",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 62,
+        "fact_id": "4dd360001a376d2c1258aa2a05a3674d"
+      },
+      {
+        "symbol": "frontend/src/admin.AdminLayout",
+        "detail": "loop_depth=2, loop_count=5, cyclomatic=10",
+        "fact_id": "4dd360001a376d2c1258aa2a05a3674d"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): frontend/src/admin/pages.AdminCategories",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminCategories.jsx",
+        "symbol": "frontend/src/admin/pages.AdminCategories",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 13,
+        "fact_id": "21c13109ff46c2e27e4bdf3507acf7c4"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminCategories",
+        "detail": "loop_depth=2, loop_count=3, cyclomatic=19",
+        "fact_id": "21c13109ff46c2e27e4bdf3507acf7c4"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): frontend/src/admin/pages.AdminSettings",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminSettings.jsx",
+        "symbol": "frontend/src/admin/pages.AdminSettings",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 25,
+        "fact_id": "9b8c0655eead2a13210794041f15e7fe"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminSettings",
+        "detail": "loop_depth=2, loop_count=8, cyclomatic=23",
+        "fact_id": "9b8c0655eead2a13210794041f15e7fe"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): frontend/src/admin/pages.AdminUsers",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminUsers.jsx",
+        "symbol": "frontend/src/admin/pages.AdminUsers",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 11,
+        "fact_id": "826ecc03a71c5a7792b21fc1a706fc1a"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminUsers",
+        "detail": "loop_depth=2, loop_count=4, cyclomatic=31",
+        "fact_id": "826ecc03a71c5a7792b21fc1a706fc1a"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): frontend/src/pages.MyItems",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "frontend/src/pages/MyItems.jsx",
+        "symbol": "frontend/src/pages.MyItems",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 13,
+        "fact_id": "dd2e357f2474f8acd8b962fc116f0668"
+      },
+      {
+        "symbol": "frontend/src/pages.MyItems",
+        "detail": "loop_depth=2, loop_count=7, cyclomatic=37",
+        "fact_id": "dd2e357f2474f8acd8b962fc116f0668"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): generate_report.create_charts",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "generate_report.py",
+        "symbol": "generate_report.create_charts",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 123,
+        "fact_id": "644b81f21f17448e5479f41578680131"
+      },
+      {
+        "symbol": "generate_report.create_charts",
+        "detail": "loop_depth=2, loop_count=3, cyclomatic=7",
+        "fact_id": "644b81f21f17448e5479f41578680131"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (nested-loop, O(n²)): generate_report.generate_pdf",
+    "source": "performance",
+    "description": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.8,
+    "evidence": [
+      {
+        "file": "generate_report.py",
+        "symbol": "generate_report.generate_pdf",
+        "detail": "Loops nest 2 deep, so the body runs about O(n²) in the loop bounds.",
+        "line": 160,
+        "fact_id": "6b3768166275027d776004c9b783a6a6"
+      },
+      {
+        "symbol": "generate_report.generate_pdf",
+        "detail": "loop_depth=2, loop_count=4, cyclomatic=12",
+        "fact_id": "6b3768166275027d776004c9b783a6a6"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (recursion, O(?) — recursive (with loop)): backend/src/models.redact",
+    "source": "performance",
+    "description": "Recurses and loops in the same body — confirm each level consumes a disjoint subset of the input (a tree / divide-and-conquer traversal) rather than re-scanning the whole input; verify a base case and stack-depth limits. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.5,
+    "evidence": [
+      {
+        "file": "backend/src/models/auditModel.js",
+        "symbol": "backend/src/models.redact",
+        "detail": "Recurses and loops in the same body — confirm each level consumes a disjoint subset of the input (a tree / divide-and-conquer traversal) rather than re-scanning the whole input; verify a base case and stack-depth limits.",
+        "line": 22,
+        "fact_id": "9931c7f9b0274751d7107d58774ec6d4"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (compounded, O(n²)): backend/src/utils.normaliseRawRows",
+    "source": "performance",
+    "description": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n²). Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.55,
+    "evidence": [
+      {
+        "file": "backend/src/utils/rawRows.js",
+        "symbol": "backend/src/utils.normaliseRawRows",
+        "detail": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n²).",
+        "line": 17,
+        "fact_id": "0f8917e382f13b508f73e738493dedbb"
+      },
+      {
+        "symbol": "backend/src/utils.normaliseRawRows",
+        "detail": "backend/src/utils.normaliseRawRow (loop_depth=1)",
+        "fact_id": "0f8917e382f13b508f73e738493dedbb"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (compounded, O(n²)): frontend/src/admin/pages.AdminItems",
+    "source": "performance",
+    "description": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n²). Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.55,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminItems.jsx",
+        "symbol": "frontend/src/admin/pages.AdminItems",
+        "detail": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n²).",
+        "line": 9,
+        "fact_id": "5451d8a0915031b09376a99e437be65b"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminItems",
+        "detail": "frontend/src/lib.timeAgo (loop_depth=1)",
+        "fact_id": "5451d8a0915031b09376a99e437be65b"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (compounded, O(n²)): frontend/src/admin/pages.AdminReports",
+    "source": "performance",
+    "description": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n²). Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.55,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/AdminReports.jsx",
+        "symbol": "frontend/src/admin/pages.AdminReports",
+        "detail": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n²).",
+        "line": 9,
+        "fact_id": "21b27cbbb1a4ee01085e2e009cb7ad94"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.AdminReports",
+        "detail": "frontend/src/lib.timeAgo (loop_depth=1)",
+        "fact_id": "21b27cbbb1a4ee01085e2e009cb7ad94"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (compounded, O(n²)): frontend/src/admin/pages.Dashboard",
+    "source": "performance",
+    "description": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n²). Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.55,
+    "evidence": [
+      {
+        "file": "frontend/src/admin/pages/Dashboard.jsx",
+        "symbol": "frontend/src/admin/pages.Dashboard",
+        "detail": "Loops here call other looping functions; worst-case nesting compounds across the call graph to about O(n²).",
+        "line": 14,
+        "fact_id": "15ee8058bd17704f29e1640c9902e064"
+      },
+      {
+        "symbol": "frontend/src/admin/pages.Dashboard",
+        "detail": "frontend/src/lib.timeAgo (loop_depth=1)",
+        "fact_id": "15ee8058bd17704f29e1640c9902e064"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (call-in-loop, O(n)): backend/prisma.seedTaxonomy",
+    "source": "performance",
+    "description": "Calls prisma.category.upsert, prisma.condition.upsert inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/prisma/seed.js",
+        "symbol": "backend/prisma.seedTaxonomy",
+        "detail": "Calls prisma.category.upsert, prisma.condition.upsert inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop.",
+        "line": 148,
+        "fact_id": "44bf172eefc73e09e34d7d19dfe00e74"
+      },
+      {
+        "symbol": "backend/prisma.seedTaxonomy",
+        "detail": "call_in_loop=prisma.category.upsert",
+        "fact_id": "44bf172eefc73e09e34d7d19dfe00e74"
+      },
+      {
+        "symbol": "backend/prisma.seedTaxonomy",
+        "detail": "call_in_loop=prisma.condition.upsert",
+        "fact_id": "44bf172eefc73e09e34d7d19dfe00e74"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (call-in-loop, O(n)): backend/prisma.seedUsers",
+    "source": "performance",
+    "description": "Calls prisma.user.upsert inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/prisma/seed.js",
+        "symbol": "backend/prisma.seedUsers",
+        "detail": "Calls prisma.user.upsert inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop.",
+        "line": 215,
+        "fact_id": "df20ed160ad281f2e658b0ad23dae216"
+      },
+      {
+        "symbol": "backend/prisma.seedUsers",
+        "detail": "call_in_loop=prisma.user.upsert",
+        "fact_id": "df20ed160ad281f2e658b0ad23dae216"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (call-in-loop, O(n)): backend/src/models.updateMany",
+    "source": "performance",
+    "description": "Calls prisma.platformSetting.upsert inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "file": "backend/src/models/settingsModel.js",
+        "symbol": "backend/src/models.updateMany",
+        "detail": "Calls prisma.platformSetting.upsert inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop.",
+        "line": 169,
+        "fact_id": "8dd181704c982dce9ef398be90d19746"
+      },
+      {
+        "symbol": "backend/src/models.updateMany",
+        "detail": "call_in_loop=prisma.platformSetting.upsert",
+        "fact_id": "8dd181704c982dce9ef398be90d19746"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  }
+]

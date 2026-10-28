@@ -15,7 +15,10 @@
 /* The zero rolls like a dropped coin -- a nod to things getting lost. */
 .nf__zero {
   display: inline-block;
-  color: var(--accent);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   animation: nf-roll 6s var(--ease) infinite;
 }
 
@@ -55,17 +58,24 @@
   margin-top: var(--s3);
   color: var(--muted);
   font-size: 0.9375rem;
+  line-height: 1.5;
 }
 
 .nf__text code {
-  padding: 0 0.3em;
+  padding: 0.15em 0.4em;
   background: var(--surface-sunk);
   color: var(--ink);
   font-size: 0.875em;
+  border-radius: var(--r-sm);
   overflow-wrap: anywhere;
 }
 
-.nf__links { display: flex; align-items: center; gap: var(--s6); flex-shrink: 0; }
+.nf__links {
+  display: flex;
+  align-items: center;
+  gap: var(--s6);
+  flex-shrink: 0;
+}
 
 @media (max-width: 760px) {
   .nf__body { flex-direction: column; align-items: flex-start; }

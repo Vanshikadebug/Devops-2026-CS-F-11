@@ -1,5 +1,5 @@
 /**
- * ReuseHub base styles — Swiss editorial edition.
+ * ReuseHub base styles — elevated editorial edition.
  */
 
 @import './tokens.css';
@@ -14,6 +14,7 @@ html {
   scrollbar-width: thin;
   scrollbar-color: var(--ink) var(--bg);
   transition: background-color var(--t-slow);
+  scroll-behavior: smooth;
 }
 
 body {
@@ -36,7 +37,7 @@ h1 { font-size: clamp(2.4rem, 5vw, 4.25rem); }
 h2 { font-size: clamp(1.8rem, 3.4vw, 3rem); }
 h3 { font-size: clamp(1.1rem, 1.6vw, 1.4rem); }
 
-p { color: var(--ink-secondary); line-height: 1.45; }
+p { color: var(--ink-secondary); line-height: 1.55; }
 
 a {
   color: inherit;
@@ -46,7 +47,7 @@ a {
 /* Underline that draws in from the left — the house link style. */
 .ulink {
   background: linear-gradient(currentColor, currentColor) no-repeat 100% 100% / 0 1px;
-  transition: background-size var(--t);
+  transition: background-size var(--t), color var(--t);
 }
 .ulink:hover,
 .ulink.is-active {
@@ -58,7 +59,7 @@ a {
 .label {
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -96,7 +97,7 @@ a {
 .field__label {
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink);
 }
@@ -110,14 +111,14 @@ a {
 .field select,
 .field textarea {
   width: 100%;
-  padding: 0.55rem 0;
+  padding: 0.65rem 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1.5px solid var(--line);
   border-radius: 0;
   background: transparent;
   color: var(--ink);
   font-size: 1rem;
-  transition: border-color var(--t);
+  transition: border-color var(--t), box-shadow var(--t);
 }
 .field textarea { min-height: 6rem; resize: vertical; }
 .field select option { background: var(--bg); color: var(--ink); }
@@ -129,6 +130,7 @@ a {
 .field textarea:focus {
   outline: none;
   border-bottom-color: var(--ink);
+  box-shadow: 0 2px 0 0 var(--accent);
 }
 
 .field__input--error,
@@ -152,8 +154,12 @@ a {
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   color: var(--ink);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  transition: background-color var(--t), transform var(--t-fast);
 }
 .badge::before {
   content: '';
@@ -161,11 +167,16 @@ a {
   height: 6px;
   border-radius: 50%;
   background: currentColor;
+  animation: badge-pulse 2s ease-in-out infinite;
 }
-.badge--success { color: var(--ok-ink); }
-.badge--warning { color: var(--warn-ink); }
-.badge--danger { color: var(--bad-ink); }
-.badge--info { color: var(--info-ink); }
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.badge--success { color: var(--ok-ink); background: var(--ok-bg); }
+.badge--warning { color: var(--warn-ink); background: var(--warn-bg); }
+.badge--danger { color: var(--bad-ink); background: var(--bad-bg); }
+.badge--info { color: var(--info-ink); background: var(--info-bg); }
 .badge--neutral { color: var(--muted); }
 
 /* Skip link: off screen until it receives keyboard focus. */
@@ -179,6 +190,7 @@ a {
   color: var(--bg);
   font-size: 0.875rem;
   font-weight: 600;
+  border-radius: var(--r-sm);
   transform: translateY(-200%);
   transition: transform var(--t-fast);
 }
@@ -198,8 +210,19 @@ a {
 }
 
 .muted { color: var(--muted); }
-.gradient-text { color: var(--accent); }
-.glass { background: var(--bg); border: 1px solid var(--line); }
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--r-card);
+}
 
 .btn {
   display: inline-flex;
@@ -207,28 +230,66 @@ a {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.8rem 1.4rem;
-  border: 1px solid var(--ink);
-  border-radius: 0;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--ink);
   font: 500 0.875rem/1 var(--font-sans);
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background-color var(--t), color var(--t), border-color var(--t);
+  position: relative;
+  overflow: hidden;
+  transition: background-color var(--t), color var(--t), border-color var(--t),
+              transform var(--t-fast), box-shadow var(--t);
 }
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.btn:not(:disabled):hover::after { opacity: 0.04; }
+.btn:not(:disabled):active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn--sm { padding: 0.5rem 0.9rem; font-size: 0.8125rem; }
 .btn--lg { padding: 1rem 1.8rem; font-size: 1rem; }
 
-.btn--primary { background: var(--ink); color: var(--bg); }
-.btn--accent { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn--primary {
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--shadow-sm);
+}
+.btn--accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow-sm);
+}
 .btn--quiet,
 .btn--secondary { border-color: var(--line); }
 .btn--danger { border-color: var(--bad-ink); color: var(--bad-ink); }
 
-.btn:not(:disabled):hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.btn:not(:disabled):hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--shadow);
+}
 .btn--primary:not(:disabled):hover,
-.btn--accent:not(:disabled):hover { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.btn--danger:not(:disabled):hover { background: var(--bad-ink); border-color: var(--bad-ink); color: var(--bg); }
+.btn--accent:not(:disabled):hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow-glow);
+}
+.btn--danger:not(:disabled):hover {
+  background: var(--bad-ink);
+  border-color: var(--bad-ink);
+  color: var(--bg);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--bad-ink) 20%, transparent);
+}
 
 ::selection {
   background: var(--accent);
@@ -236,8 +297,9 @@ a {
 }
 
 :focus-visible {
-  outline: 1.5px solid var(--accent);
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
+  border-radius: 2px;
 }
 
 img {
@@ -247,6 +309,14 @@ img {
 }
 
 input, select, textarea, button { font-family: inherit; }
+
+/* Smooth entrance helper — used throughout. */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

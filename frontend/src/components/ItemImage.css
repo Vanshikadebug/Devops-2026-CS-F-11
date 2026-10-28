@@ -5,6 +5,7 @@
   width: 100%;
   overflow: hidden;
   background: var(--photo);
+  border-radius: var(--r-card);
 }
 
 .itemimg__photo {
@@ -13,11 +14,17 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 600ms var(--ease-out);
 }
 
 /* No photo: the category glyph, desaturated so it sits in the palette. */
 .itemimg__glyph {
   font-size: clamp(2rem, 5vw, 4rem);
   filter: grayscale(1);
-  opacity: 0.35;
+  opacity: 0.3;
+  transition: transform var(--t), opacity var(--t);
+}
+.itemimg:hover .itemimg__glyph {
+  transform: scale(1.15) rotate(-5deg);
+  opacity: 0.5;
 }

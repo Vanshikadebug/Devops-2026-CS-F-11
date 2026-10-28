@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MODAL — DARK LUXURY EDITION
+   MODAL — ELEVATED EDITORIAL EDITION
    ========================================================================== */
 
 .modal-overlay {
@@ -8,39 +8,39 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   padding: 1.5rem;
   opacity: 0;
-  animation: fadeIn 0.3s ease forwards;
+  animation: modal-fadeIn 0.35s var(--ease-out) forwards;
 }
 
-@keyframes fadeIn {
+@keyframes modal-fadeIn {
   to { opacity: 1; }
 }
 
 .modal-content {
-  background: var(--surface);
+  background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: var(--r-card);
+  border-radius: var(--r-lg);
   width: 100%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   position: relative;
-  transform: translateY(20px);
+  transform: translateY(24px) scale(0.97);
   opacity: 0;
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.1s;
+  animation: modal-slideUp 0.5s var(--ease-out) forwards 0.1s;
 }
 
-@keyframes slideUp {
-  to { transform: translateY(0); opacity: 1; }
+@keyframes modal-slideUp {
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 .modal-header {
@@ -64,9 +64,10 @@
   color: var(--muted);
   font-size: 1.5rem;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.35rem;
   line-height: 1;
-  transition: color var(--t);
+  border-radius: var(--r-sm);
+  transition: color var(--t), background-color var(--t), transform var(--t-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,6 +75,8 @@
 
 .modal-close:hover {
   color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  transform: rotate(90deg);
 }
 
 .modal-body {
