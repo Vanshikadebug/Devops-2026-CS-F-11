@@ -18,11 +18,24 @@
   color: #f1ede8;
   overflow: hidden;
 }
+/* Subtle radial glow behind the aside text */
+.auth__aside::before {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
 
 .auth__mark {
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.04em;
+  position: relative;
 }
 .auth__mark sup { font-size: 0.5em; }
 
@@ -32,12 +45,16 @@
   font-weight: 700;
   letter-spacing: -0.06em;
   line-height: 0.88;
+  position: relative;
   animation: auth-rise 1s var(--ease) both;
 }
 .auth__big span {
   display: block;
   margin-top: 0.15em;
-  color: var(--accent);
+  background: linear-gradient(135deg, var(--accent), #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-size: 0.42em;
   letter-spacing: -0.045em;
   line-height: 1;
@@ -46,7 +63,8 @@
 .auth__foot {
   font-size: 0.6875rem;
   font-weight: 500;
-  color: rgba(241, 237, 232, 0.55);
+  color: rgba(241, 237, 232, 0.45);
+  position: relative;
 }
 
 @keyframes auth-rise {
@@ -76,6 +94,7 @@
   margin-top: var(--s2);
   color: var(--muted);
   font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .auth__form {
@@ -84,14 +103,26 @@
   gap: var(--s6);
 }
 
-.auth__form .btn { margin-top: var(--s4); padding: 1rem; }
+.auth__form .btn {
+  margin-top: var(--s4);
+  padding: 1rem;
+}
 
 .auth__alert {
   padding: var(--s3) var(--s4);
-  border-left: 2px solid var(--bad-ink);
+  border-left: 3px solid var(--bad-ink);
+  background: var(--bad-bg);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
   color: var(--bad-ink);
   font-size: 0.8125rem;
   font-weight: 500;
+  animation: shake 0.4s var(--ease);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
 }
 
 .auth__switch {
@@ -103,8 +134,9 @@
 }
 .auth__switch a {
   color: var(--ink);
-  font-weight: 500;
+  font-weight: 600;
   background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 100% 1px;
+  transition: color var(--t);
 }
 .auth__switch a:hover { color: var(--accent); }
 

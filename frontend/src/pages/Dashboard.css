@@ -42,7 +42,9 @@
   background-color: transparent;
   color: var(--ink);
   cursor: pointer;
+  transition: color var(--t), transform var(--t-fast);
 }
+.udash__refresh:hover { color: var(--accent); transform: rotate(-180deg); }
 
 .udash__status {
   position: absolute;
@@ -61,7 +63,12 @@
   padding: var(--s10) 0 var(--s12);
 }
 
-.udash__hero { display: block; color: var(--ink); }
+.udash__hero {
+  display: block;
+  color: var(--ink);
+  transition: transform var(--t-fast);
+}
+.udash__hero:hover { transform: translateY(-2px); }
 .udash__hero:hover .udash__heronum { color: var(--accent); }
 
 .udash__heronum {
@@ -71,7 +78,10 @@
   font-weight: 700;
   letter-spacing: -0.07em;
   line-height: 0.8;
-  transition: color var(--t);
+  transition: color var(--t), text-shadow var(--t);
+}
+.udash__hero:hover .udash__heronum {
+  text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .udash__stats {
@@ -80,7 +90,13 @@
   gap: var(--s6) var(--gutter);
 }
 
-.udash__stat { padding-top: var(--s2); border-top: 1px solid var(--line); }
+.udash__stat {
+  padding-top: var(--s2);
+  border-top: 1.5px solid var(--line);
+  transition: border-color var(--t);
+}
+.udash__stat:hover { border-top-color: var(--accent); }
+
 .udash__statlink { display: block; color: inherit; }
 .udash__statlink:hover dd { color: var(--accent); }
 
@@ -91,7 +107,7 @@
   color: var(--muted);
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 .udash__stat dd {
@@ -105,10 +121,11 @@
 }
 
 .udash__alert {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
   animation: live-pulse 1.6s ease-in-out infinite;
 }
 @keyframes live-pulse { 50% { opacity: 0.25; transform: scale(0.7); } }
@@ -128,7 +145,7 @@
   display: block;
   margin-bottom: var(--s4);
   padding-top: var(--s2);
-  border-top: 1px solid var(--ink);
+  border-top: 1.5px solid var(--ink);
   color: var(--ink);
   font-size: 0.9375rem;
   font-weight: 600;
@@ -139,10 +156,12 @@
   display: grid;
   grid-template-columns: 9rem 1fr;
   gap: var(--s4);
-  padding: 0.6rem 0;
+  padding: 0.7rem 0;
   border-bottom: 1px solid var(--line);
   font-size: 0.8125rem;
+  transition: background-color var(--t);
 }
+.udash__facts > div:hover { background: color-mix(in srgb, var(--accent) 3%, transparent); }
 .udash__facts dt { color: var(--muted); }
 .udash__facts dd { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
 
@@ -152,7 +171,7 @@
   align-items: baseline;
 }
 .udash__recenthead .udash__caption { flex: 1; }
-.udash__recenthead .label { padding-top: var(--s2); border-top: 1px solid var(--ink); margin-bottom: var(--s4); }
+.udash__recenthead .label { padding-top: var(--s2); border-top: 1.5px solid var(--ink); margin-bottom: var(--s4); }
 
 @media (max-width: 900px) {
   .udash__head { grid-template-columns: 1fr; }
