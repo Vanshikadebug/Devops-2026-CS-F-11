@@ -1,7 +1,7 @@
 /**
- * ReuseHub design tokens — "Swiss editorial" edition.
+ * ReuseHub design tokens — elevated editorial edition.
  *
- * Warm paper, one loud colour, hairline rules, no rounding, no shadows.
+ * Warm paper, one loud colour, refined rules with subtle depth.
  * Three themes, picked from the dots in the navbar and stored on
  * <html data-theme>:
  *   red   — red ink on paper (default)
@@ -15,11 +15,11 @@
 
 :root,
 :root[data-theme='red'] {
-  --bg: #ece8e3;
+  --bg: #f0ece7;
   --ink: #ff2a00;
   --accent: #ff2a00;
   --accent-ink: #ffffff;
-  --photo: #dcd7d1;
+  --photo: #e4dfd9;
 
   --ok-ink: #1f7a3a;
   --warn-ink: #9a5b00;
@@ -28,19 +28,19 @@
 }
 
 :root[data-theme='mono'] {
-  --bg: #ece8e3;
+  --bg: #f0ece7;
   --ink: #111111;
   --accent: #ff2a00;
   --accent-ink: #ffffff;
-  --photo: #dcd7d1;
+  --photo: #e4dfd9;
 }
 
 :root[data-theme='dark'] {
-  --bg: #0b0b0b;
+  --bg: #0e0e0e;
   --ink: #f1ede8;
-  --accent: #ff2a00;
+  --accent: #ff3d17;
   --accent-ink: #ffffff;
-  --photo: #1c1c1c;
+  --photo: #1a1a1a;
 
   --ok-ink: #6ee7a0;
   --warn-ink: #fbbf24;
@@ -49,38 +49,38 @@
 }
 
 :root {
-  /* Derived surfaces — legacy names kept so every existing stylesheet follows. */
+  /* Derived surfaces — now with subtle layering for depth. */
   --bg-deep: var(--bg);
   --surface: color-mix(in srgb, var(--ink) 4%, var(--bg));
-  --surface-elevated: var(--bg);
+  --surface-elevated: color-mix(in srgb, var(--ink) 2%, var(--bg));
   --surface-sunk: color-mix(in srgb, var(--ink) 7%, var(--bg));
   --surface-glass: var(--bg);
   --surface-ink: var(--ink);
-  --ink-secondary: color-mix(in srgb, var(--ink) 80%, transparent);
-  --muted: color-mix(in srgb, var(--ink) 58%, transparent);
+  --ink-secondary: color-mix(in srgb, var(--ink) 78%, transparent);
+  --muted: color-mix(in srgb, var(--ink) 52%, transparent);
 
-  --line: color-mix(in srgb, var(--ink) 18%, transparent);
+  --line: color-mix(in srgb, var(--ink) 15%, transparent);
   --line-strong: var(--ink);
   --ring: var(--accent);
 
-  --accent-dim: color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-dim: color-mix(in srgb, var(--accent) 12%, transparent);
   --accent-2: var(--accent);
   --accent-2-dim: var(--accent-dim);
-  --gradient-primary: linear-gradient(var(--accent), var(--accent));
+  --gradient-primary: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, #ff6b35));
   --gradient-warm: var(--gradient-primary);
-  --gradient-subtle: linear-gradient(var(--accent-dim), var(--accent-dim));
+  --gradient-subtle: linear-gradient(135deg, var(--accent-dim), color-mix(in srgb, var(--accent-dim) 50%, transparent));
 
-  --ok-bg: color-mix(in srgb, var(--ok-ink) 12%, transparent);
-  --warn-bg: color-mix(in srgb, var(--warn-ink) 12%, transparent);
-  --bad-bg: color-mix(in srgb, var(--bad-ink) 12%, transparent);
-  --info-bg: color-mix(in srgb, var(--info-ink) 12%, transparent);
+  --ok-bg: color-mix(in srgb, var(--ok-ink) 10%, transparent);
+  --warn-bg: color-mix(in srgb, var(--warn-ink) 10%, transparent);
+  --bad-bg: color-mix(in srgb, var(--bad-ink) 10%, transparent);
+  --info-bg: color-mix(in srgb, var(--info-ink) 10%, transparent);
 
-  /* No rounding except true circles and pills. */
-  --r-card: 0;
-  --r-sm: 0;
-  --r-md: 0;
-  --r-lg: 0;
-  --r-xl: 0;
+  /* Elevated editorial: subtle rounding instead of fully sharp. */
+  --r-card: 6px;
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
   --r-pill: 999px;
 
   --s1: 0.25rem;
@@ -96,15 +96,18 @@
   --s20: 5rem;
   --s24: 6rem;
 
-  --shadow-sm: none;
-  --shadow: none;
-  --shadow-lg: none;
-  --shadow-glow: none;
-  --shadow-glow-strong: none;
+  /* Layered shadows for editorial depth. */
+  --shadow-sm: 0 1px 3px color-mix(in srgb, var(--ink) 6%, transparent);
+  --shadow: 0 2px 8px color-mix(in srgb, var(--ink) 8%, transparent),
+            0 1px 3px color-mix(in srgb, var(--ink) 5%, transparent);
+  --shadow-lg: 0 8px 30px color-mix(in srgb, var(--ink) 10%, transparent),
+               0 2px 8px color-mix(in srgb, var(--ink) 6%, transparent);
+  --shadow-glow: 0 0 20px color-mix(in srgb, var(--accent) 15%, transparent);
+  --shadow-glow-strong: 0 0 40px color-mix(in srgb, var(--accent) 25%, transparent);
 
-  --glass-bg: var(--bg);
-  --glass-border: var(--line);
-  --glass-blur: 0px;
+  --glass-bg: color-mix(in srgb, var(--bg) 85%, transparent);
+  --glass-border: color-mix(in srgb, var(--ink) 10%, transparent);
+  --glass-blur: 16px;
 
   --font-display: 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-sans: 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -114,10 +117,12 @@
   --nav-h: 64px;
 
   --ease: cubic-bezier(0.7, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
   --t: 300ms var(--ease);
   --t-fast: 160ms var(--ease);
   --t-slow: 700ms var(--ease);
-  --t-spring: 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-spring: 600ms var(--ease-elastic);
 
   font-family: var(--font-sans);
   font-size: 16px;
